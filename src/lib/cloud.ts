@@ -121,9 +121,13 @@ async function ensureFresh() {
       const body = await call("/auth/v1/token?grant_type=refresh_token", { method: "POST", body: JSON.stringify({ refresh_token: session!.refresh_token }), auth: false });
       takeSession(body);
     } catch (e) {
-      if (String(e).includes("Geen internet")) throw e;
-      writeSession(null);
-      throw new Error("Je bent uitgelogd. Log opnieuw in");
+      // Alleen uitloggen als Supabase zegt dat de login echt niet meer geldig is.
+      // Bij storingen of geen internet blijft iedereen gewoon ingelogd en proberen we het later opnieuw.
+      if (/invalid refresh token|refresh token not found|already used/i.test(String((e as Error).message ?? e))) {
+        writeSession(null);
+        throw new Error("Je bent uitgelogd. Log opnieuw in");
+      }
+      throw new Error("Even geen verbinding met de server. We proberen het zo opnieuw");
     } finally {
       refreshing = null;
     }

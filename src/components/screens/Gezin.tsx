@@ -50,6 +50,10 @@ export function Gezin({ state, me, onToast, onOefenen, onCoachNu }: Props) {
         </div>
       </header>
 
+      {isLive() && away.length === 0 && !showInvites && (
+        <button className="ff-btn ff-btn-ghost ff-btn-wide" onClick={() => setShowInvites(true)}>Iemand uitgelogd of nieuwe telefoon? Nieuwe code maken</button>
+      )}
+
       {isLive() && (away.length > 0 || showInvites) && (
         <section className="ff-stack-s" aria-label="Gezinsleden uitnodigen">
           <h2 className="ff-h2">Gezinsleden uitnodigen</h2>
@@ -228,8 +232,8 @@ export function Gezin({ state, me, onToast, onOefenen, onCoachNu }: Props) {
         ))}
       </section>
 
-      {isLive() && away.length === 0 && (
-        <button className="ff-link" onClick={() => setShowInvites((v) => !v)}>{showInvites ? "Uitnodigen verbergen" : "Nieuwe telefoon? Nieuwe code maken"}</button>
+      {isLive() && away.length === 0 && showInvites && (
+        <button className="ff-link" onClick={() => setShowInvites(false)}>Uitnodigen verbergen</button>
       )}
 
       {feat.oefenen && <button className="ff-level" onClick={onOefenen}>
