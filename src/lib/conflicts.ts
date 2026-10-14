@@ -199,10 +199,10 @@ export const CONFLICTS: ConflictScenario[] = [
   },
   {
     id: "voetbal",
-    title: "Ruzie tijdens het voetballen",
+    title: "Ruzie tijdens samen spelen of sporten",
     category: "buiten",
-    description: "Ruzie over een overtreding, de score of vals spel. Er wordt gescholden, geduwd, of iemand loopt boos weg.",
-    trigger: "Een discussie over het spel.",
+    description: "Ruzie tijdens een spel of sport, buiten of binnen: over een regel, de score of vals spelen. Er wordt gescholden, geduwd, of iemand loopt boos weg.",
+    trigger: "Een discussie over het spel, de regels of de score.",
     possible_factors: ["Teleurstelling en willen winnen", "Sterk reageren op onrecht", "Groepsdruk of uitdagen", "Moeite om je in te houden als het oploopt"],
     early_signs: ["Harder roepen", "Wild gebaren", "Dicht bij de ander gaan staan", "Schelden"],
     safety_check: [],

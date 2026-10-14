@@ -98,7 +98,7 @@ function FamilyDetail({ state, pro, onBack, onToast }: { state: FamilyState; pro
   const addTask = () => {
     if (!title.trim() || !to) return;
     const kid = kids.some((k) => k.id === to);
-    actions.addTask({ title: title.trim(), icon: school ? "boek" : "zon", assignee: to, repeat, date: repeat === "eenmalig" ? new Date().toLocaleDateString("sv-SE") : undefined, xp: kid ? 20 : 0, createdBy: pro.id, source: pro.id });
+    actions.addTask({ title: title.trim(), icon: school ? "boek" : "zon", assignee: to, repeat, date: repeat === "eenmalig" ? new Date().toLocaleDateString("sv-SE") : undefined, xp: kid ? 15 : 0, createdBy: pro.id, source: pro.id });
     onToast(`Taak klaargezet voor ${name(to)}`);
     setTitle("");
   };

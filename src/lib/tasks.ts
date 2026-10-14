@@ -29,19 +29,19 @@ export function energyOf(state: FamilyState, m: Member): number {
   return mine.filter((t) => isDone(state, t.id)).length / mine.length;
 }
 
-export const levelOf = (xp: number) => Math.floor(xp / 100) + 1;
+export { levelOf } from "./xp";
 
 export const TASK_SUGGESTIONS: { title: string; icon: Task["icon"]; xp: number; pet?: boolean }[] = [
-  { title: "Huiswerk maken", icon: "pen", xp: 20 },
-  { title: "20 minuten leren", icon: "boek", xp: 15 },
-  { title: "Training of sporten", icon: "sport", xp: 25 },
+  { title: "Huiswerk maken", icon: "pen", xp: 15 },
+  { title: "20 minuten leren", icon: "boek", xp: 10 },
+  { title: "Training of sporten", icon: "sport", xp: 10 },
   { title: "Kamer opruimen", icon: "bed", xp: 10 },
-  { title: "Tafel dekken", icon: "bord", xp: 10 },
-  { title: "Vaatwasser uitruimen", icon: "huis", xp: 10 },
-  { title: "Afval wegbrengen", icon: "afval", xp: 10 },
+  { title: "Tafel dekken", icon: "bord", xp: 5 },
+  { title: "Vaatwasser uitruimen", icon: "huis", xp: 5 },
+  { title: "Afval wegbrengen", icon: "afval", xp: 5 },
   { title: "Boodschappen halen", icon: "kar", xp: 10 },
-  { title: "Telefoon aan de lader in de keuken", icon: "telefoon", xp: 15 },
-  { title: "Huisdier uitlaten of eten geven", icon: "poot", xp: 10, pet: true },
+  { title: "Telefoon aan de lader in de keuken", icon: "telefoon", xp: 10 },
+  { title: "Huisdier uitlaten of eten geven", icon: "poot", xp: 5, pet: true },
 ];
 
 /** Een uur voor bedtijd: "21:30" → "20.30". */

@@ -52,7 +52,7 @@ export function Ruzie({ state, me, conflictId, onClose, onToast, onAfter }: Prop
     onClose();
     if (solution === "Een ouder helpt ons") onToast("Je ouders krijgen een seintje om te helpen");
     else {
-      onToast("Opgelost! Knap gedaan, allebei. +20 XP");
+      onToast("Opgelost! Knap gedaan, allebei");
       window.setTimeout(onAfter, 900);
     }
   };

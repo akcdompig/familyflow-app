@@ -11,6 +11,7 @@ import { phoneTime } from "@/lib/tasks";
 import { Uitnodigen } from "@/components/screens/Uitnodigen";
 import { SKILLS, scenarioById, type SkillId } from "@/lib/coach";
 import { features } from "@/lib/unlock";
+import { levelOf, xpForLevel, XP_UITLEG } from "@/lib/xp";
 import type { FamilyState, Member, Meeting } from "@/lib/types";
 
 const GOAL_COLORS = ["#d9442f", "#3cc6a0", "#6c8cff"];
@@ -203,6 +204,16 @@ export function Gezin({ state, me, onToast, onOefenen, onCoachNu }: Props) {
           </label>
         ))}
         <button className="ff-link" onClick={() => actions.setRewards([...state.rewards, { level: (state.rewards[state.rewards.length - 1]?.level ?? 1) + 1, title: "" }])}>+ Level toevoegen</button>
+        <details className="ff-details">
+          <summary><b>Zo verdienen de kinderen XP</b></summary>
+          <ul className="ff-list ff-small">{XP_UITLEG.map(([a, b]) => <li key={a}><b>{a}:</b> {b}</li>)}</ul>
+          <p className="ff-small ff-muted">Een kind dat alles doet, haalt zo'n 40 tot 60 XP per dag. Level 2 is na een paar dagen binnen, level 5 na ruim twee weken. Elk level wordt iets zwaarder.</p>
+          <p className="ff-small">Levels: {[2, 3, 4, 5, 6].map((l) => `${l} = ${xpForLevel(l)} XP`).join(" · ")}</p>
+        </details>
+        {state.members.filter((m) => m.role !== "ouder").map((k) => {
+          const mins = (state.reading?.[k.id] ?? []).filter((r) => Date.now() - new Date(r.at).getTime() < 7 * 864e5).reduce((a, r) => a + r.min, 0);
+          return <p key={k.id} className="ff-small"><b>{k.name}:</b> level {levelOf(state.xp[k.id] ?? 0)} · {state.xp[k.id] ?? 0} XP · {mins} min gelezen deze week</p>;
+        })}
       </section>
 
       <section className="ff-card ff-stack-s">

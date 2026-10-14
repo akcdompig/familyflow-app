@@ -13,6 +13,7 @@ import { ProApp } from "@/components/screens/Pro";
 import { Ruzie } from "@/components/screens/Ruzie";
 import { CoachPlay } from "@/components/screens/Coach";
 import { CoachNu } from "@/components/screens/CoachNu";
+import { Leerplanner } from "@/components/screens/Leerplanner";
 import { scenarioById } from "@/lib/coach";
 import { features } from "@/lib/unlock";
 import { Oefenen } from "@/components/screens/Oefenen";
@@ -62,6 +63,7 @@ export function FamilyFlowApp() {
   const [ruzie, setRuzie] = useState<string | null>(null);
   const [coach, setCoach] = useState<string | null>(null);
   const [coachNu, setCoachNu] = useState<string | null>(null);
+  const [planner, setPlanner] = useState(false);
 
   // Energie van elke avatar komt uit de taken van vandaag.
   const state: FamilyState = useMemo(() => ({ ...raw, members: raw.members.map((m) => ({ ...m, energy: energyOf(raw, m) })) }), [raw]);
@@ -89,6 +91,7 @@ export function FamilyFlowApp() {
     setRuzie(null);
     setCoach(null);
     setCoachNu(null);
+    setPlanner(false);
     setToast(null);
     window.scrollTo(0, 0);
   };
@@ -126,7 +129,9 @@ export function FamilyFlowApp() {
     <div className={`ff-app ${isParent ? "ff-theme-ouder" : "ff-theme-kind"}`}>
       {screen !== "maker" && !live && <DemoBar state={state} onSwitch={afterSwitch} />}
       {live && syncErr && <div className="ff-syncbar" role="status">Niet opgeslagen: {syncErr}. Ik probeer het zo opnieuw.</div>}
-      {coachNu !== null ? (
+      {planner ? (
+        <Leerplanner key={me.id} state={state} me={me} onClose={() => setPlanner(false)} onToast={setToast} />
+      ) : coachNu !== null ? (
         <CoachNu
           key={coachNu || "kies"}
           state={state}
@@ -153,7 +158,7 @@ export function FamilyFlowApp() {
       {view === "huis" && (
         <Huiskamer state={state} me={me} onCheckIn={() => setCheckIn(true)} onOpenMember={setMember} onTalkTips={setTips} onWho={() => (live ? setScreen("ik") : setWho(true))} onGoTasks={() => setScreen("taken")} onRuzie={(id) => setRuzie(id ?? "")} onGoGezin={() => setScreen("gezin")} onCoachNu={() => setCoachNu("")} />
       )}
-      {view === "taken" && <Taken state={state} me={me} onToast={setToast} onPlay={setCoach} />}
+      {view === "taken" && <Taken state={state} me={me} onToast={setToast} onPlay={setCoach} onPlanner={() => setPlanner(true)} />}
       {view === "oefenen" && <Oefenen state={state} me={me} onToast={setToast} onCalm={() => setCalm(true)} onRuzie={() => setRuzie("")} onCoach={setCoach} onCoachNu={() => setCoachNu("")} />}
       {view === "gezin" && isParent && <Gezin state={state} me={me} onToast={setToast} onOefenen={() => setScreen("oefenen")} onCoachNu={() => setCoachNu("")} />}
       {view === "ik" && <Ik state={state} me={me} onEditAvatar={() => setScreen("maker")} onCalm={() => setCalm(true)} onToast={setToast} />}
@@ -161,7 +166,7 @@ export function FamilyFlowApp() {
         </>
       )}
 
-      {screen !== "maker" && ruzie === null && coach === null && coachNu === null && (
+      {screen !== "maker" && ruzie === null && coach === null && coachNu === null && !planner && (
         <nav className="ff-nav" aria-label="Hoofdmenu" style={{ gridTemplateColumns: `repeat(${nav.length}, minmax(0, 1fr))` }}>
           {nav.map((n) => {
             const cur = screen === n.id || (n.id === "gezin" && screen === "oefenen" && isParent);

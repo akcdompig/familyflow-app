@@ -4,6 +4,7 @@ import { useSyncExternalStore } from "react";
 import * as cloud from "./cloud";
 import { demoFamily } from "./demo";
 import { phoneTaskTitle, todayKey } from "./tasks";
+import { XP } from "./xp";
 import type { CoachRun, Quest, AvatarConfig, CalmPlan, CheckIn, Conflict, ConflictSide, FamilyState, Meeting, ProKind, Task } from "./types";
 
 /*
@@ -199,6 +200,7 @@ export function useFamily(): FamilyState {
 
 const addXp = (s: FamilyState, id: string, n: number) => ({ ...s.xp, [id]: Math.max(0, (s.xp[id] ?? 0) + n) });
 const newId = (p = "t") => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+const isToday = (iso: string) => new Date(iso).toDateString() === new Date().toDateString();
 const isKid = (s: FamilyState, id: string) => !!s.members.find((m) => m.id === id) && s.members.find((m) => m.id === id)!.role !== "ouder";
 
 export const actions = {
@@ -210,8 +212,10 @@ export const actions = {
   checkIn(memberId: string, c: Omit<CheckIn, "at">) {
     const at = new Date().toISOString();
     update((s) => {
+      const first = !(s.history[memberId] ?? []).some((h) => isToday(h.at));
       const hist = [...(s.history[memberId] ?? []), { mood: c.mood, rest: c.rest, at }].slice(-60);
-      return { ...s, checkins: { ...s.checkins, [memberId]: { ...c, at } }, history: { ...s.history, [memberId]: hist } };
+      const xp = first && isKid(s, memberId) ? addXp(s, memberId, XP.inchecken) : s.xp;
+      return { ...s, xp, checkins: { ...s.checkins, [memberId]: { ...c, at } }, history: { ...s.history, [memberId]: hist } };
     });
   },
   saveAvatar(memberId: string, avatar: AvatarConfig, name?: string) {
@@ -252,7 +256,10 @@ export const actions = {
   },
   calmDone(memberId: string) {
     const at = new Date().toISOString();
-    update((s) => ({ ...s, calm: [...s.calm, { member: memberId, at }].slice(-100), xp: addXp(s, memberId, 5) }));
+    update((s) => {
+      const first = !s.calm.some((c) => c.member === memberId && isToday(c.at));
+      return { ...s, calm: [...s.calm, { member: memberId, at }].slice(-100), xp: first && isKid(s, memberId) ? addXp(s, memberId, XP.rustig) : s.xp };
+    });
   },
   /** Oefenlevel klaar. Alleen de eerste keer XP. */
   finishScenario(memberId: string, id: number): boolean {
@@ -260,7 +267,7 @@ export const actions = {
     update((s) => {
       const list = s.played[memberId] ?? [];
       if (list.includes(id)) return s;
-      return { ...s, played: { ...s.played, [memberId]: [...list, id] }, xp: addXp(s, memberId, 20) };
+      return { ...s, played: { ...s.played, [memberId]: [...list, id] }, xp: isKid(s, memberId) ? addXp(s, memberId, XP.korteOefening) : s.xp };
     });
     return true;
   },
@@ -277,8 +284,10 @@ export const actions = {
       const c = s.conflicts.find((x) => x.id === id);
       if (!c || c.status !== "wacht") return s;
       let xp = s.xp;
-      if (!help) for (const m of [c.from, c.with]) xp = { ...xp, [m]: (xp[m] ?? 0) + 20 };
-      return { ...s, xp, conflicts: s.conflicts.map((x) => (x.id === id ? { ...x, status: help ? "hulp" : "opgelost", solution } : x)) };
+      // Max één keer per dag XP voor een opgeloste ruzie, zodat niemand ruzies gaat verzinnen.
+      const solvedToday = (m: string) => s.conflicts.some((x) => x.id !== id && x.status === "opgelost" && x.solvedAt && isToday(x.solvedAt) && (x.from === m || x.with === m));
+      if (!help) for (const m of [c.from, c.with]) if (!solvedToday(m)) xp = { ...xp, [m]: (xp[m] ?? 0) + XP.ruzieOpgelost };
+      return { ...s, xp, conflicts: s.conflicts.map((x) => (x.id === id ? { ...x, status: help ? "hulp" : "opgelost", solution, solvedAt: help ? undefined : new Date().toISOString() } : x)) };
     });
   },
   /** Ouder heeft geholpen bij een ruzie. */
@@ -321,7 +330,7 @@ export const actions = {
     update((s) => {
       const list = s.coach?.[memberId] ?? [];
       const first = !list.some((r) => r.id === run.id);
-      return { ...s, coach: { ...(s.coach ?? {}), [memberId]: [...list, { ...run, at }].slice(-200) }, xp: addXp(s, memberId, first ? 20 : 5) };
+      return { ...s, coach: { ...(s.coach ?? {}), [memberId]: [...list, { ...run, at }].slice(-200) }, xp: first && isKid(s, memberId) ? addXp(s, memberId, XP.oefenscenario) : s.xp };
     });
   },
   addQuest(q: Omit<Quest, "id" | "at">) {
@@ -341,7 +350,7 @@ export const actions = {
       return {
         ...s,
         quests: (s.quests ?? []).map((x) => (x.id === id ? { ...x, done } : x)),
-        xp: isKid(s, q.member) ? addXp(s, q.member, done ? 25 : -25) : s.xp,
+        xp: isKid(s, q.member) ? addXp(s, q.member, done ? XP.quest : -XP.quest) : s.xp,
       };
     });
   },
@@ -359,6 +368,20 @@ export const actions = {
   logCoach(by: string, scenario: string, licht: "rood" | "oranje" | "groen" | "veilig") {
     const at = new Date().toISOString();
     update((s) => ({ ...s, coachLog: [...(s.coachLog ?? []), { at, by, scenario, licht }].slice(-200) }));
+  },
+  /** Lezen loggen. XP per 10 minuten, met een max per dag. Boek uit geeft een bonus. */
+  logReading(memberId: string, min: number, book: string, uit: boolean): number {
+    const today = (state.reading?.[memberId] ?? []).filter((r) => isToday(r.at)).reduce((a, r) => a + r.min, 0);
+    const earnedToday = Math.min(XP.lezenMaxPerDag, Math.floor(today / 10) * XP.lezenPer10Min);
+    const earnedAfter = Math.min(XP.lezenMaxPerDag, Math.floor((today + min) / 10) * XP.lezenPer10Min);
+    const gained = (isKid(state, memberId) ? earnedAfter - earnedToday : 0) + (uit && isKid(state, memberId) ? XP.boekUit : 0);
+    const entry = { at: new Date().toISOString(), min, book: book.trim() || undefined, uit: uit || undefined };
+    update((s) => ({ ...s, reading: { ...(s.reading ?? {}), [memberId]: [...(s.reading?.[memberId] ?? []), entry].slice(-300) }, xp: gained ? addXp(s, memberId, gained) : s.xp }));
+    return gained;
+  },
+  addTasks(list: Omit<Task, "id">[]) {
+    const withIds = list.map((t, i) => ({ ...t, id: newId("t") + i }));
+    update((s) => ({ ...s, tasks: [...s.tasks, ...withIds] }));
   },
   addFeedback(by: string, vibe: "fijn" | "lastig", text: string) {
     const f = { id: newId("f"), by, at: new Date().toISOString(), vibe, text: text.trim().slice(0, 300) };

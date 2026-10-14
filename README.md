@@ -1,4 +1,4 @@
-# FamilyFlow (versie 1.1, pilotweek)
+# FamilyFlow (versie 1.2, pilotweek)
 
 Minder strijd, meer samen. Eén app voor het hele gezin: een huiskamer met levende avatars, check-ins, een rustplan, ruzies oplossen en coaching. Later ook voor school en wijkteam.
 
@@ -66,6 +66,9 @@ De demo blijft bereikbaar via `/#demo`.
 - **Toestemming**: ouders zetten delen met school en zorg aan of uit bij Ik.
 - **Conflictcoach** (`src/lib/coach.ts`, `screens/Coach.tsx`): 8 vaste scenario's zonder AI, volgens het G-schema. Elke keuze is aanvallen, wegduiken of voor jezelf opkomen; je ziet de reactie en de thermometer van de ander. Daarna een terugblik met tijdlijn, "wat als", advies van coach en psycholoog en een opdracht voor het echte leven (quest). Zorg kan oefeningen klaarzetten; ouders en zorg zien alleen welke vaardigheden geoefend zijn.
 - **Coach voor nu** (`src/lib/methodiek.ts`, `src/lib/conflicts.ts`, `screens/CoachNu.tsx`): hulp bij een échte ruzie, voor ouder en kind. Veiligheidscheck eerst (met hulplijnen), dan de zes vaste stappen met het stoplichtmodel, rust als keuze, één vraag per keer, herstel zonder afgedwongen sorry en een gezinsafspraak. Er wordt niet opgeslagen wat er gebeurde. De methodiek voor professionals staat in `docs/methodiek-conflictcoach.md` (wordt gemaakt uit de app-inhoud).
+- **Leerplanner** (`src/lib/planner.ts`, `screens/Leerplanner.tsx`): Somtoday-week plakken (iPhone: screenshot › Foto's › tekst-icoon › Kopieer alles) of zelf invoeren. De app herkent vak, toets/SO/leren/huiswerk/inleveren en datum; het kind controleert. Daarna korte blokjes verspreid over de dagen ervoor (toets: 4 × 20 min in de week ervoor, laatste avond herhalen), rekening houdend met drukke dagen en een max per dag. 20 minuten leren = 10 XP.
+- **Lezen**: minuten loggen, weekdoel van 4 dagen, 5 XP per 10 min (max 20 per dag), boek uit +25.
+- **XP** (`src/lib/xp.ts`): oplopende levels (2 = 100, 3 = 250, 4 = 450, 5 = 700, 6 = 1000 XP), realistische punten per activiteit, en geen XP-farmen met ruzies, rustig worden of opnieuw oefenen.
 - **Release 1**: aanmelden voor ouders, gezin aanmaken met bedtijden (telefoon een uur eerder aan de lader), uitnodigingscodes via mail of WhatsApp met installatie-uitleg, eerst je eigen avatar maken, grijs wie nog niet meedoet, gedeelde stand via Supabase (elke 5 seconden bijgewerkt), installeerbaar op het beginscherm. School en zorg staan in release 1 nog uit; die zitten alleen in de demo.
 
 Data staat nu nog lokaal (`src/lib/store.ts`). De schermen praten alleen met `useFamily()` en `actions`, zodat Supabase er later achter kan zonder dat de schermen veranderen.

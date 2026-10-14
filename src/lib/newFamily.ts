@@ -1,5 +1,6 @@
 import { HAIR_COLORS, OUTFIT_COLORS } from "@/components/avatar/parts";
 import { phoneTaskTitle } from "./tasks";
+import { DEFAULT_REWARDS } from "./xp";
 import type { AvatarConfig, FamilyState, Member, Role, Task } from "./types";
 
 export interface NewMember {
@@ -44,14 +45,14 @@ export function newFamily(familyName: string, people: NewMember[]): FamilyState 
   let n = 1;
   const add = (t: Omit<Task, "id" | "createdBy">) => tasks.push({ ...t, id: "t" + n++, createdBy: creator });
   for (const k of kids) {
-    add({ title: "Huiswerk maken", icon: "pen", assignee: k.id, repeat: "dagelijks", xp: 20 });
-    add({ title: phoneTaskTitle(k.bedtime ?? "21:30"), icon: "telefoon", assignee: k.id, repeat: "dagelijks", xp: 15 });
+    add({ title: "Huiswerk maken", icon: "pen", assignee: k.id, repeat: "dagelijks", xp: 15 });
+    add({ title: phoneTaskTitle(k.bedtime ?? "21:30"), icon: "telefoon", assignee: k.id, repeat: "dagelijks", xp: 10 });
   }
   if (kids.length > 1) {
-    add({ title: "Vaatwasser uitruimen", icon: "huis", assignee: "beurt", repeat: "dagelijks", xp: 10 });
-    add({ title: "Tafel dekken", icon: "bord", assignee: "beurt", repeat: "dagelijks", xp: 10 });
+    add({ title: "Vaatwasser uitruimen", icon: "huis", assignee: "beurt", repeat: "dagelijks", xp: 5 });
+    add({ title: "Tafel dekken", icon: "bord", assignee: "beurt", repeat: "dagelijks", xp: 5 });
   } else if (kids.length === 1) {
-    add({ title: "Tafel dekken", icon: "bord", assignee: kids[0].id, repeat: "dagelijks", xp: 10 });
+    add({ title: "Tafel dekken", icon: "bord", assignee: kids[0].id, repeat: "dagelijks", xp: 5 });
   }
 
   return {
@@ -71,12 +72,7 @@ export function newFamily(familyName: string, people: NewMember[]): FamilyState 
     conflicts: [],
     goals: ["Minder ruzie", "Rustige ochtenden", "Samen leuke dingen doen"],
     meetings: [],
-    rewards: [
-      { level: 2, title: "Pizza-avond, jij kiest" },
-      { level: 3, title: "Uitje met papa of mama" },
-      { level: 4, title: "Uur extra gametijd in het weekend" },
-      { level: 5, title: "Vriend blijven slapen" },
-    ],
+    rewards: DEFAULT_REWARDS.map((r) => ({ ...r })),
     pros: [],
     consent: { school: false, zorg: false },
     messages: [],

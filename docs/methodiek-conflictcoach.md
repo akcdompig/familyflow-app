@@ -662,11 +662,11 @@ Er wordt een gênante of kwetsende foto gedeeld. Het kind voelt zich vernederd, 
 - Het pesten gaat door
 - Het kind wil niet meer naar school
 
-### Ruzie tijdens het voetballen (Buiten)
+### Ruzie tijdens samen spelen of sporten (Buiten)
 
-Ruzie over een overtreding, de score of vals spel. Er wordt gescholden, geduwd, of iemand loopt boos weg.
+Ruzie tijdens een spel of sport, buiten of binnen: over een regel, de score of vals spelen. Er wordt gescholden, geduwd, of iemand loopt boos weg.
 
-**Aanleiding:** Een discussie over het spel.
+**Aanleiding:** Een discussie over het spel, de regels of de score.
 
 **Mogelijke factoren (geen diagnose):**
 - Teleurstelling en willen winnen

@@ -9,6 +9,7 @@ import { TaskIcon } from "@/components/ui/TaskIcon";
 import { expressionFor } from "@/lib/mood";
 import { actions } from "@/lib/store";
 import { isDone, TASK_SUGGESTIONS, tasksFor } from "@/lib/tasks";
+import { dayLabel } from "@/lib/planner";
 import type { FamilyState, Member, Task } from "@/lib/types";
 
 interface Props {
@@ -16,9 +17,10 @@ interface Props {
   me: Member;
   onToast: (m: string) => void;
   onPlay: (scenarioId: string) => void;
+  onPlanner: () => void;
 }
 
-export function Taken({ state, me, onToast, onPlay }: Props) {
+export function Taken({ state, me, onToast, onPlay, onPlanner }: Props) {
   const isParent = me.role === "ouder";
   const [view, setView] = useState<"mijn" | "iedereen">(isParent ? "iedereen" : "mijn");
   const [adding, setAdding] = useState(false);
@@ -39,11 +41,14 @@ export function Taken({ state, me, onToast, onPlay }: Props) {
           <div className="ff-eyebrow">{date}</div>
           <h1 className="ff-h1">Taken vandaag</h1>
         </div>
-        {isParent && (
-          <button className="ff-btn ff-btn-primary" onClick={() => setAdding(true)}>
-            + Taak
-          </button>
-        )}
+        <div className="ff-row" style={{ flexWrap: "nowrap", gap: 8 }}>
+          <button className="ff-btn ff-btn-ghost ff-btn-sm" onClick={onPlanner} aria-label="Leerplanner"><Icon name="boek" size={18} /> Leren</button>
+          {isParent && (
+            <button className="ff-btn ff-btn-primary ff-btn-sm" onClick={() => setAdding(true)}>
+              + Taak
+            </button>
+          )}
+        </div>
       </header>
 
       <div className="ff-seg" role="tablist" aria-label="Welke taken">
@@ -54,6 +59,7 @@ export function Taken({ state, me, onToast, onPlay }: Props) {
       {view === "mijn" && (
         <>
           <Quests state={state} memberId={me.id} onToast={onToast} onPlay={onPlay} />
+          {!isParent && <Lezen state={state} me={me} onToast={onToast} />}
           {mine.length > 0 && doneCount === mine.length ? (
             <div className="ff-card ff-done-card">
               <Flo size={56} />
@@ -128,7 +134,7 @@ function Quests({ state, memberId, onToast, onPlay, compact = false }: { state: 
               aria-pressed={!!q.done}
               onClick={() => {
                 actions.toggleQuest(q.id);
-                if (!q.done) onToast(kid ? "Quest gehaald! +25 XP" : "Quest gehaald");
+                if (!q.done) onToast(kid ? "Quest gehaald! +30 XP" : "Quest gehaald");
               }}
               aria-label={q.done ? `${q.title}: gehaald. Tik om terug te zetten` : `${q.title}: afvinken`}
             >
@@ -139,7 +145,7 @@ function Quests({ state, memberId, onToast, onPlay, compact = false }: { state: 
               <span className="ff-small ff-muted"><span className={`ff-src ff-src-${q.from === "zorg" ? "zorg" : q.from === "school" ? "school" : "coach"}`}>{FROM_LABEL[q.from]}</span>{q.done ? "gehaald" : "deze week"}</span>
               {q.scenario && !q.done && <button className="ff-link ff-small" style={{ justifySelf: "start", minHeight: 32, padding: "4px 0" }} onClick={() => onPlay(q.scenario!)}>Nu oefenen</button>}
             </div>
-            {kid && <span className="ff-xp">+25</span>}
+            {kid && <span className="ff-xp">+30</span>}
           </li>
         ))}
       </ul>
@@ -150,7 +156,9 @@ function Quests({ state, memberId, onToast, onPlay, compact = false }: { state: 
 function TaskRow({ task, state, who, canToggle, onToggle, showXp, onRemove }: { task: Task; state: FamilyState; who: string; canToggle: boolean; onToggle: () => void; showXp: boolean; onRemove?: () => void }) {
   const done = isDone(state, task.id);
   const doer = state.done[new Date().toLocaleDateString("sv-SE")]?.[task.id];
-  const sub = task.assignee === "beurt" ? "om de beurt" : task.repeat === "dagelijks" ? "elke dag" : "alleen vandaag";
+  const sub = task.study
+    ? `${task.study.min} min · ${task.study.kind === "huiswerk" || task.study.kind === "inleveren" ? "inleveren" : "toets"} ${dayLabel(task.study.deadline)}`
+    : task.assignee === "beurt" ? "om de beurt" : task.repeat === "dagelijks" ? "elke dag" : "alleen vandaag";
   const doneBy = done && doer && doer !== who ? ` · gedaan door ${state.members.find((m) => m.id === doer)?.name}` : "";
   return (
     <li className={`ff-task ${done ? "is-done" : ""}`}>
@@ -238,5 +246,57 @@ function AddTaskSheet({ open, onClose, state, me, onAdded }: { open: boolean; on
         Toevoegen
       </button>
     </Sheet>
+  );
+}
+
+/** Lezen: minuten loggen, boek uit, weekdoel van 4 dagen. */
+function Lezen({ state, me, onToast }: { state: FamilyState; me: Member; onToast: (m: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [min, setMin] = useState(20);
+  const list = state.reading?.[me.id] ?? [];
+  const [book, setBook] = useState(list[list.length - 1]?.uit ? "" : list[list.length - 1]?.book ?? "");
+  const [uit, setUit] = useState(false);
+  const days = ["ma", "di", "wo", "do", "vr", "za", "zo"];
+  const monday = new Date();
+  monday.setHours(0, 0, 0, 0);
+  monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
+  const readOn = days.map((_, i) => {
+    const d = new Date(monday);
+    d.setDate(d.getDate() + i);
+    return list.some((r) => new Date(r.at).toDateString() === d.toDateString());
+  });
+  const today = list.filter((r) => new Date(r.at).toDateString() === new Date().toDateString()).reduce((a, r) => a + r.min, 0);
+  const week = list.filter((r) => new Date(r.at) >= monday).reduce((a, r) => a + r.min, 0);
+  const count = readOn.filter(Boolean).length;
+  const save = () => {
+    const xp = actions.logReading(me.id, min, book, uit);
+    onToast(uit ? `Boek uit! +${xp} XP` : xp ? `Lekker gelezen! +${xp} XP` : "Gelezen! Max XP voor vandaag is al gehaald");
+    setOpen(false);
+    setUit(false);
+    if (uit) setBook("");
+  };
+  return (
+    <section className="ff-card ff-stack-s ff-lezen">
+      <div className="ff-row" style={{ justifyContent: "space-between" }}>
+        <b>Lezen</b>
+        <span className="ff-small ff-muted">{week} min deze week{today ? ` · vandaag ${today}` : ""}</span>
+      </div>
+      <div className="ff-weekdots" aria-label={`${count} van 4 leesdagen deze week`}>
+        {days.map((d, i) => <span key={d} className={readOn[i] ? "on" : ""}>{d}</span>)}
+      </div>
+      <p className="ff-small ff-muted">Doel: 4 dagen per week. {count >= 4 ? "Gehaald!" : `Nog ${4 - count} ${4 - count === 1 ? "dag" : "dagen"}.`}</p>
+      <button className="ff-btn ff-btn-dark" onClick={() => setOpen(true)}>Ik heb gelezen</button>
+      <Sheet open={open} onClose={() => setOpen(false)} title="Ik heb gelezen">
+        <h2 className="ff-h2">Hoe lang heb je gelezen?</h2>
+        <div className="ff-chips">{[10, 15, 20, 30, 45].map((m) => <button key={m} className="ff-chip ff-chip-l" aria-pressed={min === m} onClick={() => setMin(m)}>{m} min</button>)}</div>
+        <label className="ff-field">
+          <span className="ff-eyebrow">Welk boek?</span>
+          <input value={book} onChange={(e) => setBook(e.target.value)} maxLength={60} placeholder="Titel van je boek" />
+        </label>
+        <button className="ff-chip ff-chip-l" aria-pressed={uit} onClick={() => setUit(!uit)}>📕 Boek uit!</button>
+        <p className="ff-small ff-muted">5 XP per 10 minuten, max 20 per dag. Boek uit: 25 XP extra.</p>
+        <button className="ff-btn ff-btn-primary ff-btn-wide" onClick={save}>Opslaan</button>
+      </Sheet>
+    </section>
   );
 }

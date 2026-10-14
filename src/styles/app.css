@@ -571,3 +571,17 @@ a.ff-btn-whatsapp { color: #fff; }
 .ff-aanrader .ff-btn { justify-self: start; margin-top: 4px; }
 .ff-more { margin-top: 8px; }
 .ff-teaser { background: var(--ff-zon-zacht); }
+
+/* ---------- Lezen ---------- */
+.ff-lezen { background: var(--ff-lucht-zacht); }
+.ff-weekdots { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.ff-weekdots span { text-align: center; font-size: 0.72rem; font-weight: 800; padding: 6px 0; border-radius: 10px; background: rgba(255,255,255,0.7); color: var(--ff-tekst-zacht); }
+.ff-weekdots span.on { background: var(--ff-lucht-donker); color: #fff; }
+
+/* ---------- Leerplanner ---------- */
+.ff-btn-sm { min-height: 40px; padding: 8px 12px; font-size: var(--ff-t-s); }
+.ff-planday { display: grid; gap: 6px; }
+.ff-planblok { display: flex; justify-content: space-between; gap: 10px; padding: 8px 10px; border-radius: var(--ff-rond-s); background: var(--ff-grond); font-weight: 700; font-size: 0.92rem; }
+.ff-planblok.is-done { opacity: 0.55; text-decoration: line-through; }
+.ff-select { min-height: var(--ff-tik); border: 2px solid #e4dcd3; border-radius: var(--ff-rond-m); padding: 8px 12px; font: inherit; font-weight: 700; background: var(--ff-vlak); color: var(--ff-tekst); flex: 1; }
+.ff-field input[type="date"] { min-width: 0; width: 100%; }

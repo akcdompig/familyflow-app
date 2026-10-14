@@ -5,7 +5,7 @@ import { expressionFor } from "@/lib/mood";
 import { PLAN_OPTIONS } from "@/lib/scenarios";
 import * as cloud from "@/lib/cloud";
 import { actions, isLive, stopLive } from "@/lib/store";
-import { levelOf } from "@/lib/tasks";
+import { levelProgress, xpForLevel } from "@/lib/xp";
 import { features } from "@/lib/unlock";
 import { VERSION, VERSION_NAME } from "@/lib/version";
 import { useState } from "react";
@@ -16,8 +16,8 @@ const EMPTY: CalmPlan = { signals: [], helps: [], needs: [], place: "" };
 export function Ik({ state, me, onEditAvatar, onCalm, onToast }: { state: FamilyState; me: Member; onEditAvatar: () => void; onCalm: () => void; onToast: (m: string) => void }) {
   const isParent = me.role === "ouder";
   const xp = state.xp[me.id] ?? 0;
-  const level = levelOf(xp);
-  const into = xp % 100;
+  const lp = levelProgress(xp);
+  const level = lp.level;
   const plan = state.plans[me.id] ?? EMPTY;
   const kids = state.members.filter((m) => m.role !== "ouder");
 
@@ -43,10 +43,10 @@ export function Ik({ state, me, onEditAvatar, onCalm, onToast }: { state: Family
         <section className="ff-card ff-level-card">
           <div className="ff-row" style={{ justifyContent: "space-between" }}>
             <b className="ff-level-big">Level {level}</b>
-            <span className="ff-small">{into} / 100 XP</span>
+            <span className="ff-small">{lp.into} / {lp.need} XP</span>
           </div>
-          <span className="ff-bar ff-bar-l"><i style={{ width: `${into}%` }} /></span>
-          <p className="ff-small">Nog {100 - into} XP tot level {level + 1}.</p>
+          <span className="ff-bar ff-bar-l"><i style={{ width: `${lp.pct}%` }} /></span>
+          <p className="ff-small">Nog {lp.left} XP tot level {level + 1}.</p>
         </section>
       )}
 
@@ -59,7 +59,7 @@ export function Ik({ state, me, onEditAvatar, onCalm, onToast }: { state: Family
               <li key={r.level} className={r.level <= level ? "is-open" : ""}>
                 <span className="ff-reward-lvl">Lvl {r.level}</span>
                 <span className="ff-grow">{r.title}</span>
-                <span className="ff-small">{r.level <= level ? "Behaald!" : `nog ${(r.level - 1) * 100 - xp} XP`}</span>
+                <span className="ff-small">{r.level <= level ? "Behaald!" : `nog ${xpForLevel(r.level) - xp} XP`}</span>
               </li>
             ))}
           </ul>

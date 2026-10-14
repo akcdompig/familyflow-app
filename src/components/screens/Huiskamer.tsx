@@ -192,7 +192,7 @@ function Attention({ state, me, onTalkTips, onCheckIn, onGoTasks, onRuzie, onGoG
   if (invite) {
     return (
       <Card tone="lucht" title={`${name(invite.from)} wil een ruzie uitpraten`} meta={timeLabel(invite.at)}>
-        <p>Over: {invite.topic.toLowerCase()}. Lees wat {name(invite.from)} zegt en vertel jouw kant. Lukt het samen, dan krijgen jullie allebei 20 XP.</p>
+        <p>Over: {invite.topic.toLowerCase()}. Lees wat {name(invite.from)} zegt en vertel jouw kant. Lukt het samen, dan krijgen jullie allebei XP.</p>
         <button className="ff-btn ff-btn-primary" onClick={() => onRuzie(invite.id)}>Bekijken</button>
       </Card>
     );

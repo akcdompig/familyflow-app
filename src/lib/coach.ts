@@ -406,21 +406,21 @@ export const COACH_SCENARIOS: CoachScenario[] = [
   },
   {
     id: "voetbal",
-    title: "Ruzie bij het voetballen",
+    title: "Ruzie bij samen spelen of sporten",
     where: "buiten",
     with: "vriend",
     otherName: "Daan",
     skill: "timeout",
-    situation: "Je voetbalt met vrienden op het veldje. Je schiet, en volgens jou is het goal. {ander} zegt van niet.",
+    situation: "Je speelt buiten met vrienden, een spel of een sport. Volgens jou heb je een punt gescoord. {ander} zegt dat het niet telt.",
     selfStart: 7,
     otherStart: 6,
     start: {
-      says: "Nee joh, die was naast. Jij speelt altijd vals.",
+      says: "Nee joh, die telt niet. Jij speelt altijd vals.",
       feel: "boos",
       choices: [
-        { type: "aanval", text: "\"Hij was er WEL in! Jij bent gewoon een slechte verliezer!\"", self: 8, other: 8, feel: "boos", says: "Ik? Jij bent de valsspeler!", what: "Jullie gaan allebei harder praten. Niemand luistert meer, iedereen wil alleen nog gelijk hebben.", next: "a" },
-        { type: "wegduik", text: "De bal pakken en naar huis gaan.", self: 7, other: 6, feel: "boos", says: "Serieus? Nu kunnen we niet meer spelen.", what: "Je stopt de ruzie, maar ook het spel. Voor iedereen.", next: "b" },
-        { type: "opkomen", text: "\"Oké, we zien het allebei anders. Doen we hem over, of tossen we erom?\"", self: 5, other: 4, feel: "neutraal", says: "Prima. Overdoen.", end: { outcome: "opgelost", text: "Bij ja-nee is er geen winnaar. Een eerlijke manier kiezen, zoals overdoen of tossen, haalt de angel eruit." } },
+        { type: "aanval", text: "\"Hij telt WEL! Jij bent gewoon een slechte verliezer!\"", self: 8, other: 8, feel: "boos", says: "Ik? Jij bent de valsspeler!", what: "Jullie gaan allebei harder praten. Niemand luistert meer, iedereen wil alleen nog gelijk hebben.", next: "a" },
+        { type: "wegduik", text: "Stoppen en boos naar huis gaan.", self: 7, other: 6, feel: "boos", says: "Serieus? Nu kunnen we niet meer spelen.", what: "Je stopt de ruzie, maar ook het spel. Voor iedereen.", next: "b" },
+        { type: "opkomen", text: "\"Oké, we zien het allebei anders. Doen we het over, of tossen we erom?\"", self: 5, other: 4, feel: "neutraal", says: "Prima. Overdoen.", end: { outcome: "opgelost", text: "Bij ja-nee is er geen winnaar. Een eerlijke manier kiezen, zoals overdoen of tossen, haalt de angel eruit." } },
       ],
     },
     nodes: {
@@ -436,7 +436,7 @@ export const COACH_SCENARIOS: CoachScenario[] = [
         says: "Serieus? Nu kunnen we niet meer spelen.",
         feel: "boos",
         choices: [
-          { type: "opkomen", text: "Terugkomen: \"Sorry, ik was boos. Doen we hem over?\"", self: 4, other: 3, feel: "goed", says: "Ja, kom op.", end: { outcome: "opgelost", text: "Even weglopen en dan terugkomen is eigenlijk een time-out. En sorry zeggen maakt het helemaal goed." } },
+          { type: "opkomen", text: "Terugkomen: \"Sorry, ik was boos. Doen we het over?\"", self: 4, other: 3, feel: "goed", says: "Ja, kom op.", end: { outcome: "opgelost", text: "Even weglopen en dan terugkomen is eigenlijk een time-out. En sorry zeggen maakt het helemaal goed." } },
           { type: "wegduik", text: "Gewoon naar huis gaan.", self: 7, other: 6, feel: "boos", says: "", end: { outcome: "half", text: "Je ontliep de ruzie, maar thuis ben je nog steeds boos. En morgen is het ongemakkelijk." } },
         ],
       },

@@ -1,4 +1,5 @@
 import type { FamilyState } from "./types";
+import { DEFAULT_REWARDS } from "./xp";
 
 const daysAgo = (n: number, h = 18) => {
   const d = new Date();
@@ -35,21 +36,22 @@ export function demoFamily(): FamilyState {
       k2: { mood: 2, rest: true, topics: ["School"], wantsTalk: false, at: at(16, 10) },
     },
     tasks: [
-      { id: "t1", title: "Huiswerk maken", icon: "pen", assignee: "k1", repeat: "dagelijks", xp: 20, createdBy: "p1" },
-      { id: "t2", title: "Training of sporten", icon: "sport", assignee: "k1", repeat: "dagelijks", xp: 25, createdBy: "p1" },
-      { id: "t3", title: "Telefoon om 20.30 aan de lader", icon: "telefoon", assignee: "k1", repeat: "dagelijks", xp: 15, createdBy: "p1" },
-      { id: "t4", title: "Op tijd opstaan en ontbijten", icon: "zon", assignee: "k2", repeat: "dagelijks", xp: 15, createdBy: "p2" },
-      { id: "t5", title: "Stageverslag: één alinea", icon: "pen", assignee: "k2", repeat: "eenmalig", date: d, xp: 20, createdBy: "k2" },
-      { id: "t6", title: "Vaatwasser uitruimen", icon: "huis", assignee: "beurt", repeat: "dagelijks", xp: 10, createdBy: "p2" },
-      { id: "t7", title: "Tafel dekken", icon: "bord", assignee: "beurt", repeat: "dagelijks", xp: 10, createdBy: "p2" },
+      { id: "t1", title: "Huiswerk maken", icon: "pen", assignee: "k1", repeat: "dagelijks", xp: 15, createdBy: "p1" },
+      { id: "t2", title: "Training of sporten", icon: "sport", assignee: "k1", repeat: "dagelijks", xp: 10, createdBy: "p1" },
+      { id: "t3", title: "Telefoon om 20.30 aan de lader", icon: "telefoon", assignee: "k1", repeat: "dagelijks", xp: 10, createdBy: "p1" },
+      { id: "t4", title: "Op tijd opstaan en ontbijten", icon: "zon", assignee: "k2", repeat: "dagelijks", xp: 10, createdBy: "p2" },
+      { id: "t5", title: "Stageverslag: één alinea", icon: "pen", assignee: "k2", repeat: "eenmalig", date: d, xp: 15, createdBy: "k2" },
+      { id: "t6", title: "Vaatwasser uitruimen", icon: "huis", assignee: "beurt", repeat: "dagelijks", xp: 5, createdBy: "p2" },
+      { id: "t7", title: "Tafel dekken", icon: "bord", assignee: "beurt", repeat: "dagelijks", xp: 5, createdBy: "p2" },
       { id: "t8", title: "Hond uitlaten", icon: "poot", assignee: "beurt", repeat: "dagelijks", xp: 10, pet: true, createdBy: "p1" },
       { id: "t9", title: "Boodschappen halen", icon: "kar", assignee: "p2", repeat: "eenmalig", date: d, xp: 0, createdBy: "p2" },
       { id: "t10", title: "Mail naar mentor over rapportgesprek", icon: "post", assignee: "p1", repeat: "eenmalig", date: d, xp: 0, createdBy: "p1" },
-      { id: "t11", title: "Wiskunde hoofdstuk 4 oefenen", icon: "boek", assignee: "k1", repeat: "eenmalig", date: d, xp: 20, createdBy: "school", source: "school" },
+      { id: "t11", title: "Wiskunde hoofdstuk 4 oefenen", icon: "boek", assignee: "k1", repeat: "eenmalig", date: d, xp: 15, createdBy: "school", source: "school" },
       { id: "t12", title: "Geef elk kind vandaag één compliment", icon: "zon", assignee: "p2", repeat: "dagelijks", xp: 0, createdBy: "zorg", source: "zorg" },
     ],
     done: { [d]: { t1: "k1", t4: "k2", t9: "p2" } },
     xp: { k1: 185, k2: 90 },
+    reading: { k2: [{ at: daysAgo(1, 21), min: 20, book: "De Gelukkige Klas" }] },
     played: { k1: [1, 2], k2: [] },
     plans: {
       k1: { signals: ["Warm hoofd", "Vuisten ballen"], helps: ["Naar mijn rustplek", "Bokszak of sporten"], needs: ["Even met rust laten", "Later rustig praten"], place: "Mijn kamer met muziek op" },
@@ -78,12 +80,7 @@ export function demoFamily(): FamilyState {
       { at: daysAgo(14, 19), therm: { p1: 5, p2: 6, k1: 6, k2: 5 }, goals: { 0: 4, 1: 3, 2: 5 }, good: "Rustigere ochtenden", problem: "Telefoon 's avonds", solution: "Een uur voor bedtijd aan de lader in de keuken", fun: "Fietstocht" },
       { at: daysAgo(7, 19), therm: { p1: 6, p2: 7, k1: 7, k2: 5 }, goals: { 0: 6, 1: 5, 2: 6 }, good: "Ruzie zelf opgelost met de app", problem: "Wie mag voorin de auto", solution: "Even dagen Noah, oneven dagen Lina", fun: "Bowlen" },
     ],
-    rewards: [
-      { level: 2, title: "Pizza-avond, jij kiest" },
-      { level: 3, title: "Uitje met papa of mama" },
-      { level: 4, title: "Uur extra gametijd in het weekend" },
-      { level: 5, title: "Vriend blijven slapen" },
-    ],
+    rewards: DEFAULT_REWARDS.map((r) => ({ ...r })),
     pros: [
       { id: "school", name: "Mentor Van Dijk", org: "Het Baken College" },
       { id: "zorg", name: "Coach Sanne", org: "Wijkteam Stad" },

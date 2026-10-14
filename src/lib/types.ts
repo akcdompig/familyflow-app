@@ -60,6 +60,8 @@ export interface Task {
   createdBy: string;
   /** Gezet door school of zorg. */
   source?: ProKind;
+  /** Leerblok uit de leerplanner. */
+  study?: { subject: string; kind: string; deadline: string; part: number; of: number; min: number };
 }
 
 export interface CalmPlan {
@@ -93,6 +95,7 @@ export interface Conflict {
   sides: Record<string, ConflictSide>;
   status: "wacht" | "opgelost" | "hulp";
   solution?: string;
+  solvedAt?: string;
 }
 
 export interface Meeting {
@@ -165,6 +168,8 @@ export interface FamilyState {
   coach?: Record<string, CoachRun[]>;
   /** Gezinsafspraken uit de coach of het overleg. */
   afspraken?: { id: string; text: string; at: string; by: string; scenario?: string }[];
+  /** Gelezen minuten per lid. */
+  reading?: Record<string, { at: string; min: number; book?: string; uit?: boolean }[]>;
   /** Korte feedback tijdens de pilot. */
   feedback?: { id: string; by: string; at: string; vibe: "fijn" | "lastig"; text: string }[];
   /** Startdatum van het gezin, voor stap voor stap vrijspelen. Leeg = alles aan. */
