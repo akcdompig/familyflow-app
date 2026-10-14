@@ -17,7 +17,37 @@ Losse preview zonder Next.js (dezelfde componenten, één HTML-bestand):
 npm run preview:build   # maakt preview/dist/index.html
 ```
 
-## Wat er nu in zit (stukje 1, 2 en 3)
+## Live zetten (release 1, testpilot)
+
+De echte app is een gewone webapp die je op je beginscherm zet (PWA). Hij staat kant-en-klaar in `dist/`, dus Vercel hoeft niks te bouwen.
+
+**1. Supabase (de database), ± 10 minuten**
+1. Maak een gratis account op supabase.com en klik op **New project**. Kies als regio **Frankfurt** (EU).
+2. Ga naar **SQL Editor › New query**, plak de inhoud van `supabase/schema.sql` en klik op **Run**.
+3. Ga naar **Authentication › Sign In / Providers**:
+   - **Email** aan, **Confirm email** uit. Ouders loggen in met e-mail en wachtwoord.
+   - **Allow anonymous sign-ins** aan. Kinderen en de andere ouder doen mee met een code.
+4. Ga naar **Project Settings › API** en kopieer de **Project URL** en de **anon public key**. Zet die in `dist/config.js`:
+   ```js
+   window.FF_CONFIG = { url: "https://xxxx.supabase.co", anonKey: "eyJ..." };
+   ```
+   De anon key is openbaar; de beveiliging zit in de regels in `schema.sql`. Je ziet alleen je eigen gezin.
+
+**2. Vercel (de website), ± 5 minuten**
+1. Log in op vercel.com met GitHub en klik op **Add New › Project**.
+2. Kies de repo en klik op **Deploy**. De instellingen komen uit `vercel.json`.
+3. Je krijgt een adres, bijvoorbeeld `familyflow.vercel.app`. Dat is de link voor in de uitnodigingen. Een eigen domein kan later.
+
+**3. Aan de slag**
+1. Open het adres op je telefoon en zet de app op je beginscherm.
+2. Kies **Nieuw gezin starten**, maak een account en vul het gezin in.
+3. Maak je avatar en stuur per persoon de uitnodiging, via mail of WhatsApp. Daarin staat hoe ze de app installeren en hun code.
+
+De demo blijft bereikbaar via `/#demo`.
+
+**Opnieuw bouwen** na een wijziging in de code: `node preview/build.mjs`. Daarmee worden `dist/` en de demo bijgewerkt.
+
+## Wat er nu in zit (stukje 1, 2, 3 en release 1)
 
 - **Designsysteem "Zonsondergang"**: `src/styles/tokens.css`. Alle kleuren, letters, ruimtes, rondingen en bewegingen staan hier.
 - **Avatar-engine**: `src/components/avatar/`. Opgebouwd uit lagen (huid, haar, extra's, kleding) met uitdrukkingen per gevoel. Ze bewegen: ademen, knipperen en reageren als het gevoel verandert. Energie uit quests geeft glans, maar zegt niets over het gevoel.
@@ -34,6 +64,7 @@ npm run preview:build   # maakt preview/dist/index.html
 - **Gezin** (alleen ouders): gezinsoverleg in 5 stappen (wat ging goed, cijfer per gezinslid, doelen 1–10, één ding oplossen, iets leuks plannen), voortgangsgrafiek, ruzies deze week tegenover vorige week, lopende ruzies met aanpak, beloningen per level.
 - **School en Zorg**: eigen omgeving met een lijst gezinnen en een weekkleur (groen/oranje, alleen patronen). Ze kunnen taken klaarzetten (met label "Van school" of "Van coach") en berichten sturen. Zorg ziet ook de gezinsdoelen. Eigen notities zijn alleen voor de professional.
 - **Toestemming**: ouders zetten delen met school en zorg aan of uit bij Ik.
+- **Release 1**: aanmelden voor ouders, gezin aanmaken met bedtijden (telefoon een uur eerder aan de lader), uitnodigingscodes via mail of WhatsApp met installatie-uitleg, eerst je eigen avatar maken, grijs wie nog niet meedoet, gedeelde stand via Supabase (elke 5 seconden bijgewerkt), installeerbaar op het beginscherm. School en zorg staan in release 1 nog uit; die zitten alleen in de demo.
 
 Data staat nu nog lokaal (`src/lib/store.ts`). De schermen praten alleen met `useFamily()` en `actions`, zodat Supabase er later achter kan zonder dat de schermen veranderen.
 

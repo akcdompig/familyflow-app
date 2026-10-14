@@ -17,7 +17,7 @@ const TABS: { id: Tab; label: string }[] = [
 
 const pickOne = <T,>(a: readonly T[]) => a[Math.floor(Math.random() * a.length)];
 
-export function AvatarMaker({ member, onClose, onSaved }: { member: Member; onClose: () => void; onSaved: (msg: string) => void }) {
+export function AvatarMaker({ member, onClose, onSaved, firstTime = false }: { member: Member; onClose: () => void; onSaved: (msg: string) => void; firstTime?: boolean }) {
   const [cfg, setCfg] = useState<AvatarConfig>(member.avatar);
   const [name, setName] = useState(member.name);
   const [tab, setTab] = useState<Tab>("haar");
@@ -52,9 +52,11 @@ export function AvatarMaker({ member, onClose, onSaved }: { member: Member; onCl
   return (
     <div className="ff-screen ff-maker">
       <header className="ff-top">
-        <button className="ff-iconbtn" onClick={onClose} aria-label="Terug">
-          <Icon name="terug" />
-        </button>
+        {firstTime ? <span style={{ width: 44 }} aria-hidden="true" /> : (
+          <button className="ff-iconbtn" onClick={onClose} aria-label="Terug">
+            <Icon name="terug" />
+          </button>
+        )}
         <h1 className="ff-h2">Maak jouw avatar</h1>
         <span style={{ width: 44 }} aria-hidden="true" />
       </header>

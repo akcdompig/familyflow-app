@@ -40,6 +40,14 @@ export const TASK_SUGGESTIONS: { title: string; icon: Task["icon"]; xp: number; 
   { title: "Vaatwasser uitruimen", icon: "huis", xp: 10 },
   { title: "Afval wegbrengen", icon: "afval", xp: 10 },
   { title: "Boodschappen halen", icon: "kar", xp: 10 },
-  { title: "Telefoon om 21.30 in de keuken", icon: "telefoon", xp: 15 },
+  { title: "Telefoon aan de lader in de keuken", icon: "telefoon", xp: 15 },
   { title: "Huisdier uitlaten of eten geven", icon: "poot", xp: 10, pet: true },
 ];
+
+/** Een uur voor bedtijd: "21:30" → "20.30". */
+export function phoneTime(bedtime: string): string {
+  const [h, m] = bedtime.split(":").map(Number);
+  const t = ((h * 60 + (m || 0) - 60) + 1440) % 1440;
+  return `${Math.floor(t / 60)}.${String(t % 60).padStart(2, "0")}`;
+}
+export const phoneTaskTitle = (bedtime: string) => `Telefoon om ${phoneTime(bedtime)} aan de lader`;

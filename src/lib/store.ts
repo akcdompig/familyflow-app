@@ -1,30 +1,47 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import * as cloud from "./cloud";
 import { demoFamily } from "./demo";
-import { todayKey } from "./tasks";
+import { phoneTaskTitle, todayKey } from "./tasks";
 import type { AvatarConfig, CalmPlan, CheckIn, Conflict, ConflictSide, FamilyState, Meeting, ProKind, Task } from "./types";
 
 /*
-  Eenvoudige lokale store. Straks komt Supabase erachter (tabellen + Realtime),
-  zodat een check-in op de telefoon van het kind meteen in de huiskamer van de ouder verschijnt.
-  De schermen praten alleen met useFamily() en actions, dus dat wisselen raakt de schermen niet.
+  Eén store voor demo en echt.
+  - Demo: alles lokaal in de browser.
+  - Live: de gezinsstand staat in Supabase. Elke wijziging is een functie (oude stand → nieuwe stand).
+    Wijzigt een andere telefoon tegelijk iets, dan halen we de nieuwste stand op en passen we onze
+    wijzigingen daar opnieuw op toe. Zo raakt niemand iets kwijt.
+  De schermen praten alleen met useFamily() en actions.
 */
 
+type Fn = (s: FamilyState) => FamilyState;
+
 const KEY = "familyflow:v1";
-let state: FamilyState = load();
+const LIVE_KEY = "familyflow:live";
+const ME_KEY = "familyflow:ik";
+
+let live = false;
+let state: FamilyState = loadDemo();
+let me = "";
+let view: FamilyState = state;
 const listeners = new Set<() => void>();
+
+// Live-sync
+let rev = 0;
+let queue: Fn[] = [];
+let saving = false;
+let timer: number | undefined;
+let syncError = "";
 
 function migrate(raw: unknown): FamilyState | null {
   const s = raw as Partial<FamilyState> & { version?: number };
   if (!s || !Array.isArray(s.members)) return null;
   if (s.version === 3) return s as FamilyState;
-  // Oudere versies: ontbrekende onderdelen aanvullen met het voorbeeldgezin.
-  const d = demoFamily();
-  return { ...d, ...s, version: 3 } as FamilyState;
+  return { ...demoFamily(), ...s, version: 3 } as FamilyState;
 }
 
-function load(): FamilyState {
+function loadDemo(): FamilyState {
   if (typeof window === "undefined") return demoFamily();
   try {
     const raw = window.localStorage.getItem(KEY);
@@ -33,24 +50,141 @@ function load(): FamilyState {
       if (s) return s;
     }
   } catch {
-    /* opslag niet beschikbaar: demo gebruiken */
+    /* opslag niet beschikbaar */
   }
   return demoFamily();
 }
 
-function persist() {
+function emit() {
+  view = live ? { ...state, me } : state;
+  listeners.forEach((l) => l());
+}
+
+function persistLocal() {
   try {
-    window.localStorage.setItem(KEY, JSON.stringify(state));
+    if (live) window.localStorage.setItem(LIVE_KEY, JSON.stringify({ state, rev }));
+    else window.localStorage.setItem(KEY, JSON.stringify(state));
   } catch {
-    /* geen opslag: alleen in geheugen */
+    /* geen opslag */
   }
 }
 
-function set(next: FamilyState) {
-  state = next;
-  persist();
-  listeners.forEach((l) => l());
+/** Alle wijzigingen gaan hierdoorheen. */
+function update(fn: Fn) {
+  state = fn(state);
+  persistLocal();
+  emit();
+  if (live) {
+    queue.push(fn);
+    window.clearTimeout(timer);
+    timer = window.setTimeout(flush, 250);
+  }
 }
+
+async function flush() {
+  if (saving || !queue.length) return;
+  saving = true;
+  const sending = queue.length;
+  try {
+    const n = await cloud.saveFamily(state, rev);
+    if (n >= 0) {
+      rev = n;
+      queue = queue.slice(sending);
+    } else {
+      // Iemand anders was ons voor: nieuwste stand ophalen en onze wijzigingen opnieuw toepassen.
+      const fresh = await cloud.loadFamily();
+      if (fresh) {
+        rev = fresh.rev;
+        state = queue.reduce((s, f) => f(s), fresh.state);
+        emit();
+      }
+    }
+    syncError = "";
+  } catch (e) {
+    syncError = String((e as Error).message ?? e);
+    emit();
+  } finally {
+    saving = false;
+    persistLocal();
+    if (queue.length) timer = window.setTimeout(flush, syncError ? 4000 : 50);
+  }
+}
+
+/** Kijk of er op een andere telefoon iets veranderd is. */
+async function poll() {
+  if (!live || saving || queue.length || document.visibilityState !== "visible") return;
+  try {
+    const r = await cloud.loadRev();
+    if (r !== null && r !== rev) {
+      const fresh = await cloud.loadFamily();
+      if (fresh && !queue.length) {
+        state = fresh.state;
+        rev = fresh.rev;
+        persistLocal();
+        emit();
+      }
+    }
+    if (syncError) {
+      syncError = "";
+      emit();
+    }
+  } catch (e) {
+    syncError = String((e as Error).message ?? e);
+    emit();
+  }
+}
+
+let pollTimer: number | undefined;
+/** Live-modus starten met de stand uit de database. */
+export function startLive(s: FamilyState, r: number, memberId: string) {
+  live = true;
+  state = s;
+  rev = r;
+  me = memberId;
+  queue = [];
+  try {
+    window.localStorage.setItem(ME_KEY, memberId);
+  } catch {
+    /* */
+  }
+  persistLocal();
+  emit();
+  window.clearInterval(pollTimer);
+  pollTimer = window.setInterval(poll, 5000);
+  document.addEventListener("visibilitychange", poll);
+  window.addEventListener("focus", poll);
+}
+
+/** Laatst bekende live-stand, zodat de app ook zonder internet meteen opent. */
+export function cachedLive(): { state: FamilyState; rev: number; me: string } | null {
+  try {
+    const raw = window.localStorage.getItem(LIVE_KEY);
+    const m = window.localStorage.getItem(ME_KEY);
+    if (!raw || !m) return null;
+    const p = JSON.parse(raw);
+    return p?.state?.members ? { state: p.state, rev: p.rev ?? 0, me: m } : null;
+  } catch {
+    return null;
+  }
+}
+
+export function stopLive() {
+  live = false;
+  window.clearInterval(pollTimer);
+  try {
+    window.localStorage.removeItem(LIVE_KEY);
+    window.localStorage.removeItem(ME_KEY);
+  } catch {
+    /* */
+  }
+}
+
+export const isLive = () => live;
+export const lastSyncError = () => syncError;
+export const syncNow = () => {
+  void flush();
+  void poll();
+};
 
 export function useFamily(): FamilyState {
   return useSyncExternalStore(
@@ -58,104 +192,132 @@ export function useFamily(): FamilyState {
       listeners.add(l);
       return () => listeners.delete(l);
     },
-    () => state,
-    () => state,
+    () => view,
+    () => view,
   );
 }
 
 const addXp = (s: FamilyState, id: string, n: number) => ({ ...s.xp, [id]: Math.max(0, (s.xp[id] ?? 0) + n) });
-const newId = () => "t" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+const newId = (p = "t") => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+const isKid = (s: FamilyState, id: string) => !!s.members.find((m) => m.id === id) && s.members.find((m) => m.id === id)!.role !== "ouder";
 
 export const actions = {
+  /** Alleen demo: wissel van gezinslid. */
   switchMe(id: string) {
-    set({ ...state, me: id });
+    if (live) return;
+    update((s) => ({ ...s, me: id }));
   },
   checkIn(memberId: string, c: Omit<CheckIn, "at">) {
     const at = new Date().toISOString();
-    const hist = [...(state.history[memberId] ?? []), { mood: c.mood, rest: c.rest, at }].slice(-60);
-    set({ ...state, checkins: { ...state.checkins, [memberId]: { ...c, at } }, history: { ...state.history, [memberId]: hist } });
+    update((s) => {
+      const hist = [...(s.history[memberId] ?? []), { mood: c.mood, rest: c.rest, at }].slice(-60);
+      return { ...s, checkins: { ...s.checkins, [memberId]: { ...c, at } }, history: { ...s.history, [memberId]: hist } };
+    });
   },
   saveAvatar(memberId: string, avatar: AvatarConfig, name?: string) {
-    set({ ...state, members: state.members.map((m) => (m.id === memberId ? { ...m, avatar, name: name?.trim() || m.name } : m)) });
+    update((s) => ({ ...s, members: s.members.map((m) => (m.id === memberId ? { ...m, avatar, name: name?.trim() || m.name, joined: true } : m)) }));
   },
   acknowledgeTalk(memberId: string) {
-    const c = state.checkins[memberId];
-    if (!c) return;
-    set({ ...state, checkins: { ...state.checkins, [memberId]: { ...c, wantsTalk: false } } });
+    update((s) => {
+      const c = s.checkins[memberId];
+      return c ? { ...s, checkins: { ...s.checkins, [memberId]: { ...c, wantsTalk: false } } } : s;
+    });
   },
   /** Taak afvinken of terugzetten. Geeft terug of de taak nu af is. */
   toggleTask(task: Task, memberId: string): boolean {
     const d = todayKey();
-    const day = { ...(state.done[d] ?? {}) };
-    const wasDone = !!day[task.id];
-    const doer = wasDone ? day[task.id] : memberId;
-    if (wasDone) delete day[task.id];
-    else day[task.id] = memberId;
-    const kid = state.members.find((m) => m.id === doer)?.role !== "ouder";
-    set({ ...state, done: { ...state.done, [d]: day }, xp: kid && task.xp ? addXp(state, doer, wasDone ? -task.xp : task.xp) : state.xp });
-    return !wasDone;
+    const nowDone = !state.done[d]?.[task.id];
+    update((s) => {
+      const day = { ...(s.done[d] ?? {}) };
+      const wasDone = !!day[task.id];
+      const doer = wasDone ? day[task.id] : memberId;
+      if (wasDone) delete day[task.id];
+      else day[task.id] = memberId;
+      return { ...s, done: { ...s.done, [d]: day }, xp: isKid(s, doer) && task.xp ? addXp(s, doer, wasDone ? -task.xp : task.xp) : s.xp };
+    });
+    return nowDone;
   },
   addTask(t: Omit<Task, "id">) {
-    set({ ...state, tasks: [...state.tasks, { ...t, id: newId() }] });
+    const id = newId();
+    update((s) => ({ ...s, tasks: [...s.tasks, { ...t, id }] }));
   },
   removeTask(id: string) {
-    set({ ...state, tasks: state.tasks.filter((t) => t.id !== id) });
+    update((s) => ({ ...s, tasks: s.tasks.filter((t) => t.id !== id) }));
   },
   setPet(pet: FamilyState["pet"]) {
-    set({ ...state, pet });
+    update((s) => ({ ...s, pet }));
   },
   savePlan(memberId: string, plan: CalmPlan) {
-    set({ ...state, plans: { ...state.plans, [memberId]: plan } });
+    update((s) => ({ ...s, plans: { ...s.plans, [memberId]: plan } }));
   },
   calmDone(memberId: string) {
-    set({ ...state, calm: [...state.calm, { member: memberId, at: new Date().toISOString() }], xp: addXp(state, memberId, 5) });
+    const at = new Date().toISOString();
+    update((s) => ({ ...s, calm: [...s.calm, { member: memberId, at }].slice(-100), xp: addXp(s, memberId, 5) }));
   },
   /** Oefenlevel klaar. Alleen de eerste keer XP. */
   finishScenario(memberId: string, id: number): boolean {
-    const list = state.played[memberId] ?? [];
-    if (list.includes(id)) return false;
-    set({ ...state, played: { ...state.played, [memberId]: [...list, id] }, xp: addXp(state, memberId, 20) });
+    if ((state.played[memberId] ?? []).includes(id)) return false;
+    update((s) => {
+      const list = s.played[memberId] ?? [];
+      if (list.includes(id)) return s;
+      return { ...s, played: { ...s.played, [memberId]: [...list, id] }, xp: addXp(s, memberId, 20) };
+    });
     return true;
   },
   startConflict(c: Omit<Conflict, "id" | "at" | "status">) {
-    set({ ...state, conflicts: [...state.conflicts, { ...c, id: "c" + Date.now().toString(36), at: new Date().toISOString(), status: "wacht" }] });
+    const extra = { id: newId("c"), at: new Date().toISOString(), status: "wacht" as const };
+    update((s) => ({ ...s, conflicts: [...s.conflicts, { ...c, ...extra }].slice(-100) }));
   },
   answerConflict(id: string, memberId: string, side: ConflictSide) {
-    set({ ...state, conflicts: state.conflicts.map((c) => (c.id === id ? { ...c, sides: { ...c.sides, [memberId]: side } } : c)) });
+    update((s) => ({ ...s, conflicts: s.conflicts.map((c) => (c.id === id ? { ...c, sides: { ...c.sides, [memberId]: side } } : c)) }));
   },
   closeConflict(id: string, solution: string) {
     const help = solution === "Een ouder helpt ons";
-    const c = state.conflicts.find((x) => x.id === id);
-    let xp = state.xp;
-    if (c && !help) for (const m of [c.from, c.with]) xp = { ...xp, [m]: (xp[m] ?? 0) + 20 };
-    set({ ...state, xp, conflicts: state.conflicts.map((x) => (x.id === id ? { ...x, status: help ? "hulp" : "opgelost", solution } : x)) });
+    update((s) => {
+      const c = s.conflicts.find((x) => x.id === id);
+      if (!c || c.status !== "wacht") return s;
+      let xp = s.xp;
+      if (!help) for (const m of [c.from, c.with]) xp = { ...xp, [m]: (xp[m] ?? 0) + 20 };
+      return { ...s, xp, conflicts: s.conflicts.map((x) => (x.id === id ? { ...x, status: help ? "hulp" : "opgelost", solution } : x)) };
+    });
   },
   /** Ouder heeft geholpen bij een ruzie. */
   parentHelped(id: string) {
-    set({ ...state, conflicts: state.conflicts.map((x) => (x.id === id ? { ...x, status: "opgelost", solution: "Opgelost met hulp van een ouder" } : x)) });
+    update((s) => ({ ...s, conflicts: s.conflicts.map((x) => (x.id === id ? { ...x, status: "opgelost", solution: "Opgelost met hulp van een ouder" } : x)) }));
   },
   saveMeeting(m: Omit<Meeting, "at">) {
-    set({ ...state, meetings: [...state.meetings, { ...m, at: new Date().toISOString() }] });
+    const at = new Date().toISOString();
+    update((s) => ({ ...s, meetings: [...s.meetings, { ...m, at }] }));
   },
   setGoals(goals: string[]) {
-    set({ ...state, goals });
+    update((s) => ({ ...s, goals }));
   },
   setRewards(rewards: FamilyState["rewards"]) {
-    set({ ...state, rewards });
+    update((s) => ({ ...s, rewards }));
   },
   setConsent(kind: ProKind, on: boolean) {
-    set({ ...state, consent: { ...state.consent, [kind]: on } });
+    update((s) => ({ ...s, consent: { ...s.consent, [kind]: on } }));
   },
   sendMessage(from: ProKind, to: string, text: string) {
-    set({ ...state, messages: [...state.messages, { id: "m" + Date.now().toString(36), from, to, text, at: new Date().toISOString(), read: false }] });
+    const msg = { id: newId("m"), from, to, text, at: new Date().toISOString(), read: false };
+    update((s) => ({ ...s, messages: [...s.messages, msg] }));
   },
   readMessage(id: string) {
-    set({ ...state, messages: state.messages.map((m) => (m.id === id ? { ...m, read: true } : m)) });
+    update((s) => ({ ...s, messages: s.messages.map((m) => (m.id === id ? { ...m, read: true } : m)) }));
   },
   saveProNote(kind: ProKind, text: string) {
-    set({ ...state, proNotes: { ...state.proNotes, [kind]: text } });
+    update((s) => ({ ...s, proNotes: { ...s.proNotes, [kind]: text } }));
   },
+  setBedtime(memberId: string, bedtime: string) {
+    update((s) => ({
+      ...s,
+      members: s.members.map((m) => (m.id === memberId ? { ...m, bedtime } : m)),
+      tasks: s.tasks.map((t) => (t.icon === "telefoon" && t.assignee === memberId ? { ...t, title: phoneTaskTitle(bedtime) } : t)),
+    }));
+  },
+  /** Alleen demo. */
   reset() {
-    set(demoFamily());
+    if (live) return;
+    update(() => demoFamily());
   },
 };

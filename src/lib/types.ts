@@ -33,6 +33,12 @@ export interface Member {
   avatar: AvatarConfig;
   /** 0–1, berekend uit de taken van vandaag. Zegt niets over gevoel. */
   energy: number;
+  /** Live: false tot iemand zijn eigen telefoon heeft gekoppeld en een avatar heeft gemaakt. */
+  joined?: boolean;
+  /** Bedtijd "21:30". De telefoon gaat een uur eerder aan de lader. */
+  bedtime?: string;
+  /** Alleen bij het aanmaken, om de uitnodiging te kunnen mailen. */
+  email?: string;
 }
 
 export type TaskIcon = "pen" | "boek" | "sport" | "huis" | "bord" | "afval" | "poot" | "bed" | "telefoon" | "zon" | "kar" | "post";

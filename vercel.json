@@ -1,0 +1,11 @@
+{
+  "framework": null,
+  "installCommand": "echo 'Geen installatie nodig'",
+  "buildCommand": "echo 'De app staat al gebouwd in dist/'",
+  "outputDirectory": "dist",
+  "headers": [
+    { "source": "/sw.js", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] },
+    { "source": "/config.js", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] },
+    { "source": "/", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] }
+  ]
+}

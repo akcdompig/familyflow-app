@@ -86,14 +86,14 @@ function Row({ members, row, state, me, onOpen }: { members: Member[]; row: "ach
         const left = 50 + (i - (members.length - 1) / 2) * spread;
         const style = { left: `${left}%` } as CSSProperties;
         return (
-          <button key={m.id} className={`ff-slot ff-slot-${row}`} style={style} onClick={() => onOpen(m.id)} aria-label={`${m.name}: ${moodLabel(c)}`}>
+          <button key={m.id} className={`ff-slot ff-slot-${row} ${m.joined === false ? "is-away" : ""}`} style={style} onClick={() => onOpen(m.id)} aria-label={`${m.name}: ${moodLabel(c)}`}>
             <Avatar config={m.avatar} expression={expressionFor(c)} energy={m.energy} size={row === "voor" ? 112 : 100} seed={i * 3 + (row === "voor" ? 2 : 0)} label={m.name} />
             <span className="ff-tag">
               <span className="ff-tag-name">
                 <span className="ff-dot" style={{ background: moodDot(c) }} />
                 {m.id === me.id ? "Jij" : m.name}
               </span>
-              <span className="ff-tag-mood">{moodLabel(c)}</span>
+              <span className="ff-tag-mood">{m.joined === false ? "nog niet aangemeld" : moodLabel(c)}</span>
             </span>
             {c?.wantsTalk && <span className="ff-bubble" aria-hidden="true"><Icon name="chat" size={16} /></span>}
           </button>
@@ -157,11 +157,20 @@ function Attention({ state, me, onTalkTips, onCheckIn, onGoTasks, onRuzie, onGoG
         </Card>
       );
     }
-    const missing = kids.filter((k) => !today(k));
+    const missing = kids.filter((k) => k.joined !== false && !today(k));
     if (missing.length) {
       return (
         <Card tone="wolk" title={`${missing.map((m) => m.name).join(" en ")} ${missing.length > 1 ? "hebben" : "heeft"} nog niet ingecheckt`}>
           <p>Geen zorgen. Herinner er luchtig aan, bijvoorbeeld bij het eten.</p>
+        </Card>
+      );
+    }
+    const away = state.members.filter((m) => m.joined === false);
+    if (away.length) {
+      return (
+        <Card tone="wolk" title={`${away.map((m) => m.name).join(" en ")} ${away.length > 1 ? "doen" : "doet"} nog niet mee`}>
+          <p>Stuur een uitnodiging met een code. Daarin staat ook hoe ze de app installeren.</p>
+          <button className="ff-btn ff-btn-dark" onClick={onGoGezin}>Uitnodigen</button>
         </Card>
       );
     }

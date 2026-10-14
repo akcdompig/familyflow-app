@@ -1,7 +1,7 @@
 // Bouwt een losse HTML-preview van de app met esbuild (zonder Next.js).
 // Gebruik: node preview/build.mjs
 import { build } from "esbuild";
-import { readFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, readFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -38,6 +38,35 @@ writeFileSync(
 writeFileSync(
   resolve(out, "artifact.html"),
   `<title>FamilyFlow</title>\n<meta name="claude:viewport-fit-sides" content="cover">\n${fonts}\n<style>${css}\n.ff-app{padding-top:12px}</style>\n<div id="root"></div>\n<script>${js}</script>\n`,
+);
+
+// Echte app (release): dist/ met config.js, manifest, iconen en service worker. Vercel serveert deze map.
+const dist = resolve(root, "dist");
+mkdirSync(dist, { recursive: true });
+cpSync(resolve(root, "public"), dist, { recursive: true });
+const cfgFile = resolve(dist, "config.js");
+if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+  writeFileSync(cfgFile, `window.FF_CONFIG = ${JSON.stringify({ url: process.env.SUPABASE_URL, anonKey: process.env.SUPABASE_ANON_KEY })};\n`);
+} else if (!existsSync(cfgFile)) {
+  writeFileSync(cfgFile, `// Vul hier je Supabase-gegevens in (Project Settings › API). Leeg = demo.\nwindow.FF_CONFIG = { url: "", anonKey: "" };\n`);
+}
+const head = [
+  '<meta charset="utf-8">',
+  '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">',
+  "<title>FamilyFlow</title>",
+  '<meta name="theme-color" content="#fff6ee">',
+  '<meta name="apple-mobile-web-app-capable" content="yes">',
+  '<meta name="mobile-web-app-capable" content="yes">',
+  '<meta name="apple-mobile-web-app-title" content="FamilyFlow">',
+  '<meta name="apple-mobile-web-app-status-bar-style" content="default">',
+  '<link rel="manifest" href="/manifest.webmanifest">',
+  '<link rel="icon" href="/favicon.png">',
+  '<link rel="apple-touch-icon" href="/apple-touch-icon.png">',
+  fonts,
+].join("");
+writeFileSync(
+  resolve(dist, "index.html"),
+  `<!doctype html><html lang="nl"><head>${head}<style>${css}</style></head><body><div id="root"></div><script src="/config.js"></script><script>${js}</script><script>if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("/sw.js");</script></body></html>`,
 );
 
 console.log("Preview gebouwd:", out, `(${Math.round(js.length / 1024)} kB JS)`);

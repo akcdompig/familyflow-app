@@ -1,5 +1,5 @@
-import { FamilyFlowApp } from "@/components/FamilyFlowApp";
+import { Root } from "@/components/Root";
 
 export default function Home() {
-  return <FamilyFlowApp />;
+  return <Root />;
 }

@@ -25,8 +25,8 @@ export function demoFamily(): FamilyState {
     members: [
       { id: "p1", name: "Papa", role: "ouder", energy: 0.5, avatar: { skin: "s5", hair: "kort", hairColor: "#2b1b14", extras: ["baard"], outfit: "overhemd", outfitColor: "#3a3670" } },
       { id: "p2", name: "Mama", role: "ouder", energy: 0.5, avatar: { skin: "s2", hair: "lang", hairColor: "#5a3825", extras: [], outfit: "trui", outfitColor: "#3cc6a0" } },
-      { id: "k1", name: "Noah", role: "kind", age: 13, energy: 0.5, avatar: { skin: "s4", hair: "krullen", hairColor: "#2b1b14", extras: [], outfit: "hoodie", outfitColor: "#ff6b57" } },
-      { id: "k2", name: "Lina", role: "tiener", age: 17, energy: 0.5, avatar: { skin: "s3", hair: "knot", hairColor: "#3a2418", extras: ["sproeten", "koptelefoon"], outfit: "tshirt", outfitColor: "#8fa6ff" } },
+      { id: "k1", name: "Noah", role: "kind", age: 13, bedtime: "21:30", energy: 0.5, avatar: { skin: "s4", hair: "krullen", hairColor: "#2b1b14", extras: [], outfit: "hoodie", outfitColor: "#ff6b57" } },
+      { id: "k2", name: "Lina", role: "tiener", age: 17, bedtime: "22:30", energy: 0.5, avatar: { skin: "s3", hair: "knot", hairColor: "#3a2418", extras: ["sproeten", "koptelefoon"], outfit: "tshirt", outfitColor: "#8fa6ff" } },
     ],
     checkins: {
       p1: { mood: 3, rest: false, topics: ["Thuis"], wantsTalk: false, at: at(8, 5) },
@@ -37,7 +37,7 @@ export function demoFamily(): FamilyState {
     tasks: [
       { id: "t1", title: "Huiswerk maken", icon: "pen", assignee: "k1", repeat: "dagelijks", xp: 20, createdBy: "p1" },
       { id: "t2", title: "Training of sporten", icon: "sport", assignee: "k1", repeat: "dagelijks", xp: 25, createdBy: "p1" },
-      { id: "t3", title: "Telefoon om 21.30 in de keuken", icon: "telefoon", assignee: "k1", repeat: "dagelijks", xp: 15, createdBy: "p1" },
+      { id: "t3", title: "Telefoon om 20.30 aan de lader", icon: "telefoon", assignee: "k1", repeat: "dagelijks", xp: 15, createdBy: "p1" },
       { id: "t4", title: "Op tijd opstaan en ontbijten", icon: "zon", assignee: "k2", repeat: "dagelijks", xp: 15, createdBy: "p2" },
       { id: "t5", title: "Stageverslag: één alinea", icon: "pen", assignee: "k2", repeat: "eenmalig", date: d, xp: 20, createdBy: "k2" },
       { id: "t6", title: "Vaatwasser uitruimen", icon: "huis", assignee: "beurt", repeat: "dagelijks", xp: 10, createdBy: "p2" },
@@ -75,7 +75,7 @@ export function demoFamily(): FamilyState {
     goals: ["Minder ruzie tussen de kinderen", "Rustige ochtenden", "Samen leuke dingen doen"],
     meetings: [
       { at: daysAgo(21, 19), therm: { p1: 4, p2: 5, k1: 5, k2: 4 }, goals: { 0: 3, 1: 2, 2: 4 }, good: "Noah ging 3 keer naar training", problem: "Ruzie over de vaatwasser", solution: "Takenlijst in de app, om de beurt", fun: "Pannenkoeken bakken" },
-      { at: daysAgo(14, 19), therm: { p1: 5, p2: 6, k1: 6, k2: 5 }, goals: { 0: 4, 1: 3, 2: 5 }, good: "Rustigere ochtenden", problem: "Telefoon 's avonds", solution: "Om 21.30 aan de lader in de keuken", fun: "Fietstocht" },
+      { at: daysAgo(14, 19), therm: { p1: 5, p2: 6, k1: 6, k2: 5 }, goals: { 0: 4, 1: 3, 2: 5 }, good: "Rustigere ochtenden", problem: "Telefoon 's avonds", solution: "Een uur voor bedtijd aan de lader in de keuken", fun: "Fietstocht" },
       { at: daysAgo(7, 19), therm: { p1: 6, p2: 7, k1: 7, k2: 5 }, goals: { 0: 6, 1: 5, 2: 6 }, good: "Ruzie zelf opgelost met de app", problem: "Wie mag voorin de auto", solution: "Even dagen Noah, oneven dagen Lina", fun: "Bowlen" },
     ],
     rewards: [

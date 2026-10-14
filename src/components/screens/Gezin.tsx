@@ -6,7 +6,9 @@ import { Icon } from "@/components/ui/Icon";
 import { LineChart } from "@/components/ui/LineChart";
 import { expressionFor, timeLabel } from "@/lib/mood";
 import { calmThisWeek, conflictsLastWeek, conflictsThisWeek, goalSeries, thermSeries } from "@/lib/signals";
-import { actions } from "@/lib/store";
+import { actions, isLive } from "@/lib/store";
+import { phoneTime } from "@/lib/tasks";
+import { Uitnodigen } from "@/components/screens/Uitnodigen";
 import type { FamilyState, Member, Meeting } from "@/lib/types";
 
 const GOAL_COLORS = ["#d9442f", "#3cc6a0", "#6c8cff"];
@@ -21,6 +23,8 @@ interface Props {
 export function Gezin({ state, me, onToast, onOefenen }: Props) {
   const [meeting, setMeeting] = useState(false);
   const [editGoals, setEditGoals] = useState(false);
+  const [showInvites, setShowInvites] = useState(false);
+  const away = state.members.filter((m) => m.joined === false);
   const name = (id: string) => state.members.find((m) => m.id === id)?.name ?? "?";
 
   if (meeting) return <Overleg state={state} onClose={() => setMeeting(false)} onToast={onToast} />;
@@ -40,6 +44,13 @@ export function Gezin({ state, me, onToast, onOefenen }: Props) {
           <h1 className="ff-h1">Ons gezin</h1>
         </div>
       </header>
+
+      {isLive() && (away.length > 0 || showInvites) && (
+        <section className="ff-stack-s" aria-label="Gezinsleden uitnodigen">
+          <h2 className="ff-h2">Gezinsleden uitnodigen</h2>
+          <Uitnodigen state={state} me={me} onToast={onToast} />
+        </section>
+      )}
 
       <section className="ff-card ff-meet-cta">
         <div>
@@ -88,6 +99,8 @@ export function Gezin({ state, me, onToast, onOefenen }: Props) {
               </label>
             ))}
           </div>
+        ) : state.meetings.length === 0 ? (
+          <p className="ff-small ff-muted">Na jullie eerste gezinsoverleg zie je hier elke week hoe het gaat met jullie doelen: {state.goals.filter(Boolean).join(", ").toLowerCase()}.</p>
         ) : (
           <>
             <LineChart series={goalSeries(state)} colors={GOAL_COLORS} dashed={thermSeries(state)} label="Cijfers voor de gezinsdoelen per week" />
@@ -142,6 +155,22 @@ export function Gezin({ state, me, onToast, onOefenen }: Props) {
         ))}
         <button className="ff-link" onClick={() => actions.setRewards([...state.rewards, { level: (state.rewards[state.rewards.length - 1]?.level ?? 1) + 1, title: "" }])}>+ Level toevoegen</button>
       </section>
+
+      <section className="ff-card ff-stack-s">
+        <h2 className="ff-h2">Bedtijden</h2>
+        <p className="ff-small ff-muted">De telefoon gaat een uur voor bedtijd aan de lader. Die taak past zich vanzelf aan.</p>
+        {state.members.filter((m) => m.role !== "ouder").map((k) => (
+          <label key={k.id} className="ff-reward-edit">
+            <b className="ff-grow">{k.name}</b>
+            <span className="ff-small ff-muted">telefoon {phoneTime(k.bedtime ?? "21:30")}</span>
+            <input type="time" style={{ flex: "0 0 auto", width: 132 }} value={k.bedtime ?? "21:30"} onChange={(e) => e.target.value && actions.setBedtime(k.id, e.target.value)} aria-label={`Bedtijd van ${k.name}`} />
+          </label>
+        ))}
+      </section>
+
+      {isLive() && away.length === 0 && (
+        <button className="ff-link" onClick={() => setShowInvites((v) => !v)}>{showInvites ? "Uitnodigen verbergen" : "Nieuwe telefoon? Nieuwe code maken"}</button>
+      )}
 
       <button className="ff-level" onClick={onOefenen}>
         <span className="ff-choice-l"><Icon name="oefenen" size={18} /></span>

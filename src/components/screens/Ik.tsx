@@ -3,7 +3,8 @@
 import { Avatar } from "@/components/avatar/Avatar";
 import { expressionFor } from "@/lib/mood";
 import { PLAN_OPTIONS } from "@/lib/scenarios";
-import { actions } from "@/lib/store";
+import * as cloud from "@/lib/cloud";
+import { actions, isLive, stopLive } from "@/lib/store";
 import { levelOf } from "@/lib/tasks";
 import type { CalmPlan, FamilyState, Member } from "@/lib/types";
 
@@ -143,7 +144,7 @@ export function Ik({ state, me, onEditAvatar, onCalm, onToast }: { state: Family
         <p className="ff-small"><b>School en coach</b> zien alleen een weekkleur en wat ze zelf klaarzetten. Nooit je stemming of gesprekken.</p>
       </section>
 
-      {isParent && (
+      {isParent && state.pros.length > 0 && (
         <section className="ff-card ff-stack">
           <div>
             <h2 className="ff-h2">Delen met school en zorg</h2>
@@ -170,6 +171,23 @@ export function Ik({ state, me, onEditAvatar, onCalm, onToast }: { state: Family
               </button>
             </div>
           ))}
+        </section>
+      )}
+      {isLive() && (
+        <section className="ff-card ff-stack-s">
+          <h2 className="ff-h2">Account</h2>
+          <p className="ff-small ff-muted">{cloud.isAnonymous() ? "Je bent aangemeld met een code. Log je uit, dan heb je een nieuwe code van je ouder nodig." : `Ingelogd als ${cloud.userEmail()}`}</p>
+          <button
+            className="ff-btn ff-btn-ghost"
+            onClick={() => {
+              if (!window.confirm(cloud.isAnonymous() ? "Echt uitloggen? Je hebt daarna een nieuwe code nodig." : "Uitloggen?")) return;
+              cloud.signOut();
+              stopLive();
+              window.location.reload();
+            }}
+          >
+            Uitloggen
+          </button>
         </section>
       )}
     </div>

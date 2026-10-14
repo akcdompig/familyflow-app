@@ -16,7 +16,7 @@ import { Taken } from "@/components/screens/Taken";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { Sheet } from "@/components/ui/Sheet";
 import { expressionFor, moodLabel, timeLabel } from "@/lib/mood";
-import { actions, useFamily } from "@/lib/store";
+import { actions, isLive, lastSyncError, useFamily } from "@/lib/store";
 import { energyOf, isDone, tasksFor } from "@/lib/tasks";
 import type { FamilyState } from "@/lib/types";
 
@@ -107,19 +107,22 @@ export function FamilyFlowApp() {
   const tipTopics = tipKid ? state.checkins[tipKid.id]?.topics ?? [] : [];
   const openLeft = tasksFor(state, me.id).filter((t) => !isDone(state, t.id)).length;
   const isParent = me.role === "ouder";
+  const live = isLive();
+  const syncErr = lastSyncError();
   const nav = isParent ? NAV_OUDER : NAV_KIND;
   const hot = state.conflicts.filter((c) => c.status === "hulp" || (c.physical && c.status !== "opgelost")).length;
   const view: Screen = screen === "gezin" && !isParent ? "huis" : screen;
 
   return (
     <div className={`ff-app ${isParent ? "ff-theme-ouder" : "ff-theme-kind"}`}>
-      {screen !== "maker" && <DemoBar state={state} onSwitch={afterSwitch} />}
+      {screen !== "maker" && !live && <DemoBar state={state} onSwitch={afterSwitch} />}
+      {live && syncErr && <div className="ff-syncbar" role="status">Niet opgeslagen: {syncErr}. Ik probeer het zo opnieuw.</div>}
       {ruzie !== null ? (
         <Ruzie key={ruzie || "nieuw"} state={state} me={me} conflictId={ruzie || undefined} onClose={() => setRuzie(null)} onToast={setToast} onAfter={() => setCheckIn(true)} />
       ) : (
         <>
       {view === "huis" && (
-        <Huiskamer state={state} me={me} onCheckIn={() => setCheckIn(true)} onOpenMember={setMember} onTalkTips={setTips} onWho={() => setWho(true)} onGoTasks={() => setScreen("taken")} onRuzie={(id) => setRuzie(id ?? "")} onGoGezin={() => setScreen("gezin")} />
+        <Huiskamer state={state} me={me} onCheckIn={() => setCheckIn(true)} onOpenMember={setMember} onTalkTips={setTips} onWho={() => (live ? setScreen("ik") : setWho(true))} onGoTasks={() => setScreen("taken")} onRuzie={(id) => setRuzie(id ?? "")} onGoGezin={() => setScreen("gezin")} />
       )}
       {view === "taken" && <Taken state={state} me={me} onToast={setToast} />}
       {view === "oefenen" && <Oefenen state={state} me={me} onToast={setToast} onCalm={() => setCalm(true)} onRuzie={() => setRuzie("")} />}
