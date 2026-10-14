@@ -5,7 +5,7 @@ import * as cloud from "./cloud";
 import { demoFamily } from "./demo";
 import { phoneTaskTitle, todayKey } from "./tasks";
 import { XP } from "./xp";
-import type { CoachRun, Quest, AvatarConfig, CalmPlan, CheckIn, Conflict, ConflictSide, FamilyState, Meeting, ProKind, Task } from "./types";
+import type { Dienst, WerkItem, CoachRun, Quest, AvatarConfig, CalmPlan, CheckIn, Conflict, ConflictSide, FamilyState, Meeting, ProKind, Task } from "./types";
 
 /*
   Eén store voor demo en echt.
@@ -261,6 +261,16 @@ export const actions = {
       if (!doer || s.checked?.[d]?.[task.id]) return s;
       return { ...s, checked: { ...(s.checked ?? {}), [d]: { ...(s.checked?.[d] ?? {}), [task.id]: parentId } }, xp: isKid(s, doer) && task.xp ? addXp(s, doer, task.xp) : s.xp };
     });
+  },
+  /** Werk van een gezinslid opslaan (hele lijst). */
+  setWerk(memberId: string, list: WerkItem[]) {
+    update((s) => ({ ...s, werk: { ...(s.werk ?? {}), [memberId]: list } }));
+  },
+  addDienst(d: Omit<Dienst, "id">) {
+    update((s) => ({ ...s, diensten: [...(s.diensten ?? []), { ...d, id: newId("d") }].slice(-500) }));
+  },
+  removeDienst(id: string) {
+    update((s) => ({ ...s, diensten: (s.diensten ?? []).filter((d) => d.id !== id) }));
   },
   /** Schoolvakanties van een kind bijwerken (alleen als er iets veranderd is). */
   setVakanties(memberId: string, list: { naam: string; van: string; tot: string }[]) {

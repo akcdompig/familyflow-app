@@ -1,5 +1,6 @@
 "use client";
 
+import { MijnWerk } from "@/components/screens/MijnWerk";
 import { Avatar } from "@/components/avatar/Avatar";
 import { expressionFor } from "@/lib/mood";
 import { PLAN_OPTIONS } from "@/lib/scenarios";
@@ -20,11 +21,14 @@ export function Ik({ state, me, onEditAvatar, onCalm, onToast }: { state: Family
   const level = lp.level;
   const plan = state.plans[me.id] ?? EMPTY;
   const kids = state.members.filter((m) => m.role !== "ouder");
+  const [werk, setWerk] = useState(false);
 
   const toggle = (key: "signals" | "helps" | "needs", v: string) => {
     const list = plan[key].includes(v) ? plan[key].filter((x) => x !== v) : [...plan[key], v];
     actions.savePlan(me.id, { ...plan, [key]: list });
   };
+
+  if (werk) return <MijnWerk state={state} me={me} onClose={() => setWerk(false)} onToast={onToast} />;
 
   return (
     <div className="ff-screen">
@@ -38,6 +42,12 @@ export function Ik({ state, me, onEditAvatar, onCalm, onToast }: { state: Family
           <button className="ff-btn ff-btn-ghost" onClick={onEditAvatar}>Avatar aanpassen</button>
         </div>
       </section>
+
+      {me.role !== "kind" && (
+        <button className="ff-level" onClick={() => setWerk(true)}>
+          <span className="ff-grow"><b>Werk en roosters</b><br /><span className="ff-small ff-muted">{(state.werk?.[me.id] ?? []).length ? (state.werk?.[me.id] ?? []).map((w) => w.naam).join(", ") : "Vaste baan, trainingen, diensten. Telt mee bij Wie doet wat"}</span></span>
+        </button>
+      )}
 
       {!isParent && (
         <section className="ff-card ff-level-card">

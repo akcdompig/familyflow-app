@@ -30,6 +30,14 @@ export interface LidStats {
   top: { title: string; min: number; keer: number }[];
 }
 
+/** Minuten tussen "08:30" en "17:00". Over middernacht ("22:00"–"04:00") telt ook. */
+export function duur(van?: string, tot?: string): number {
+  if (!van || !tot) return 0;
+  const m = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+  const d = m(tot) - m(van);
+  return d >= 0 ? d : d + 1440;
+}
+
 const leeg = (): Record<TaakCat, number> => ({ huishouden: 0, kinderen: 0, school: 0, sport: 0, werk: 0, overig: 0 });
 
 export function statsVoor(state: FamilyState, van: string, tot: string): LidStats[] {
@@ -56,6 +64,32 @@ export function statsVoor(state: FamilyState, van: string, tot: string): LidStat
       tops.set(wie, tm);
     }
   }
+  // Werk uit het profiel: vaste werkdagen en losse diensten, tot en met vandaag.
+  const vandaag = iso(new Date());
+  const eind = tot < vandaag ? tot : vandaag;
+  const plus = (wie: string, dag: string, min: number, title: string) => {
+    const s = map.get(wie);
+    if (!s || min <= 0) return;
+    s.perCat.werk += min;
+    s.werk += min;
+    s.perDag[dag] = (s.perDag[dag] ?? 0) + min;
+    const tm = tops.get(wie) ?? new Map();
+    const cur = tm.get(title) ?? { min: 0, keer: 0 };
+    tm.set(title, { min: cur.min + min, keer: cur.keer + 1 });
+    tops.set(wie, tm);
+  };
+  for (let d = van; d <= eind; d = addDays(d, 1)) {
+    const wd = new Date(d + "T12:00:00").getDay();
+    for (const [wie, lijst] of Object.entries(state.werk ?? {})) {
+      for (const w of lijst) if (w.soort === "vast" && w.days?.includes(wd)) plus(wie, d, duur(w.van, w.tot), w.naam);
+    }
+  }
+  for (const di of state.diensten ?? []) {
+    if (di.date < van || di.date > eind) continue;
+    const w = state.werk?.[di.member]?.find((x) => x.id === di.werkId);
+    plus(di.member, di.date, duur(di.van, di.tot), w?.naam ?? "Dienst");
+  }
+
   for (const [wie, tm] of tops) {
     const s = map.get(wie)!;
     s.top = [...tm.entries()].map(([title, v]) => ({ title, ...v })).sort((a, b) => b.min - a.min).slice(0, 5);

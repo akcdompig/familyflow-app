@@ -632,3 +632,4 @@ i.is-vak { background: var(--ff-munt-zacht); border: 1px solid var(--ff-munt-don
 .ff-wdw-cijfers b { font-size: var(--ff-t-l); font-variant-numeric: tabular-nums; }
 .ff-wdw-cat { display: grid; grid-template-columns: minmax(0, 9rem) 1fr auto; align-items: center; gap: 8px; }
 @media (prefers-reduced-motion: reduce) { .ff-wdw-balk span, .ff-wdw-druk-kolom span { transition: none; } }
+.ff-field input[type="time"] { min-width: 6.5rem; }

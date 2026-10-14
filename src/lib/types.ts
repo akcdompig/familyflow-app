@@ -146,6 +146,27 @@ export interface CoachRun {
   outcome: "opgelost" | "half" | "escalatie";
 }
 
+/** Werk of een inkomstenbron van een gezinslid. Vast = elke week op dezelfde dagen; wisselend = losse diensten. */
+export interface WerkItem {
+  id: string;
+  naam: string;
+  soort: "vast" | "wisselend";
+  /** Bij vast: dagen (0 = zondag … 6 = zaterdag) en tijden. */
+  days?: number[];
+  van?: string; // "08:30"
+  tot?: string; // "17:00"
+  /** Hier verdient iemand geld mee (geen bedragen). */
+  inkomen?: boolean;
+}
+export interface Dienst {
+  id: string;
+  member: string;
+  werkId: string;
+  date: string;
+  van: string;
+  tot: string;
+}
+
 export interface FamilyState {
   version: 3;
   family: string;
@@ -190,6 +211,9 @@ export interface FamilyState {
   somtoday?: Record<string, { at: string; seen: string[] }>;
   /** Schoolvakanties per kind (uit Somtoday). Dan geen schooltaken. */
   vakanties?: Record<string, { naam: string; van: string; tot: string }[]>;
+  /** Werk per gezinslid, en losse diensten (security, heitoezicht, …). */
+  werk?: Record<string, WerkItem[]>;
+  diensten?: Dienst[];
   /** Bevestigd door een ouder: checked[datum][taakId] = id van de ouder. */
   checked?: Record<string, Record<string, string>>;
 }
