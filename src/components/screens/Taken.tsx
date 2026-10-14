@@ -118,7 +118,10 @@ function TaskRow({ task, state, who, canToggle, onToggle, showXp, onRemove }: { 
       </button>
       <div className="ff-task-t">
         <b>{task.title}</b>
-        <span className="ff-small ff-muted">{sub}{doneBy}</span>
+        <span className="ff-small ff-muted">
+          {task.source && <span className={`ff-src ff-src-${task.source}`}>{task.source === "school" ? "Van school" : "Van coach"}</span>}
+          {sub}{doneBy}
+        </span>
       </div>
       {showXp && task.xp > 0 && <span className="ff-xp">+{task.xp}</span>}
       {onRemove && (

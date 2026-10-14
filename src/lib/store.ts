@@ -3,7 +3,7 @@
 import { useSyncExternalStore } from "react";
 import { demoFamily } from "./demo";
 import { todayKey } from "./tasks";
-import type { AvatarConfig, CalmPlan, CheckIn, FamilyState, Task } from "./types";
+import type { AvatarConfig, CalmPlan, CheckIn, Conflict, ConflictSide, FamilyState, Meeting, ProKind, Task } from "./types";
 
 /*
   Eenvoudige lokale store. Straks komt Supabase erachter (tabellen + Realtime),
@@ -18,12 +18,10 @@ const listeners = new Set<() => void>();
 function migrate(raw: unknown): FamilyState | null {
   const s = raw as Partial<FamilyState> & { version?: number };
   if (!s || !Array.isArray(s.members)) return null;
-  if (s.version === 2) return s as FamilyState;
-  if (s.version === 1) {
-    const d = demoFamily();
-    return { ...d, ...s, version: 2, tasks: d.tasks, done: d.done, xp: d.xp, played: d.played, plans: d.plans, calm: [], pet: d.pet } as FamilyState;
-  }
-  return null;
+  if (s.version === 3) return s as FamilyState;
+  // Oudere versies: ontbrekende onderdelen aanvullen met het voorbeeldgezin.
+  const d = demoFamily();
+  return { ...d, ...s, version: 3 } as FamilyState;
 }
 
 function load(): FamilyState {
@@ -73,7 +71,9 @@ export const actions = {
     set({ ...state, me: id });
   },
   checkIn(memberId: string, c: Omit<CheckIn, "at">) {
-    set({ ...state, checkins: { ...state.checkins, [memberId]: { ...c, at: new Date().toISOString() } } });
+    const at = new Date().toISOString();
+    const hist = [...(state.history[memberId] ?? []), { mood: c.mood, rest: c.rest, at }].slice(-60);
+    set({ ...state, checkins: { ...state.checkins, [memberId]: { ...c, at } }, history: { ...state.history, [memberId]: hist } });
   },
   saveAvatar(memberId: string, avatar: AvatarConfig, name?: string) {
     set({ ...state, members: state.members.map((m) => (m.id === memberId ? { ...m, avatar, name: name?.trim() || m.name } : m)) });
@@ -116,6 +116,44 @@ export const actions = {
     if (list.includes(id)) return false;
     set({ ...state, played: { ...state.played, [memberId]: [...list, id] }, xp: addXp(state, memberId, 20) });
     return true;
+  },
+  startConflict(c: Omit<Conflict, "id" | "at" | "status">) {
+    set({ ...state, conflicts: [...state.conflicts, { ...c, id: "c" + Date.now().toString(36), at: new Date().toISOString(), status: "wacht" }] });
+  },
+  answerConflict(id: string, memberId: string, side: ConflictSide) {
+    set({ ...state, conflicts: state.conflicts.map((c) => (c.id === id ? { ...c, sides: { ...c.sides, [memberId]: side } } : c)) });
+  },
+  closeConflict(id: string, solution: string) {
+    const help = solution === "Een ouder helpt ons";
+    const c = state.conflicts.find((x) => x.id === id);
+    let xp = state.xp;
+    if (c && !help) for (const m of [c.from, c.with]) xp = { ...xp, [m]: (xp[m] ?? 0) + 20 };
+    set({ ...state, xp, conflicts: state.conflicts.map((x) => (x.id === id ? { ...x, status: help ? "hulp" : "opgelost", solution } : x)) });
+  },
+  /** Ouder heeft geholpen bij een ruzie. */
+  parentHelped(id: string) {
+    set({ ...state, conflicts: state.conflicts.map((x) => (x.id === id ? { ...x, status: "opgelost", solution: "Opgelost met hulp van een ouder" } : x)) });
+  },
+  saveMeeting(m: Omit<Meeting, "at">) {
+    set({ ...state, meetings: [...state.meetings, { ...m, at: new Date().toISOString() }] });
+  },
+  setGoals(goals: string[]) {
+    set({ ...state, goals });
+  },
+  setRewards(rewards: FamilyState["rewards"]) {
+    set({ ...state, rewards });
+  },
+  setConsent(kind: ProKind, on: boolean) {
+    set({ ...state, consent: { ...state.consent, [kind]: on } });
+  },
+  sendMessage(from: ProKind, to: string, text: string) {
+    set({ ...state, messages: [...state.messages, { id: "m" + Date.now().toString(36), from, to, text, at: new Date().toISOString(), read: false }] });
+  },
+  readMessage(id: string) {
+    set({ ...state, messages: state.messages.map((m) => (m.id === id ? { ...m, read: true } : m)) });
+  },
+  saveProNote(kind: ProKind, text: string) {
+    set({ ...state, proNotes: { ...state.proNotes, [kind]: text } });
   },
   reset() {
     set(demoFamily());

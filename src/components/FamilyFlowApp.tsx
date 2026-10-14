@@ -2,11 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Avatar } from "@/components/avatar/Avatar";
+import { DemoBar } from "@/components/DemoBar";
 import { AvatarMaker } from "@/components/screens/AvatarMaker";
 import { CalmSheet } from "@/components/screens/CalmSheet";
 import { CheckInSheet } from "@/components/screens/CheckInSheet";
 import { Huiskamer } from "@/components/screens/Huiskamer";
+import { Gezin } from "@/components/screens/Gezin";
 import { Ik } from "@/components/screens/Ik";
+import { ProApp } from "@/components/screens/Pro";
+import { Ruzie } from "@/components/screens/Ruzie";
 import { Oefenen } from "@/components/screens/Oefenen";
 import { Taken } from "@/components/screens/Taken";
 import { Icon, type IconName } from "@/components/ui/Icon";
@@ -16,7 +20,7 @@ import { actions, useFamily } from "@/lib/store";
 import { energyOf, isDone, tasksFor } from "@/lib/tasks";
 import type { FamilyState } from "@/lib/types";
 
-type Screen = "huis" | "taken" | "oefenen" | "ik" | "maker";
+type Screen = "huis" | "taken" | "oefenen" | "gezin" | "ik" | "maker";
 
 const TOPIC_OPENERS: Record<string, string> = {
   School: "Hoe was het vandaag op school? Was er iets lastigs?",
@@ -27,10 +31,16 @@ const TOPIC_OPENERS: Record<string, string> = {
   Slaap: "Je slaapt slecht, hè? Wat houdt je wakker?",
 };
 
-const NAV: { id: Screen; label: string; icon: IconName }[] = [
+const NAV_KIND: { id: Screen; label: string; icon: IconName }[] = [
   { id: "huis", label: "Huiskamer", icon: "huis" },
   { id: "taken", label: "Taken", icon: "taken" },
   { id: "oefenen", label: "Oefenen", icon: "oefenen" },
+  { id: "ik", label: "Ik", icon: "ik" },
+];
+const NAV_OUDER: typeof NAV_KIND = [
+  { id: "huis", label: "Huiskamer", icon: "huis" },
+  { id: "taken", label: "Taken", icon: "taken" },
+  { id: "gezin", label: "Gezin", icon: "gezin" },
   { id: "ik", label: "Ik", icon: "ik" },
 ];
 
@@ -44,6 +54,8 @@ export function FamilyFlowApp() {
   const [tips, setTips] = useState<string | null>(null);
   const [who, setWho] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  // Ruzie-scherm: null = dicht, "" = nieuwe ruzie, anders id van een ruzie om op te reageren.
+  const [ruzie, setRuzie] = useState<string | null>(null);
 
   // Energie van elke avatar komt uit de taken van vandaag.
   const state: FamilyState = useMemo(() => ({ ...raw, members: raw.members.map((m) => ({ ...m, energy: energyOf(raw, m) })) }), [raw]);
@@ -66,6 +78,24 @@ export function FamilyFlowApp() {
 
   if (!mounted) return <div className="ff-app ff-loading" aria-busy="true" />;
 
+  const afterSwitch = () => {
+    setScreen("huis");
+    setRuzie(null);
+    setToast(null);
+    window.scrollTo(0, 0);
+  };
+
+  const pro = state.pros.find((p) => p.id === state.me);
+  if (pro) {
+    return (
+      <div className="ff-app ff-theme-pro">
+        <DemoBar state={state} onSwitch={afterSwitch} />
+        <ProApp key={pro.id} state={state} pro={pro} onToast={setToast} />
+        {toast && <div className="ff-toast" role="status">{toast.charAt(0).toUpperCase() + toast.slice(1)}</div>}
+      </div>
+    );
+  }
+
   const me = state.members.find((m) => m.id === state.me) ?? state.members[0];
   const parents = state.members.filter((m) => m.role === "ouder");
   const talkTo = me.role === "ouder" ? parents.find((p) => p.id !== me.id)?.name ?? "iemand die je vertrouwt" : parents.map((p) => p.name.toLowerCase()).join(" of ") || "een ouder";
@@ -76,26 +106,42 @@ export function FamilyFlowApp() {
   const tipKid = tips ? state.members.find((m) => m.id === tips) : undefined;
   const tipTopics = tipKid ? state.checkins[tipKid.id]?.topics ?? [] : [];
   const openLeft = tasksFor(state, me.id).filter((t) => !isDone(state, t.id)).length;
+  const isParent = me.role === "ouder";
+  const nav = isParent ? NAV_OUDER : NAV_KIND;
+  const hot = state.conflicts.filter((c) => c.status === "hulp" || (c.physical && c.status !== "opgelost")).length;
+  const view: Screen = screen === "gezin" && !isParent ? "huis" : screen;
 
   return (
-    <div className={`ff-app ${me.role === "ouder" ? "ff-theme-ouder" : "ff-theme-kind"}`}>
-      {screen === "huis" && (
-        <Huiskamer state={state} me={me} onCheckIn={() => setCheckIn(true)} onOpenMember={setMember} onTalkTips={setTips} onWho={() => setWho(true)} onGoTasks={() => setScreen("taken")} />
+    <div className={`ff-app ${isParent ? "ff-theme-ouder" : "ff-theme-kind"}`}>
+      {screen !== "maker" && <DemoBar state={state} onSwitch={afterSwitch} />}
+      {ruzie !== null ? (
+        <Ruzie key={ruzie || "nieuw"} state={state} me={me} conflictId={ruzie || undefined} onClose={() => setRuzie(null)} onToast={setToast} onAfter={() => setCheckIn(true)} />
+      ) : (
+        <>
+      {view === "huis" && (
+        <Huiskamer state={state} me={me} onCheckIn={() => setCheckIn(true)} onOpenMember={setMember} onTalkTips={setTips} onWho={() => setWho(true)} onGoTasks={() => setScreen("taken")} onRuzie={(id) => setRuzie(id ?? "")} onGoGezin={() => setScreen("gezin")} />
       )}
-      {screen === "taken" && <Taken state={state} me={me} onToast={setToast} />}
-      {screen === "oefenen" && <Oefenen state={state} me={me} onToast={setToast} onCalm={() => setCalm(true)} />}
-      {screen === "ik" && <Ik state={state} me={me} onEditAvatar={() => setScreen("maker")} onCalm={() => setCalm(true)} onToast={setToast} />}
-      {screen === "maker" && <AvatarMaker key={me.id} member={me} onClose={() => setScreen("ik")} onSaved={setToast} />}
+      {view === "taken" && <Taken state={state} me={me} onToast={setToast} />}
+      {view === "oefenen" && <Oefenen state={state} me={me} onToast={setToast} onCalm={() => setCalm(true)} onRuzie={() => setRuzie("")} />}
+      {view === "gezin" && isParent && <Gezin state={state} me={me} onToast={setToast} onOefenen={() => setScreen("oefenen")} />}
+      {view === "ik" && <Ik state={state} me={me} onEditAvatar={() => setScreen("maker")} onCalm={() => setCalm(true)} onToast={setToast} />}
+      {view === "maker" && <AvatarMaker key={me.id} member={me} onClose={() => setScreen("ik")} onSaved={setToast} />}
+        </>
+      )}
 
-      {screen !== "maker" && (
+      {screen !== "maker" && ruzie === null && (
         <nav className="ff-nav" aria-label="Hoofdmenu">
-          {NAV.map((n) => (
-            <button key={n.id} className="ff-nav-item" aria-current={screen === n.id ? "page" : undefined} onClick={() => setScreen(n.id)}>
-              <Icon name={n.icon} size={26} filled={screen === n.id} />
+          {nav.map((n) => {
+            const cur = screen === n.id || (n.id === "gezin" && screen === "oefenen" && isParent);
+            return (
+            <button key={n.id} className="ff-nav-item" aria-current={cur ? "page" : undefined} onClick={() => setScreen(n.id)}>
+              <Icon name={n.icon} size={26} filled={cur} />
               <span>{n.label}</span>
               {n.id === "taken" && openLeft > 0 && <span className="ff-nav-badge" aria-label={`${openLeft} open`}>{openLeft}</span>}
+              {n.id === "gezin" && hot > 0 && <span className="ff-nav-badge" aria-label={`${hot} ruzie die aandacht vraagt`}>!</span>}
             </button>
-          ))}
+            );
+          })}
         </nav>
       )}
 
@@ -157,7 +203,7 @@ export function FamilyFlowApp() {
           <p className="ff-small ff-muted">In de echte app logt iedereen in op een eigen telefoon. In deze demo wissel je hier.</p>
           <div className="ff-who-list">
             {state.members.map((m) => (
-              <button key={m.id} className="ff-who-item" aria-pressed={m.id === me.id} onClick={() => { actions.switchMe(m.id); closeWho(); setScreen("huis"); setToast(null); }}>
+              <button key={m.id} className="ff-who-item" aria-pressed={m.id === me.id} onClick={() => { actions.switchMe(m.id); closeWho(); afterSwitch(); }}>
                 <Avatar config={m.avatar} expression={expressionFor(state.checkins[m.id])} headOnly size={44} animate={false} label={m.name} />
                 <span><b>{m.name}</b><br /><span className="ff-small ff-muted">{m.role === "ouder" ? "ouder" : `${m.age} jaar`}</span></span>
               </button>

@@ -17,6 +17,8 @@ interface Props {
   onTalkTips: (id: string) => void;
   onWho: () => void;
   onGoTasks: () => void;
+  onRuzie: (id?: string) => void;
+  onGoGezin: () => void;
 }
 
 function timeOfDay() {
@@ -26,7 +28,7 @@ function timeOfDay() {
   return "nacht";
 }
 
-export function Huiskamer({ state, me, onCheckIn, onOpenMember, onTalkTips, onWho, onGoTasks }: Props) {
+export function Huiskamer({ state, me, onCheckIn, onOpenMember, onTalkTips, onWho, onGoTasks, onRuzie, onGoGezin }: Props) {
   const back = state.members.filter((m) => m.role === "ouder");
   const front = state.members.filter((m) => m.role !== "ouder");
   const tod = timeOfDay();
@@ -58,7 +60,8 @@ export function Huiskamer({ state, me, onCheckIn, onOpenMember, onTalkTips, onWh
         <Row members={front} row="voor" state={state} me={me} onOpen={onOpenMember} />
       </section>
 
-      <Attention state={state} me={me} onTalkTips={onTalkTips} onCheckIn={onCheckIn} onGoTasks={onGoTasks} />
+      <Attention state={state} me={me} onTalkTips={onTalkTips} onCheckIn={onCheckIn} onGoTasks={onGoTasks} onRuzie={onRuzie} onGoGezin={onGoGezin} />
+      <Inbox state={state} me={me} />
 
       <div className="ff-mybar">
         <MoodFace mood={mine ? (mine.rest ? "rust" : mine.mood) : 3} size={36} />
@@ -100,7 +103,7 @@ function Row({ members, row, state, me, onOpen }: { members: Member[]; row: "ach
   );
 }
 
-function Attention({ state, me, onTalkTips, onCheckIn, onGoTasks }: { state: FamilyState; me: Member; onTalkTips: (id: string) => void; onCheckIn: () => void; onGoTasks: () => void }) {
+function Attention({ state, me, onTalkTips, onCheckIn, onGoTasks, onRuzie, onGoGezin }: { state: FamilyState; me: Member; onTalkTips: (id: string) => void; onCheckIn: () => void; onGoTasks: () => void; onRuzie: (id?: string) => void; onGoGezin: () => void }) {
   const kids = state.members.filter((m) => m.role !== "ouder");
   const parents = state.members.filter((m) => m.role === "ouder");
   const ci = (m: Member) => state.checkins[m.id];
@@ -109,7 +112,18 @@ function Attention({ state, me, onTalkTips, onCheckIn, onGoTasks }: { state: Fam
     return !!c && new Date(c.at).toDateString() === new Date().toDateString();
   };
 
+  const name = (id: string) => state.members.find((m) => m.id === id)?.name ?? "";
+
   if (me.role === "ouder") {
+    const hot = state.conflicts.find((c) => c.status === "hulp" || (c.physical && c.status !== "opgelost"));
+    if (hot) {
+      return (
+        <Card tone="koraal" title={hot.physical ? `Ruzie met fysiek contact: ${name(hot.from)} en ${name(hot.with)}` : `${name(hot.from)} en ${name(hot.with)} vragen om hulp`} meta={timeLabel(hot.at)}>
+          <p>{hot.physical ? "Kijk eerst of iedereen veilig is. Praat pas als het rustig is." : "Ze kwamen er samen niet uit. Help ze, zonder een kant te kiezen."}</p>
+          <button className="ff-btn ff-btn-primary" onClick={onGoGezin}>Zo pak je het aan</button>
+        </Card>
+      );
+    }
     const talk = kids.find((k) => ci(k)?.wantsTalk);
     if (talk) {
       const c = ci(talk)!;
@@ -158,6 +172,15 @@ function Attention({ state, me, onTalkTips, onCheckIn, onGoTasks }: { state: Fam
     );
   }
 
+  const invite = state.conflicts.find((c) => c.status === "wacht" && c.with === me.id);
+  if (invite) {
+    return (
+      <Card tone="lucht" title={`${name(invite.from)} wil een ruzie uitpraten`} meta={timeLabel(invite.at)}>
+        <p>Over: {invite.topic.toLowerCase()}. Lees wat {name(invite.from)} zegt en vertel jouw kant. Lukt het samen, dan krijgen jullie allebei 20 XP.</p>
+        <button className="ff-btn ff-btn-primary" onClick={() => onRuzie(invite.id)}>Bekijken</button>
+      </Card>
+    );
+  }
   if (!today(me)) {
     return (
       <Card tone="koraal" title={`Hoi ${me.name}, hoe gaat het?`}>
@@ -200,5 +223,30 @@ function Card({ tone, title, meta, children }: { tone: "koraal" | "lucht" | "zon
       </div>
       <div className="ff-attn-body">{children}</div>
     </section>
+  );
+}
+
+/** Berichten van school of zorg voor mij. */
+function Inbox({ state, me }: { state: FamilyState; me: Member }) {
+  const forMe = (to: string) => to === "gezin" || to === me.id || (to === "ouders" && me.role === "ouder");
+  const unread = state.messages.filter((m) => !m.read && forMe(m.to));
+  if (!unread.length) return null;
+  return (
+    <>
+      {unread.map((m) => {
+        const pro = state.pros.find((p) => p.id === m.from);
+        return (
+          <section key={m.id} className={`ff-card ff-msg ff-msg-${m.from}`}>
+            <div className="ff-attn-head">
+              <span className={`ff-pro-badge ff-pro-${m.from} ff-pro-badge-s`}><Icon name={m.from} size={16} /></span>
+              <b>{pro?.name ?? (m.from === "school" ? "School" : "Coach")}</b>
+              <span className="ff-small ff-muted ff-push">{timeLabel(m.at)}</span>
+            </div>
+            <p>{m.text}</p>
+            <button className="ff-link" style={{ justifySelf: "start" }} onClick={() => actions.readMessage(m.id)}>Gelezen</button>
+          </section>
+        );
+      })}
+    </>
   );
 }

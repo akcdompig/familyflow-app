@@ -52,6 +52,8 @@ export interface Task {
   /** Alleen tonen als het gezin een huisdier heeft. */
   pet?: boolean;
   createdBy: string;
+  /** Gezet door school of zorg. */
+  source?: ProKind;
 }
 
 export interface CalmPlan {
@@ -61,8 +63,53 @@ export interface CalmPlan {
   place: string;
 }
 
+export type ProKind = "school" | "zorg";
+
+export interface Pro {
+  id: ProKind;
+  name: string;
+  org: string;
+}
+
+export interface ConflictSide {
+  feel: string[];
+  want: string[];
+  story: string;
+}
+
+export interface Conflict {
+  id: string;
+  at: string;
+  from: string;
+  with: string;
+  topic: string;
+  physical: boolean;
+  sides: Record<string, ConflictSide>;
+  status: "wacht" | "opgelost" | "hulp";
+  solution?: string;
+}
+
+export interface Meeting {
+  at: string;
+  therm: Record<string, number>;
+  goals: Record<number, number>;
+  good: string;
+  problem: string;
+  solution: string;
+  fun: string;
+}
+
+export interface ProMessage {
+  id: string;
+  from: ProKind;
+  to: string; // "gezin" | "ouders" | lid-id
+  text: string;
+  at: string;
+  read: boolean;
+}
+
 export interface FamilyState {
-  version: 2;
+  version: 3;
   family: string;
   members: Member[];
   me: string;
@@ -76,4 +123,14 @@ export interface FamilyState {
   plans: Record<string, CalmPlan>;
   calm: { member: string; at: string }[];
   pet: { has: boolean; name: string; kind: string };
+  /** Geschiedenis van check-ins, voor trends en het weeksignaal. */
+  history: Record<string, { mood: number; rest: boolean; at: string }[]>;
+  conflicts: Conflict[];
+  goals: string[];
+  meetings: Meeting[];
+  rewards: { level: number; title: string }[];
+  pros: Pro[];
+  consent: Record<ProKind, boolean>;
+  messages: ProMessage[];
+  proNotes: Record<ProKind, string>;
 }

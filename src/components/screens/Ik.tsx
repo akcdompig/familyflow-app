@@ -42,7 +42,23 @@ export function Ik({ state, me, onEditAvatar, onCalm, onToast }: { state: Family
             <span className="ff-small">{into} / 100 XP</span>
           </div>
           <span className="ff-bar ff-bar-l"><i style={{ width: `${into}%` }} /></span>
-          <p className="ff-small">Nog {100 - into} XP tot level {level + 1}. Dan speel je nieuwe kleding vrij.</p>
+          <p className="ff-small">Nog {100 - into} XP tot level {level + 1}.</p>
+        </section>
+      )}
+
+      {!isParent && state.rewards.length > 0 && (
+        <section className="ff-card ff-stack-s">
+          <h2 className="ff-h2">Mijn beloningen</h2>
+          <p className="ff-small ff-muted">Afgesproken met je ouders. Haal je een level, dan mag je het inleveren.</p>
+          <ul className="ff-rewards">
+            {state.rewards.filter((r) => r.title).map((r) => (
+              <li key={r.level} className={r.level <= level ? "is-open" : ""}>
+                <span className="ff-reward-lvl">Lvl {r.level}</span>
+                <span className="ff-grow">{r.title}</span>
+                <span className="ff-small">{r.level <= level ? "Behaald!" : `nog ${(r.level - 1) * 100 - xp} XP`}</span>
+              </li>
+            ))}
+          </ul>
         </section>
       )}
 
@@ -123,7 +139,39 @@ export function Ik({ state, me, onEditAvatar, onCalm, onToast }: { state: Family
         <p className="ff-small"><b>Ouders</b> zien je gezichtje, het onderwerp, of je wilt praten, je taken en je rustplan.</p>
         <p className="ff-small"><b>Broers en zussen</b> zien alleen je gezichtje en je taken.</p>
         <p className="ff-small"><b>Alleen jij</b> ziet je antwoorden bij het oefenen.</p>
+        <p className="ff-small"><b>Ruzie oplossen:</b> de ander ziet jouw kant. Je ouders zien alleen dat er een ruzie was en hoe het is opgelost.</p>
+        <p className="ff-small"><b>School en coach</b> zien alleen een weekkleur en wat ze zelf klaarzetten. Nooit je stemming of gesprekken.</p>
       </section>
+
+      {isParent && (
+        <section className="ff-card ff-stack">
+          <div>
+            <h2 className="ff-h2">Delen met school en zorg</h2>
+            <p className="ff-small ff-muted">Jullie bepalen wat er gedeeld wordt. Je kunt het altijd weer uitzetten.</p>
+          </div>
+          {state.pros.map((p) => (
+            <div key={p.id} className="ff-row" style={{ justifyContent: "space-between", flexWrap: "nowrap" }}>
+              <div>
+                <b>{p.name}</b> <span className="ff-small ff-muted">· {p.org}</span>
+                <br />
+                <span className="ff-small ff-muted">{p.id === "school" ? "Ziet de weekkleur. Kan taken en berichten klaarzetten." : "Ziet de weekkleur en jullie gezinsdoelen. Kan taken en berichten klaarzetten."}</span>
+              </div>
+              <button
+                className="ff-switch"
+                role="switch"
+                aria-checked={state.consent[p.id]}
+                aria-label={`Delen met ${p.name}`}
+                onClick={() => {
+                  actions.setConsent(p.id, !state.consent[p.id]);
+                  onToast(state.consent[p.id] ? `${p.name} ziet niets meer` : `Gedeeld met ${p.name}`);
+                }}
+              >
+                <span />
+              </button>
+            </div>
+          ))}
+        </section>
+      )}
     </div>
   );
 }

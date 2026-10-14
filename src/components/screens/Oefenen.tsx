@@ -31,7 +31,7 @@ function Listen({ text }: { text: string }) {
   );
 }
 
-export function Oefenen({ state, me, onToast, onCalm }: { state: FamilyState; me: Member; onToast: (m: string) => void; onCalm: () => void }) {
+export function Oefenen({ state, me, onToast, onCalm, onRuzie }: { state: FamilyState; me: Member; onToast: (m: string) => void; onCalm: () => void; onRuzie: () => void }) {
   const [play, setPlay] = useState<Scenario | null>(null);
   const played = state.played[me.id] ?? [];
   const isParent = me.role === "ouder";
@@ -52,6 +52,13 @@ export function Oefenen({ state, me, onToast, onCalm }: { state: FamilyState; me
         <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path d="M12 2c1 4 6 6 6 12a6 6 0 0 1-12 0c0-3 2-5 2-8 1 1 2 2 3 2 0-2 0-4 1-6z" fill="currentColor" /></svg>
         <span><b>Ik word boos</b><br /><span className="ff-small">Open je rustplan</span></span>
       </button>
+
+      {!isParent && state.members.filter((m) => m.role !== "ouder").length > 1 && (
+        <button className="ff-angry ff-ruzie-btn" onClick={onRuzie}>
+          <Icon name="chat" size={26} />
+          <span><b>Ruzie oplossen</b><br /><span className="ff-small">Samen uitpraten, stap voor stap</span></span>
+        </button>
+      )}
 
       <p className="ff-muted">Oefen wat je doet als het lastig wordt. Er is geen fout antwoord. {isParent ? "Probeer ze zelf ook eens." : "Je krijgt XP voor het oefenen."}</p>
 
