@@ -633,3 +633,17 @@ i.is-vak { background: var(--ff-munt-zacht); border: 1px solid var(--ff-munt-don
 .ff-wdw-cat { display: grid; grid-template-columns: minmax(0, 9rem) 1fr auto; align-items: center; gap: 8px; }
 @media (prefers-reduced-motion: reduce) { .ff-wdw-balk span, .ff-wdw-druk-kolom span { transition: none; } }
 .ff-field input[type="time"] { min-width: 6.5rem; }
+
+/* Slapen en werken */
+.ff-av-zzz text { animation: ff-zzz 3.2s ease-in-out infinite; }
+.ff-av-zzz text:nth-child(2) { animation-delay: .5s; }
+.ff-av-zzz text:nth-child(3) { animation-delay: 1s; }
+@keyframes ff-zzz { 0% { opacity: 0; transform: translate(0, 6px); } 30% { opacity: .9; } 100% { opacity: 0; transform: translate(6px, -10px); } }
+.ff-av-lift { animation: ff-lift 1.6s ease-in-out infinite; transform-box: fill-box; }
+@keyframes ff-lift { 0%, 100% { transform: translateY(14px); } 50% { transform: translateY(-6px); } }
+.ff-av-scherm { animation: ff-scherm 2.4s ease-in-out infinite; }
+@keyframes ff-scherm { 0%, 100% { opacity: 1; } 50% { opacity: .75; } }
+.ff-room.is-iedereen-slaapt::after { content: ""; position: absolute; inset: 0; background: rgba(12, 14, 40, .38); pointer-events: none; border-radius: inherit; }
+.ff-tag-mood.is-slaap { color: var(--ff-lucht-donker); }
+.ff-tag-mood.is-werk { color: var(--ff-koraal-knop); font-weight: 800; }
+@media (prefers-reduced-motion: reduce) { .ff-av-zzz text, .ff-av-lift, .ff-av-scherm { animation: none; } .ff-av-zzz text { opacity: .8; } }

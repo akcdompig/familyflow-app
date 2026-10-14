@@ -1,7 +1,8 @@
 "use client";
 
-import type { CSSProperties, ReactNode } from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { Avatar } from "@/components/avatar/Avatar";
+import { slaapt, werktNu } from "@/lib/status";
 import { Icon } from "@/components/ui/Icon";
 import { MoodFace } from "@/components/ui/MoodFace";
 import { actions } from "@/lib/store";
@@ -34,6 +35,13 @@ export function Huiskamer({ state, me, onCheckIn, onOpenMember, onTalkTips, onWh
   const front = state.members.filter((m) => m.role !== "ouder");
   const tod = timeOfDay();
   const mine = state.checkins[me.id];
+  const [, tik] = useState(0);
+  useEffect(() => {
+    const t = window.setInterval(() => tik((n) => n + 1), 60_000); // werk en slaap volgen de klok
+    return () => window.clearInterval(t);
+  }, []);
+  const ikSlaap = slaapt(state, me.id);
+  const iedereenSlaapt = state.members.filter((m) => m.joined !== false).every((m) => slaapt(state, m.id));
 
   return (
     <div className="ff-screen">
@@ -47,7 +55,7 @@ export function Huiskamer({ state, me, onCheckIn, onOpenMember, onTalkTips, onWh
         </button>
       </header>
 
-      <section className={`ff-room ff-room-${tod}`} aria-label="De huiskamer met het hele gezin">
+      <section className={`ff-room ff-room-${iedereenSlaapt ? "nacht" : tod}${iedereenSlaapt ? " is-iedereen-slaapt" : ""}`} aria-label="De huiskamer met het hele gezin">
         <div className="ff-room-wall" />
         <div className="ff-room-window"><div className="ff-room-sky" /><div className="ff-room-sun" /></div>
         <div className="ff-room-frame" />
@@ -73,12 +81,19 @@ export function Huiskamer({ state, me, onCheckIn, onOpenMember, onTalkTips, onWh
       <div className="ff-mybar">
         <MoodFace mood={mine ? (mine.rest ? "rust" : mine.mood) : 3} size={36} />
         <div className="ff-mybar-t">
-          <b>Hoe voel jij je?</b>
-          <span className="ff-small ff-muted">{mine ? `${moodLabel(mine)} · ${timeLabel(mine.at)}` : "Nog niet ingecheckt"}</span>
+          <b>{ikSlaap ? "Welterusten" : "Hoe voel jij je?"}</b>
+          <span className="ff-small ff-muted">{ikSlaap ? "Check morgen in, dan word je wakker" : mine ? `${moodLabel(mine)} · ${timeLabel(mine.at)}` : "Nog niet ingecheckt"}</span>
         </div>
-        <button className="ff-btn ff-btn-dark" onClick={onCheckIn}>
-          {mine ? "Wijzig" : "Inchecken"}
-        </button>
+        {ikSlaap ? (
+          <button className="ff-btn ff-btn-dark" onClick={onCheckIn}>Ik ben wakker</button>
+        ) : (
+          <>
+            {tod !== "dag" && <button className="ff-btn ff-btn-ghost" onClick={() => actions.goToSleep(me.id)}>Slapen</button>}
+            <button className="ff-btn ff-btn-dark" onClick={onCheckIn}>
+              {mine ? "Wijzig" : "Inchecken"}
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
@@ -89,18 +104,20 @@ function Row({ members, row, state, me, onOpen }: { members: Member[]; row: "ach
     <>
       {members.map((m, i) => {
         const c = state.checkins[m.id];
+        const zzz = slaapt(state, m.id);
+        const werk = zzz ? null : werktNu(state, m.id);
         const spread = Math.min(46, 92 / members.length);
         const left = 50 + (i - (members.length - 1) / 2) * spread;
         const style = { left: `${left}%` } as CSSProperties;
         return (
-          <button key={m.id} className={`ff-slot ff-slot-${row} ${m.joined === false ? "is-away" : ""}`} style={style} onClick={() => onOpen(m.id)} aria-label={`${m.name}: ${moodLabel(c)}`}>
-            <Avatar config={m.avatar} expression={expressionFor(c)} energy={m.energy} size={row === "voor" ? 112 : 100} seed={i * 3 + (row === "voor" ? 2 : 0)} label={m.name} />
+          <button key={m.id} className={`ff-slot ff-slot-${row} ${m.joined === false ? "is-away" : ""}`} style={style} onClick={() => onOpen(m.id)} aria-label={`${m.name}: ${zzz ? "slaapt" : werk ? `aan het werk bij ${werk.werk.naam}` : moodLabel(c)}`}>
+            <Avatar config={m.avatar} expression={zzz ? "slaap" : expressionFor(c)} bezig={werk?.look} energy={m.energy} size={row === "voor" ? 112 : 100} seed={i * 3 + (row === "voor" ? 2 : 0)} label={m.name} />
             <span className="ff-tag">
               <span className="ff-tag-name">
                 <span className="ff-dot" style={{ background: moodDot(c) }} />
                 {m.id === me.id ? "Jij" : m.name}
               </span>
-              <span className="ff-tag-mood">{m.joined === false ? "nog niet aangemeld" : moodLabel(c)}</span>
+              <span className={`ff-tag-mood${zzz ? " is-slaap" : werk ? " is-werk" : ""}`}>{m.joined === false ? "nog niet aangemeld" : zzz ? "slaapt" : werk ? `aan het werk · ${werk.werk.naam}` : moodLabel(c)}</span>
             </span>
             {c?.wantsTalk && <span className="ff-bubble" aria-hidden="true"><Icon name="chat" size={16} /></span>}
           </button>

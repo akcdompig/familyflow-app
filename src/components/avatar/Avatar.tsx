@@ -1,7 +1,7 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import type { AvatarConfig } from "@/lib/types";
+import type { AvatarConfig, Bezig } from "@/lib/types";
 import type { Expression } from "@/lib/mood";
 import { shade, skinColor } from "./parts";
 
@@ -17,18 +17,20 @@ interface Props {
   label?: string;
   /** Alleen het hoofd tonen (voor kleine rondjes). */
   headOnly?: boolean;
+  /** Aan het werk: andere spullen of kleding. */
+  bezig?: Bezig;
 }
 
 const INK = "#23204a";
 
-export function Avatar({ config, expression = "neutraal", energy = 0.5, size = 140, animate = true, seed = 0, label, headOnly = false }: Props) {
+export function Avatar({ config, expression = "neutraal", energy = 0.5, size = 140, animate = true, seed = 0, label, headOnly = false, bezig }: Props) {
   const skin = skinColor(config.skin);
   const skinDark = shade(skin, -22);
   const hair = config.hairColor;
   const has = (e: string) => config.extras.includes(e as never);
   const browColor = config.hair === "kaal" || config.hair === "hoofddoek" ? shade(skin, -70) : hair;
-  const glow = energy >= 0.75 && !headOnly && !["verdrietig", "rust", "moe", "boos"].includes(expression);
-  const mode = !animate ? "" : expression === "rust" ? "ff-av-breathe" : "ff-av-bob";
+  const glow = energy >= 0.75 && !headOnly && !bezig && !["verdrietig", "rust", "moe", "boos", "slaap"].includes(expression);
+  const mode = !animate ? "" : expression === "rust" || expression === "slaap" ? "ff-av-breathe" : "ff-av-bob";
   const bob = expression === "verdrietig" || expression === "moe" ? 5.2 : energy >= 0.75 ? 2.4 : 3.6;
   const style = {
     "--bob": `${bob}s`,
@@ -130,6 +132,14 @@ export function Avatar({ config, expression = "neutraal", energy = 0.5, size = 1
             </g>
           )}
         </g>
+        {bezig && expression !== "slaap" && <Werkspullen bezig={bezig} headOnly={headOnly} animate={animate} />}
+        {expression === "slaap" && (
+          <g className={animate ? "ff-av-zzz" : undefined} fill={INK} fontFamily="var(--ff-font-speels, sans-serif)" fontWeight="700">
+            <text x="118" y="44" fontSize="22">Z</text>
+            <text x="134" y="26" fontSize="16">z</text>
+            <text x="146" y="12" fontSize="12">z</text>
+          </g>
+        )}
       </svg>
     </span>
   );
@@ -262,6 +272,14 @@ function Face({ expression, brow, bearded }: { expression: Expression; brow: str
           <path d="M74 104 Q80 107 86 104" {...stroke} stroke={mouthStroke} />
         </g>
       );
+    case "slaap":
+      return (
+        <g>
+          {brows("M59 76 Q66 75 72 76 M88 76 Q94 75 101 76")}
+          <path d="M60 87 Q66 92 72 87 M88 87 Q94 92 100 87" {...stroke} />
+          <ellipse cx="80" cy="105" rx="3.5" ry="4" fill="#7a2e2e" opacity=".8" />
+        </g>
+      );
     case "moe":
       return (
         <g>
@@ -276,6 +294,64 @@ function Face({ expression, brow, bearded }: { expression: Expression; brow: str
           {brows("M59 74 Q66 72 72 74 M88 74 Q94 72 101 74")}
           {openEyes}
           <path d="M72 104 H88" {...stroke} stroke={mouthStroke} />
+        </g>
+      );
+  }
+}
+
+/** Spullen en kleding tijdens werk. Getekend over de avatar heen (viewBox 0 0 160 200). */
+function Werkspullen({ bezig, headOnly, animate }: { bezig: Bezig; headOnly: boolean; animate: boolean }) {
+  switch (bezig) {
+    case "bouw":
+      return (
+        <g>
+          <path d="M36 58 C36 22 124 22 124 58 Z" fill="#ffc845" stroke="#d99a00" strokeWidth="2" />
+          <path d="M78 26 h4 v32 h-4 z" fill="#e8ad10" />
+          <path d="M28 58 H132" stroke="#d99a00" strokeWidth="6" strokeLinecap="round" />
+          {!headOnly && <path d="M40 150 L120 150 L126 200 L34 200 Z" fill="#ff8a1f" opacity=".9" />}
+          {!headOnly && <path d="M38 170 H122 M36 186 H124" stroke="#f4f4f4" strokeWidth="5" />}
+        </g>
+      );
+    case "keuken":
+      return (
+        <g>
+          <path d="M44 52 C30 40 40 16 58 22 C62 6 98 6 102 22 C120 16 130 40 116 52 Z" fill="#ffffff" stroke="#e4dcd3" strokeWidth="2" />
+          <rect x="46" y="48" width="68" height="12" rx="3" fill="#ffffff" stroke="#e4dcd3" strokeWidth="2" />
+          {!headOnly && <path d="M58 142 L102 142 L108 200 L52 200 Z" fill="#ffffff" stroke="#e4dcd3" strokeWidth="2" />}
+        </g>
+      );
+    case "sport":
+      return (
+        <g>
+          <rect x="38" y="60" width="84" height="9" rx="4" fill="#ff6b57" />
+          {!headOnly && (
+            <g className={animate ? "ff-av-lift" : undefined}>
+              <path d="M140 150 V120" stroke="#3b3a4a" strokeWidth="4" strokeLinecap="round" />
+              <rect x="131" y="112" width="18" height="9" rx="3" fill="#3b3a4a" />
+              <rect x="131" y="148" width="18" height="9" rx="3" fill="#3b3a4a" />
+            </g>
+          )}
+        </g>
+      );
+    case "security":
+      return headOnly ? (
+        <path d="M120 84 c8 2 8 14 2 18 l-4 14" stroke="#23204a" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+      ) : (
+        <g>
+          <path d="M30 200 C32 162 50 146 66 141 L74 200 Z M130 200 C128 162 110 146 94 141 L86 200 Z" fill="#1f1f2b" />
+          <path d="M34 182 L72 182 M88 182 L126 182" stroke="#ffd23f" strokeWidth="4" />
+          <text x="80" y="196" textAnchor="middle" fontSize="9" fontWeight="800" fill="#ffffff" letterSpacing="1">SECURITY</text>
+          <path d="M120 84 c8 2 8 14 2 18 l-4 14" stroke="#23204a" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+        </g>
+      );
+    default:
+      // Kantoor: laptop voor zich
+      return headOnly ? null : (
+        <g>
+          <path d="M46 150 H114 L110 182 H50 Z" fill="#c9cfdf" stroke="#9aa3b8" strokeWidth="2" />
+          <rect x="52" y="154" width="56" height="22" rx="2" fill="#8fd3ff" className={animate ? "ff-av-scherm" : undefined} />
+          <path d="M60 160 H86 M60 166 H98 M60 171 H78" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" opacity=".85" />
+          <path d="M38 184 H122 L116 192 H44 Z" fill="#aeb6c9" />
         </g>
       );
   }

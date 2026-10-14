@@ -157,7 +157,12 @@ export interface WerkItem {
   tot?: string; // "17:00"
   /** Hier verdient iemand geld mee (geen bedragen). */
   inkomen?: boolean;
+  /** Hoe de avatar eruitziet tijdens dit werk. */
+  look?: Bezig;
 }
+
+/** Wat de avatar aan het doen is tijdens werk. */
+export type Bezig = "kantoor" | "sport" | "security" | "bouw" | "keuken";
 export interface Dienst {
   id: string;
   member: string;
@@ -214,6 +219,8 @@ export interface FamilyState {
   /** Werk per gezinslid, en losse diensten (security, heitoezicht, …). */
   werk?: Record<string, WerkItem[]>;
   diensten?: Dienst[];
+  /** Wie slaapt: sleep[lid] = tijd van welterusten. Inchecken maakt je wakker. */
+  sleep?: Record<string, string>;
   /** Bevestigd door een ouder: checked[datum][taakId] = id van de ouder. */
   checked?: Record<string, Record<string, string>>;
 }

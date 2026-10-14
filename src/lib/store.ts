@@ -217,7 +217,21 @@ export const actions = {
       const first = !(s.history[memberId] ?? []).some((h) => isToday(h.at));
       const hist = [...(s.history[memberId] ?? []), { mood: c.mood, rest: c.rest, at }].slice(-60);
       const xp = first && isKid(s, memberId) ? addXp(s, memberId, XP.inchecken) : s.xp;
-      return { ...s, xp, checkins: { ...s.checkins, [memberId]: { ...c, at } }, history: { ...s.history, [memberId]: hist } };
+      const sleep = { ...(s.sleep ?? {}) };
+      delete sleep[memberId]; // inchecken = wakker
+      return { ...s, xp, sleep, checkins: { ...s.checkins, [memberId]: { ...c, at } }, history: { ...s.history, [memberId]: hist } };
+    });
+  },
+  /** Welterusten: de avatar gaat slapen tot de volgende check-in. */
+  goToSleep(memberId: string) {
+    const at = new Date().toISOString();
+    update((s) => ({ ...s, sleep: { ...(s.sleep ?? {}), [memberId]: at } }));
+  },
+  wakeUp(memberId: string) {
+    update((s) => {
+      const sleep = { ...(s.sleep ?? {}) };
+      delete sleep[memberId];
+      return { ...s, sleep };
     });
   },
   saveAvatar(memberId: string, avatar: AvatarConfig, name?: string) {

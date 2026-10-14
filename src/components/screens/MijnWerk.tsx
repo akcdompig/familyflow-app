@@ -5,6 +5,7 @@ import { Icon } from "@/components/ui/Icon";
 import { iso } from "@/lib/planner";
 import { duur, uren } from "@/lib/stats";
 import { actions } from "@/lib/store";
+import { lookVoor } from "@/lib/status";
 import type { FamilyState, Member, WerkItem } from "@/lib/types";
 
 const DAG = ["zo", "ma", "di", "wo", "do", "vr", "za"];
@@ -83,6 +84,14 @@ export function MijnWerk({ state, me, onClose, onToast }: { state: FamilyState; 
             </>
           )}
           {bewerk.soort === "wisselend" && <p className="ff-small ff-muted">Na het opslaan voeg je hier je diensten toe, met datum en tijden.</p>}
+          <div className="ff-stack-s">
+            <span className="ff-eyebrow">Wat zie je in de huiskamer tijdens dit werk?</span>
+            <div className="ff-chips">
+              {([["kantoor", "Achter de laptop"], ["sport", "Sportoutfit en dumbbell"], ["security", "Security-hesje"], ["bouw", "Bouwhelm"], ["keuken", "Koksmuts"]] as const).map(([k, l]) => (
+                <button key={k} className="ff-chip" aria-pressed={lookVoor(bewerk) === k} onClick={() => set({ look: k })}>{l}</button>
+              ))}
+            </div>
+          </div>
           <button className="ff-chip ff-chip-l" aria-pressed={!!bewerk.inkomen} onClick={() => set({ inkomen: !bewerk.inkomen })}>Hier verdien ik mee</button>
           <button className="ff-btn ff-btn-primary ff-btn-wide" onClick={() => opslaan(bewerk)}>Opslaan</button>
           {lijst.some((x) => x.id === bewerk.id) && (

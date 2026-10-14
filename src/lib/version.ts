@@ -1,2 +1,2 @@
-export const VERSION = "1.6";
-export const VERSION_NAME = "Werk en roosters";
+export const VERSION = "1.7";
+export const VERSION_NAME = "Slapen en werken";

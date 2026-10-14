@@ -23,6 +23,7 @@ import { Sheet } from "@/components/ui/Sheet";
 import { expressionFor, moodLabel, timeLabel } from "@/lib/mood";
 import { actions, isLive, lastSyncError, useFamily } from "@/lib/store";
 import { syncSomtoday } from "@/lib/somtoday";
+import { slaapt, werktNu } from "@/lib/status";
 import { energyOf, isDone, tasksFor } from "@/lib/tasks";
 import type { FamilyState } from "@/lib/types";
 
@@ -201,9 +202,9 @@ export function FamilyFlowApp() {
       <Sheet open={!!sel} onClose={closeMember} title={sel ? sel.name : "Gezinslid"}>
         {sel && (
           <div className="ff-member">
-            <Avatar config={sel.avatar} expression={expressionFor(selCi)} energy={sel.energy} size={130} seed={5} label={sel.name} />
+            <Avatar config={sel.avatar} expression={slaapt(state, sel.id) ? "slaap" : expressionFor(selCi)} bezig={slaapt(state, sel.id) ? undefined : werktNu(state, sel.id)?.look} energy={sel.energy} size={130} seed={5} label={sel.name} />
             <h2 className="ff-h2">{sel.id === me.id ? "Jij" : sel.name}</h2>
-            <p className="ff-muted">{selCi ? `${moodLabel(selCi)} · ${timeLabel(selCi.at)}` : "Nog niet ingecheckt"}</p>
+            <p className="ff-muted">{slaapt(state, sel.id) ? "Slaapt" : werktNu(state, sel.id) ? `Aan het werk · ${werktNu(state, sel.id)!.werk.naam}` : selCi ? `${moodLabel(selCi)} · ${timeLabel(selCi.at)}` : "Nog niet ingecheckt"}</p>
             {canSeeDetails && selCi && selCi.topics.length > 0 && (
               <div className="ff-chips ff-center-row">
                 {selCi.topics.map((t) => (
@@ -222,6 +223,13 @@ export function FamilyFlowApp() {
               <button className="ff-btn ff-btn-dark ff-btn-wide" onClick={() => { closeMember(); setTips(sel.id); }}>
                 Hoe begin ik het gesprek?
               </button>
+            )}
+            {(me.role === "ouder" || sel.id === me.id) && (
+              slaapt(state, sel.id) ? (
+                <button className="ff-btn ff-btn-ghost ff-btn-wide" onClick={() => { actions.wakeUp(sel.id); setToast(`${sel.id === me.id ? "Je bent" : `${sel.name} is`} wakker`); }}>Is wakker</button>
+              ) : (
+                <button className="ff-btn ff-btn-ghost ff-btn-wide" onClick={() => { actions.goToSleep(sel.id); closeMember(); setToast(sel.id === me.id ? "Welterusten" : `${sel.name} slaapt`); }}>Gaat slapen</button>
+              )
             )}
             {sel.id === me.id && (
               <button className="ff-btn ff-btn-ghost ff-btn-wide" onClick={() => { closeMember(); setScreen("maker"); }}>

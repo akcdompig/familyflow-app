@@ -11,7 +11,7 @@ export const MOODS: { level: MoodLevel; label: string; color: string }[] = [
 export const TOPICS = ["School", "Thuis", "Vrienden", "Broer of zus", "Online", "Slaap", "Sport", "Iets anders"];
 
 /** Uitdrukking op het gezicht van de avatar. */
-export type Expression = "blij" | "goed" | "neutraal" | "verdrietig" | "boos" | "rust" | "moe";
+export type Expression = "blij" | "goed" | "neutraal" | "verdrietig" | "boos" | "rust" | "moe" | "slaap";
 
 export function expressionFor(c: CheckIn | undefined): Expression {
   if (!c) return "neutraal";
