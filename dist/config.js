@@ -1,2 +1,2 @@
-// Vul hier je Supabase-gegevens in (Project Settings › API). Leeg = demo.
-window.FF_CONFIG = { url: "", anonKey: "" };
+// Supabase-gegevens (Project Settings › API). De anon key is openbaar; de beveiliging zit in de database-regels.
+window.FF_CONFIG = { url: "https://guzeciiqqbvwlsrcysib.supabase.co", anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd1emVjaWlxcWJ2d2xzcmN5c2liIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5Nzg2MTUsImV4cCI6MjEwNzU1NDYxNX0.gF-INQMyrlh8as93pzG0ILs43YAXUSzIUSpRhJC8yz4" };
