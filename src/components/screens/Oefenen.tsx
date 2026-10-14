@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Flo } from "@/components/ui/Flo";
 import { Icon } from "@/components/ui/Icon";
 import { CoachList } from "@/components/screens/Coach";
+import { COACH_SCENARIOS, SKILLS } from "@/lib/coach";
 import { RustKeuze, StoplichtKiezer } from "@/components/ui/Stoplicht";
 import { SCENARIOS, type Scenario } from "@/lib/scenarios";
 import { actions } from "@/lib/store";
@@ -44,49 +45,73 @@ export function Oefenen({ state, me, onToast, onCalm, onRuzie, onCoach, onCoachN
     <div className="ff-screen">
       <header className="ff-top">
         <div>
-          <div className="ff-eyebrow">{isParent ? "Zo oefenen de kinderen" : `${played.length} van ${SCENARIOS.length} geoefend`}</div>
+          <div className="ff-eyebrow">{isParent ? "Zo oefenen de kinderen" : "Leren omgaan met boosheid en ruzie"}</div>
           <h1 className="ff-h1">Oefenen</h1>
         </div>
         <Flo size={52} />
       </header>
 
-      <button className="ff-angry" onClick={onCalm}>
-        <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path d="M12 2c1 4 6 6 6 12a6 6 0 0 1-12 0c0-3 2-5 2-8 1 1 2 2 3 2 0-2 0-4 1-6z" fill="currentColor" /></svg>
-        <span><b>Ik word boos</b><br /><span className="ff-small">Open je rustplan</span></span>
-      </button>
-
-      {!isParent && state.members.filter((m) => m.role !== "ouder").length > 1 && (
-        <button className="ff-angry ff-ruzie-btn" onClick={onRuzie}>
-          <Icon name="chat" size={26} />
-          <span><b>Ruzie oplossen</b><br /><span className="ff-small">Samen uitpraten, stap voor stap</span></span>
+      <div className="ff-two-btns">
+        <button className="ff-bigbtn ff-bigbtn-rust" onClick={onCalm}>
+          <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><path d="M12 2c1 4 6 6 6 12a6 6 0 0 1-12 0c0-3 2-5 2-8 1 1 2 2 3 2 0-2 0-4 1-6z" fill="currentColor" /></svg>
+          <b>Ik word boos</b>
+          <span className="ff-small">Eerst rust</span>
         </button>
-      )}
+        <button className="ff-bigbtn ff-bigbtn-ruzie" onClick={onCoachNu}>
+          <Icon name="chat" size={30} />
+          <b>Ruzie of gedoe</b>
+          <span className="ff-small">Hulp, stap voor stap</span>
+        </button>
+      </div>
 
-      <button className="ff-coachnu-btn" onClick={onCoachNu}>
-        <Icon name="chat" size={22} />
-        <span className="ff-grow"><b>Nu een ruzie of gedoe?</b><br /><span className="ff-small">Stap voor stap hulp, voor nu meteen</span></span>
-        <span className="ff-chev"><Icon name="terug" size={18} /></span>
-      </button>
+      <Aanrader state={state} me={me} onPlay={onCoach} />
 
-      <CoachList state={state} me={me} onPlay={onCoach} />
-
-      <h2 className="ff-h2">Korte oefeningen</h2>
-      <p className="ff-muted ff-small">Oefen wat je doet als het lastig wordt. Er is geen fout antwoord. {isParent ? "Probeer ze zelf ook eens." : "Je krijgt XP voor het oefenen."}</p>
-
-      <ul className="ff-levels">
-        {SCENARIOS.map((s) => {
-          const done = played.includes(s.id);
-          return (
-            <li key={s.id}>
-              <button className={`ff-level ${done ? "is-done" : ""}`} onClick={() => setPlay(s)}>
-                <span className="ff-level-n">{done ? <Icon name="check" size={20} /> : s.id}</span>
-                <span className="ff-level-t"><b>{s.title}</b><span className="ff-small ff-muted">{s.where}{!isParent && !done ? " · +20 XP" : ""}</span></span>
-              </button>
-            </li>
-          );
-        })}
-      </ul>
+      <details className="ff-card ff-details">
+        <summary><b>Alle oefeningen</b></summary>
+        <CoachList state={state} me={me} onPlay={onCoach} />
+        <details className="ff-details ff-more">
+          <summary><b>Meer korte oefeningen</b></summary>
+          <ul className="ff-levels">
+            {SCENARIOS.map((sc) => {
+              const done = played.includes(sc.id);
+              return (
+                <li key={sc.id}>
+                  <button className={`ff-level ${done ? "is-done" : ""}`} onClick={() => setPlay(sc)}>
+                    <span className="ff-level-n">{done ? <Icon name="check" size={20} /> : sc.id}</span>
+                    <span className="ff-level-t"><b>{sc.title}</b><span className="ff-small ff-muted">{sc.where}</span></span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </details>
+      </details>
     </div>
+  );
+}
+
+/** Eén duidelijke volgende stap: een opdracht van coach of ouder, of het eerstvolgende scenario. */
+function Aanrader({ state, me, onPlay }: { state: FamilyState; me: Member; onPlay: (id: string) => void }) {
+  const runs = state.coach?.[me.id] ?? [];
+  const solved = new Set(runs.filter((r) => r.outcome === "opgelost").map((r) => r.id));
+  const quest = (state.quests ?? []).find((q) => q.member === me.id && !q.done && q.scenario);
+  const next = quest?.scenario ? COACH_SCENARIOS.find((c) => c.id === quest.scenario) : COACH_SCENARIOS.find((c) => !solved.has(c.id));
+  if (!next) {
+    return (
+      <section className="ff-card ff-aanrader ff-stack-s">
+        <span className="ff-eyebrow">Jouw doel</span>
+        <b className="ff-h2">Alles een keer goed opgelost!</b>
+        <p className="ff-small">Nu het echte werk: probeer het thuis. Je opdrachten staan bij Taken.</p>
+      </section>
+    );
+  }
+  return (
+    <button className="ff-card ff-aanrader" onClick={() => onPlay(next.id)}>
+      <span className="ff-eyebrow">{quest ? "Opdracht voor jou" : "Volgende oefening"} · {SKILLS[next.skill].label}</span>
+      <b className="ff-h2">{next.title}</b>
+      <span className="ff-small">{solved.size} van {COACH_SCENARIOS.length} goed opgelost · 3 minuten</span>
+      <span className="ff-btn ff-btn-primary">Start</span>
+    </button>
   );
 }
 

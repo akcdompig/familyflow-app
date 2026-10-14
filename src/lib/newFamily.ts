@@ -85,6 +85,7 @@ export function newFamily(familyName: string, people: NewMember[]): FamilyState 
     coach: {},
     afspraken: [],
     coachLog: [],
+    startedAt: new Date().toISOString(),
   };
 }
 

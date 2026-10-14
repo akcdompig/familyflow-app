@@ -165,6 +165,10 @@ export interface FamilyState {
   coach?: Record<string, CoachRun[]>;
   /** Gezinsafspraken uit de coach of het overleg. */
   afspraken?: { id: string; text: string; at: string; by: string; scenario?: string }[];
+  /** Startdatum van het gezin, voor stap voor stap vrijspelen. Leeg = alles aan. */
+  startedAt?: string;
+  /** Ouders hebben alles meteen aangezet. */
+  allesAan?: boolean;
   /** Alleen dat de coach gebruikt is, niet wat er gebeurde. */
   coachLog?: { at: string; by: string; scenario: string; licht: "rood" | "oranje" | "groen" | "veilig" }[];
 }

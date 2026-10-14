@@ -10,6 +10,7 @@ import { actions, isLive } from "@/lib/store";
 import { phoneTime } from "@/lib/tasks";
 import { Uitnodigen } from "@/components/screens/Uitnodigen";
 import { SKILLS, scenarioById, type SkillId } from "@/lib/coach";
+import { features } from "@/lib/unlock";
 import type { FamilyState, Member, Meeting } from "@/lib/types";
 
 const GOAL_COLORS = ["#d9442f", "#3cc6a0", "#6c8cff"];
@@ -27,6 +28,7 @@ export function Gezin({ state, me, onToast, onOefenen, onCoachNu }: Props) {
   const [editGoals, setEditGoals] = useState(false);
   const [showInvites, setShowInvites] = useState(false);
   const away = state.members.filter((m) => m.joined === false);
+  const feat = features(state);
   const name = (id: string) => state.members.find((m) => m.id === id)?.name ?? "?";
 
   if (meeting) return <Overleg state={state} onClose={() => setMeeting(false)} onToast={onToast} />;
@@ -54,6 +56,16 @@ export function Gezin({ state, me, onToast, onOefenen, onCoachNu }: Props) {
         </section>
       )}
 
+      {!feat.overleg && (
+        <section className="ff-card ff-stack-s ff-teaser">
+          <span className="ff-eyebrow">Week {feat.week} van de start</span>
+          <b>Eerst wennen aan inchecken en taken.</b>
+          <p className="ff-small">Vanaf week 3 komen het gezinsoverleg en de voortgang erbij{feat.week < 2 ? ", en in week 2 het oefenen voor de kinderen" : ""}. Zo krijgt niemand alles tegelijk.</p>
+          <button className="ff-link" style={{ justifySelf: "start" }} onClick={() => { actions.setAllesAan(true); onToast("Alles staat aan"); }}>Toch nu alles aanzetten</button>
+        </section>
+      )}
+
+      {feat.overleg && (
       <section className="ff-card ff-meet-cta">
         <div>
           <b className="ff-h2">Gezinsoverleg</b>
@@ -61,6 +73,7 @@ export function Gezin({ state, me, onToast, onOefenen, onCoachNu }: Props) {
         </div>
         <button className="ff-btn ff-btn-primary" onClick={() => setMeeting(true)}>Starten</button>
       </section>
+      )}
 
       {open.length > 0 && (
         <section className="ff-stack-s" aria-label="Ruzies die nog lopen">
@@ -87,6 +100,7 @@ export function Gezin({ state, me, onToast, onOefenen, onCoachNu }: Props) {
         </section>
       )}
 
+      {feat.overleg && (<>
       <section className="ff-card ff-stack">
         <div className="ff-row" style={{ justifyContent: "space-between" }}>
           <h2 className="ff-h2">Zo gaan we vooruit</h2>
@@ -133,6 +147,7 @@ export function Gezin({ state, me, onToast, onOefenen, onCoachNu }: Props) {
       </section>
 
       <Vaardigheden state={state} />
+      </>)}
 
       <section className="ff-card ff-stack-s">
         <div className="ff-row" style={{ justifyContent: "space-between" }}>
@@ -194,10 +209,10 @@ export function Gezin({ state, me, onToast, onOefenen, onCoachNu }: Props) {
         <button className="ff-link" onClick={() => setShowInvites((v) => !v)}>{showInvites ? "Uitnodigen verbergen" : "Nieuwe telefoon? Nieuwe code maken"}</button>
       )}
 
-      <button className="ff-level" onClick={onOefenen}>
+      {feat.oefenen && <button className="ff-level" onClick={onOefenen}>
         <span className="ff-choice-l"><Icon name="oefenen" size={18} /></span>
         <span className="ff-grow"><b>Oefeningen bekijken</b><br /><span className="ff-small ff-muted">Zie wat de kinderen oefenen, en probeer ze zelf</span></span>
-      </button>
+      </button>}
 
       {me.role === "ouder" && (
         <p className="ff-small ff-muted ff-center">Alleen ouders zien deze pagina.</p>

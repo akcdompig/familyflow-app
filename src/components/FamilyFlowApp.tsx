@@ -14,6 +14,7 @@ import { Ruzie } from "@/components/screens/Ruzie";
 import { CoachPlay } from "@/components/screens/Coach";
 import { CoachNu } from "@/components/screens/CoachNu";
 import { scenarioById } from "@/lib/coach";
+import { features } from "@/lib/unlock";
 import { Oefenen } from "@/components/screens/Oefenen";
 import { Taken } from "@/components/screens/Taken";
 import { Icon, type IconName } from "@/components/ui/Icon";
@@ -116,7 +117,8 @@ export function FamilyFlowApp() {
   const isParent = me.role === "ouder";
   const live = isLive();
   const syncErr = lastSyncError();
-  const nav = isParent ? NAV_OUDER : NAV_KIND;
+  const feat = features(state);
+  const nav = isParent ? NAV_OUDER : NAV_KIND.filter((n) => n.id !== "oefenen" || feat.oefenen);
   const hot = state.conflicts.filter((c) => c.status === "hulp" || (c.physical && c.status !== "opgelost")).length;
   const view: Screen = screen === "gezin" && !isParent ? "huis" : screen;
 
@@ -131,6 +133,7 @@ export function FamilyFlowApp() {
           me={me}
           startId={coachNu || undefined}
           onClose={() => setCoachNu(null)}
+          onSamen={() => { setCoachNu(null); setRuzie(""); }}
           onToast={setToast}
           onPractice={(id) => {
             setCoachNu(null);
@@ -159,7 +162,7 @@ export function FamilyFlowApp() {
       )}
 
       {screen !== "maker" && ruzie === null && coach === null && coachNu === null && (
-        <nav className="ff-nav" aria-label="Hoofdmenu">
+        <nav className="ff-nav" aria-label="Hoofdmenu" style={{ gridTemplateColumns: `repeat(${nav.length}, minmax(0, 1fr))` }}>
           {nav.map((n) => {
             const cur = screen === n.id || (n.id === "gezin" && screen === "oefenen" && isParent);
             return (

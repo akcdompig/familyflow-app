@@ -360,6 +360,11 @@ export const actions = {
     const at = new Date().toISOString();
     update((s) => ({ ...s, coachLog: [...(s.coachLog ?? []), { at, by, scenario, licht }].slice(-200) }));
   },
+  /** Alles meteen aan, of stap voor stap vrijspelen (start dan vandaag als er nog geen startdatum is). */
+  setAllesAan(on: boolean) {
+    const now = new Date().toISOString();
+    update((s) => ({ ...s, allesAan: on, startedAt: on ? s.startedAt : s.startedAt ?? now }));
+  },
   /** Alleen demo. */
   reset() {
     if (live) return;

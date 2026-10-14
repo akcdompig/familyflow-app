@@ -559,3 +559,15 @@ a.ff-btn { text-decoration: none; display: inline-flex; align-items: center; jus
 .ff-afspraak { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--ff-zon-zacht); border-radius: var(--ff-rond-s); font-weight: 700; font-size: 0.95rem; }
 a.ff-btn-ghost { color: var(--ff-tekst); }
 a.ff-btn-whatsapp { color: #fff; }
+
+/* ---------- Eenvoudiger: twee grote knoppen, één aanrader ---------- */
+.ff-two-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ff-bigbtn { border: 0; border-radius: var(--ff-rond-l); padding: 18px 12px 14px; display: grid; justify-items: center; gap: 4px; text-align: center; line-height: 1.2; min-height: 132px; align-content: center; }
+.ff-bigbtn b { font-size: 1.05rem; }
+.ff-bigbtn-rust { background: var(--ff-koraal-zacht); color: #b83521; }
+.ff-bigbtn-ruzie { background: var(--ff-lucht-zacht); color: var(--ff-lucht-donker); }
+.ff-aanrader { width: 100%; border: 0; text-align: left; display: grid; gap: 6px; background: var(--ff-nacht); color: #fff; }
+.ff-aanrader .ff-eyebrow { color: rgba(255,255,255,0.75); }
+.ff-aanrader .ff-btn { justify-self: start; margin-top: 4px; }
+.ff-more { margin-top: 8px; }
+.ff-teaser { background: var(--ff-zon-zacht); }

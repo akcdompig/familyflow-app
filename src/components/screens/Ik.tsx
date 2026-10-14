@@ -6,6 +6,7 @@ import { PLAN_OPTIONS } from "@/lib/scenarios";
 import * as cloud from "@/lib/cloud";
 import { actions, isLive, stopLive } from "@/lib/store";
 import { levelOf } from "@/lib/tasks";
+import { features } from "@/lib/unlock";
 import type { CalmPlan, FamilyState, Member } from "@/lib/types";
 
 const EMPTY: CalmPlan = { signals: [], helps: [], needs: [], place: "" };
@@ -60,6 +61,13 @@ export function Ik({ state, me, onEditAvatar, onCalm, onToast }: { state: Family
               </li>
             ))}
           </ul>
+        </section>
+      )}
+
+      {!isParent && !features(state).oefenen && (
+        <section className="ff-card ff-teaser ff-stack-s">
+          <b>Volgende week komt er iets nieuws bij</b>
+          <p className="ff-small">Dan kun je oefenen met lastige situaties en zie je wat jouw keuzes doen. Eerst: elke dag inchecken en je taken.</p>
         </section>
       )}
 
@@ -118,6 +126,10 @@ export function Ik({ state, me, onEditAvatar, onCalm, onToast }: { state: Family
             >
               <span />
             </button>
+          </div>
+          <div className="ff-row" style={{ justifyContent: "space-between", flexWrap: "nowrap" }}>
+            <div><b>Stap voor stap</b><br /><span className="ff-small ff-muted">Week 1: inchecken en taken. Week 2: oefenen. Week 3: gezinsoverleg. Hulp bij ruzie is er altijd.</span></div>
+            <button className="ff-switch" role="switch" aria-checked={!!state.startedAt && !state.allesAan} aria-label="Stap voor stap vrijspelen" onClick={() => actions.setAllesAan(!!state.startedAt && !state.allesAan)}><span /></button>
           </div>
           {state.pet.has && (
             <div className="ff-stack-s">
