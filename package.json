@@ -11,9 +11,9 @@
     "preview:build": "node preview/build.mjs"
   },
   "dependencies": {
-    "next": "15.5.4",
-    "react": "19.1.1",
-    "react-dom": "19.1.1"
+    "next": "15.5.18",
+    "react": "19.1.7",
+    "react-dom": "19.1.7"
   },
   "devDependencies": {
     "@types/node": "22.18.6",
