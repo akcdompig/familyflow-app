@@ -7,6 +7,8 @@ import * as cloud from "@/lib/cloud";
 import { actions, isLive, stopLive } from "@/lib/store";
 import { levelOf } from "@/lib/tasks";
 import { features } from "@/lib/unlock";
+import { VERSION, VERSION_NAME } from "@/lib/version";
+import { useState } from "react";
 import type { CalmPlan, FamilyState, Member } from "@/lib/types";
 
 const EMPTY: CalmPlan = { signals: [], helps: [], needs: [], place: "" };
@@ -153,7 +155,8 @@ export function Ik({ state, me, onEditAvatar, onCalm, onToast }: { state: Family
         <p className="ff-small"><b>Broers en zussen</b> zien alleen je gezichtje en je taken.</p>
         <p className="ff-small"><b>Alleen jij</b> ziet je antwoorden bij het oefenen.</p>
         <p className="ff-small"><b>Ruzie oplossen:</b> de ander ziet jouw kant. Je ouders zien alleen dat er een ruzie was en hoe het is opgelost.</p>
-        <p className="ff-small"><b>School en coach</b> zien alleen een weekkleur en wat ze zelf klaarzetten. Nooit je stemming of gesprekken.</p>
+        {state.pros.length > 0 && <p className="ff-small"><b>School en coach</b> zien alleen een weekkleur en wat ze zelf klaarzetten. Nooit je stemming of gesprekken.</p>}
+        <p className="ff-small"><b>De coach</b> bewaart niet wat er bij een ruzie gebeurde. Alleen een afspraak, als jullie die zelf opslaan.</p>
       </section>
 
       {isParent && state.pros.length > 0 && (
@@ -202,6 +205,8 @@ export function Ik({ state, me, onEditAvatar, onCalm, onToast }: { state: Family
           </button>
         </section>
       )}
+      <Feedback me={me} onToast={onToast} />
+      <p className="ff-small ff-muted ff-center">FamilyFlow {VERSION} · {VERSION_NAME}</p>
     </div>
   );
 }
@@ -216,5 +221,30 @@ function PlanGroup({ label, options, chosen, onToggle }: { label: string; option
         ))}
       </div>
     </div>
+  );
+}
+
+/** Pilot: zeg kort wat je ervan vindt. Ouders lezen het bij Gezin. */
+function Feedback({ me, onToast }: { me: Member; onToast: (m: string) => void }) {
+  const [vibe, setVibe] = useState<"fijn" | "lastig" | null>(null);
+  const [text, setText] = useState("");
+  return (
+    <section className="ff-card ff-stack-s">
+      <h2 className="ff-h2">Wat vind je van de app?</h2>
+      <p className="ff-small ff-muted">We testen de app een week. Jouw mening helpt om hem beter te maken.</p>
+      <div className="ff-two-btns">
+        <button className="ff-chip ff-chip-l" aria-pressed={vibe === "fijn"} onClick={() => setVibe("fijn")}>👍 Fijn</button>
+        <button className="ff-chip ff-chip-l" aria-pressed={vibe === "lastig"} onClick={() => setVibe("lastig")}>👎 Lastig</button>
+      </div>
+      {vibe && (
+        <>
+          <label className="ff-field">
+            <span className="ff-eyebrow">{vibe === "fijn" ? "Wat vind je fijn?" : "Wat is lastig of stom?"} (mag leeg)</span>
+            <textarea className="ff-text" rows={2} maxLength={300} value={text} onChange={(e) => setText(e.target.value)} />
+          </label>
+          <button className="ff-btn ff-btn-dark" onClick={() => { actions.addFeedback(me.id, vibe, text); setVibe(null); setText(""); onToast("Dank je! Je mening is doorgegeven"); }}>Versturen</button>
+        </>
+      )}
+    </section>
   );
 }

@@ -1,6 +1,6 @@
 {
   "name": "familyflow-app",
-  "version": "0.1.0",
+  "version": "1.1.0",
   "private": true,
   "description": "FamilyFlow: één app voor het hele gezin. Huiskamer met levende avatars, check-ins, rustplan en coaching.",
   "scripts": {

@@ -179,6 +179,18 @@ export function Gezin({ state, me, onToast, onOefenen, onCoachNu }: Props) {
         </section>
       )}
 
+      {(state.feedback ?? []).length > 0 && (
+        <section className="ff-card ff-stack-s">
+          <h2 className="ff-h2">Feedback van de pilot</h2>
+          {(state.feedback ?? []).slice().reverse().slice(0, 12).map((f) => (
+            <div key={f.id} className="ff-planrow">
+              <b>{f.vibe === "fijn" ? "👍" : "👎"} {name(f.by)} <span className="ff-small ff-muted">· {timeLabel(f.at)}</span></b>
+              {f.text && <span className="ff-small">{f.text}</span>}
+            </div>
+          ))}
+        </section>
+      )}
+
       <section className="ff-card ff-stack">
         <div>
           <h2 className="ff-h2">Beloningen</h2>

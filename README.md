@@ -1,4 +1,4 @@
-# FamilyFlow
+# FamilyFlow (versie 1.1, pilotweek)
 
 Minder strijd, meer samen. Eén app voor het hele gezin: een huiskamer met levende avatars, check-ins, een rustplan, ruzies oplossen en coaching. Later ook voor school en wijkteam.
 

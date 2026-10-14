@@ -360,6 +360,10 @@ export const actions = {
     const at = new Date().toISOString();
     update((s) => ({ ...s, coachLog: [...(s.coachLog ?? []), { at, by, scenario, licht }].slice(-200) }));
   },
+  addFeedback(by: string, vibe: "fijn" | "lastig", text: string) {
+    const f = { id: newId("f"), by, at: new Date().toISOString(), vibe, text: text.trim().slice(0, 300) };
+    update((s) => ({ ...s, feedback: [...(s.feedback ?? []), f].slice(-100) }));
+  },
   /** Alles meteen aan, of stap voor stap vrijspelen (start dan vandaag als er nog geen startdatum is). */
   setAllesAan(on: boolean) {
     const now = new Date().toISOString();
