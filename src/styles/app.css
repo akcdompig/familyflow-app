@@ -606,3 +606,29 @@ i.is-huiswerk { background: var(--ff-lucht); }
 i.is-blok { background: var(--ff-nacht); opacity: 0.55; }
 i.is-klaar { background: var(--ff-munt-donker); }
 i.is-vak { background: var(--ff-munt-zacht); border: 1px solid var(--ff-munt-donker); }
+
+/* Wie doet wat */
+.ff-wdw-tip { background: var(--ff-zon-zacht); display: grid; gap: 4px; }
+.ff-wdw-tip p { margin: 0; font-weight: 600; }
+.ff-wdw-rij { display: flex; align-items: center; gap: 10px; width: 100%; padding: 6px 0; background: none; border: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.ff-wdw-rij-t { flex: 1; min-width: 0; display: grid; gap: 6px; }
+.ff-wdw-balk { display: flex; height: 14px; border-radius: var(--ff-rond-pil); background: var(--ff-grond); overflow: hidden; }
+.ff-wdw-balk span { height: 100%; transition: width 700ms cubic-bezier(.2,.8,.2,1); }
+.ff-wdw-balk span.is-werk { background-image: repeating-linear-gradient(45deg, transparent 0 4px, rgba(255,255,255,.25) 4px 8px) !important; }
+.ff-wdw-donut-wrap { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.ff-wdw-donut { width: 140px; height: 140px; flex: 0 0 auto; }
+.ff-wdw-lijst { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.ff-wdw-lijst li { display: flex; align-items: center; gap: 8px; }
+.ff-wdw-lijst i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.ff-wdw-druk, .ff-wdw-trend { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; align-items: end; }
+.ff-wdw-trend { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.ff-wdw-druk-dag { display: grid; justify-items: center; gap: 4px; }
+.ff-wdw-druk-kolom { height: 110px; width: 100%; display: flex; align-items: flex-end; justify-content: center; gap: 2px; background: var(--ff-grond); border-radius: var(--ff-rond-s); padding: 3px; }
+.ff-wdw-druk-kolom span { flex: 1; max-width: 12px; border-radius: 3px 3px 0 0; transition: height 700ms cubic-bezier(.2,.8,.2,1); min-height: 0; }
+.ff-wdw-druk-kolom.is-stapel { flex-direction: column-reverse; align-items: stretch; justify-content: flex-start; gap: 0; }
+.ff-wdw-druk-kolom.is-stapel span { flex: 0 0 auto; max-width: none; border-radius: 0; }
+.ff-wdw-cijfers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.ff-wdw-cijfers div { display: grid; background: var(--ff-grond); border-radius: var(--ff-rond-s); padding: 10px 12px; }
+.ff-wdw-cijfers b { font-size: var(--ff-t-l); font-variant-numeric: tabular-nums; }
+.ff-wdw-cat { display: grid; grid-template-columns: minmax(0, 9rem) 1fr auto; align-items: center; gap: 8px; }
+@media (prefers-reduced-motion: reduce) { .ff-wdw-balk span, .ff-wdw-druk-kolom span { transition: none; } }

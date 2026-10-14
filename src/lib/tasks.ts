@@ -13,7 +13,8 @@ export function assigneeFor(state: FamilyState, task: Task, date = todayKey()): 
 }
 
 export function tasksToday(state: FamilyState, date = todayKey()): Task[] {
-  return state.tasks.filter((t) => (t.pet ? state.pet.has : true) && (t.repeat === "dagelijks" || t.date === date));
+  const wd = new Date(date + "T12:00:00").getDay();
+  return state.tasks.filter((t) => (t.pet ? state.pet.has : true) && (t.repeat === "dagelijks" || (t.repeat === "wekelijks" && !!t.days?.includes(wd)) || t.date === date));
 }
 
 /** Valt deze dag in een schoolvakantie van dit kind? */
@@ -22,7 +23,7 @@ export function vakantieOp(state: FamilyState, memberId: string, date = todayKey
 }
 
 /** Vaste schooltaak, zoals "Huiswerk maken" elke dag. Niet voor losse leerblokjes. */
-export const isSchoolTaak = (t: Task) => t.repeat === "dagelijks" && !t.study && (t.icon === "pen" || /huiswerk|leren|school/i.test(t.title));
+export const isSchoolTaak = (t: Task) => t.repeat !== "eenmalig" && !t.study && (t.icon === "pen" || /huiswerk|leren|school/i.test(t.title));
 
 export function tasksFor(state: FamilyState, memberId: string, date = todayKey()): Task[] {
   const vrij = !!vakantieOp(state, memberId, date);

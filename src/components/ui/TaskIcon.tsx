@@ -13,6 +13,11 @@ const P: Record<T, string> = {
   zon: "M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5",
   kar: "M3 4h2l2.5 11h10L20 7H6.5M9 20a1 1 0 1 0 0-.1M17 20a1 1 0 1 0 0-.1",
   post: "M3 6h18v12H3zM3 7l9 6 9-6",
+  werk: "M3 8h18v11H3zM8 8V5h8v3M3 13h18",
+  was: "M8 3l-5 3 2 4 3-1v12h8V9l3 1 2-4-5-3a4 4 0 0 1-8 0z",
+  schoon: "M14 3l7 7M17 6l-8 8M9 14l-5 5 1 1 5-5M7 12l5 5",
+  kook: "M4 11h14v6a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3zM18 13h3M8 7c0-1 1-1 1-2M12 7c0-1 1-1 1-2",
+  auto: "M5 16V11l2-5h10l2 5v5M3 16h18M7 19a1.5 1.5 0 1 0 0-.1M17 19a1.5 1.5 0 1 0 0-.1M5 11h14",
 };
 
 export function TaskIcon({ name, size = 24 }: { name: T; size?: number }) {

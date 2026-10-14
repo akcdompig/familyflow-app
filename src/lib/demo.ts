@@ -16,6 +16,27 @@ const at = (h: number, m: number) => {
 };
 const today = () => new Date().toLocaleDateString("sv-SE");
 
+/** Twee weken voorbeeld-afvinkwerk, voor "Wie doet wat". */
+function demoDone(d: string): FamilyState["done"] {
+  const out: FamilyState["done"] = { [d]: { t1: "k1", t4: "k2", t9: "p2" } };
+  for (let n = 1; n <= 14; n++) {
+    const dt = new Date();
+    dt.setDate(dt.getDate() - n);
+    const key = dt.toLocaleDateString("sv-SE");
+    const wd = dt.getDay();
+    const day: Record<string, string> = { t13: n % 4 === 0 ? "p2" : "p1" };
+    if (n % 2) day.t1 = "k1";
+    if (n % 3) day.t4 = "k2";
+    if (n % 2 === 0) day.t6 = n % 4 ? "k1" : "p1";
+    if (n % 3 === 0) day.t7 = "k2";
+    if ([1, 2, 4, 5].includes(wd)) day.t14 = "p1";
+    if ([1, 2, 3, 4].includes(wd)) day.t15 = "p2";
+    if ([3, 6].includes(wd)) { day.t16 = "p2"; day.t17 = "p1"; }
+    out[key] = day;
+  }
+  return out;
+}
+
 /** Voorbeeldgezin. Alle namen en gegevens zijn verzonnen. */
 export function demoFamily(): FamilyState {
   const d = today();
@@ -48,8 +69,13 @@ export function demoFamily(): FamilyState {
       { id: "t10", title: "Mail naar mentor over rapportgesprek", icon: "post", assignee: "p1", repeat: "eenmalig", date: d, xp: 0, createdBy: "p1" },
       { id: "t11", title: "Wiskunde hoofdstuk 4 oefenen", icon: "boek", assignee: "k1", repeat: "eenmalig", date: d, xp: 15, createdBy: "school", source: "school" },
       { id: "t12", title: "Geef elk kind vandaag één compliment", icon: "zon", assignee: "p2", repeat: "dagelijks", xp: 0, createdBy: "zorg", source: "zorg" },
+      { id: "t13", title: "Koken", icon: "kook", assignee: "p1", repeat: "dagelijks", xp: 0, cat: "huishouden", min: 45, createdBy: "p1" },
+      { id: "t14", title: "Werkdag", icon: "werk", assignee: "p1", repeat: "wekelijks", days: [1, 2, 4, 5], xp: 0, cat: "werk", min: 540, createdBy: "p1" },
+      { id: "t15", title: "Werkdag", icon: "werk", assignee: "p2", repeat: "wekelijks", days: [1, 2, 3, 4], xp: 0, cat: "werk", min: 480, createdBy: "p2" },
+      { id: "t16", title: "Was ophangen", icon: "was", assignee: "p2", repeat: "wekelijks", days: [3, 6], xp: 0, cat: "huishouden", min: 15, createdBy: "p2" },
+      { id: "t17", title: "Stofzuigen", icon: "schoon", assignee: "p1", repeat: "wekelijks", days: [3, 6], xp: 0, cat: "huishouden", min: 30, createdBy: "p1" },
     ],
-    done: { [d]: { t1: "k1", t4: "k2", t9: "p2" } },
+    done: demoDone(d),
     xp: { k1: 185, k2: 90 },
     reading: { k2: [{ at: daysAgo(1, 21), min: 20, book: "De Gelukkige Klas" }] },
     played: { k1: [1, 2], k2: [] },

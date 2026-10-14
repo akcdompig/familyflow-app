@@ -9,6 +9,7 @@ import { calmThisWeek, conflictsLastWeek, conflictsThisWeek, goalSeries, thermSe
 import { actions, isLive } from "@/lib/store";
 import { phoneTime } from "@/lib/tasks";
 import { Uitnodigen } from "@/components/screens/Uitnodigen";
+import { WieDoetWat } from "@/components/screens/WieDoetWat";
 import { SKILLS, scenarioById, type SkillId } from "@/lib/coach";
 import { features } from "@/lib/unlock";
 import { levelOf, xpForLevel, XP_UITLEG } from "@/lib/xp";
@@ -26,6 +27,7 @@ interface Props {
 
 export function Gezin({ state, me, onToast, onOefenen, onCoachNu }: Props) {
   const [meeting, setMeeting] = useState(false);
+  const [wdw, setWdw] = useState(false);
   const [editGoals, setEditGoals] = useState(false);
   const [showInvites, setShowInvites] = useState(false);
   const away = state.members.filter((m) => m.joined === false);
@@ -33,6 +35,7 @@ export function Gezin({ state, me, onToast, onOefenen, onCoachNu }: Props) {
   const name = (id: string) => state.members.find((m) => m.id === id)?.name ?? "?";
 
   if (meeting) return <Overleg state={state} onClose={() => setMeeting(false)} onToast={onToast} />;
+  if (wdw) return <WieDoetWat state={state} onClose={() => setWdw(false)} />;
 
   const now = conflictsThisWeek(state);
   const before = conflictsLastWeek(state);
@@ -60,6 +63,11 @@ export function Gezin({ state, me, onToast, onOefenen, onCoachNu }: Props) {
           <Uitnodigen state={state} me={me} onToast={onToast} />
         </section>
       )}
+
+      <button className="ff-level" onClick={() => setWdw(true)}>
+        <span className="ff-choice-l"><Icon name="gezin" size={18} /></span>
+        <span className="ff-grow"><b>Wie doet wat</b><br /><span className="ff-small ff-muted">Verdeling van taken en tijd in huis, per week en maand</span></span>
+      </button>
 
       {!feat.overleg && (
         <section className="ff-card ff-stack-s ff-teaser">

@@ -8,9 +8,10 @@ import { Sheet } from "@/components/ui/Sheet";
 import { TaskIcon } from "@/components/ui/TaskIcon";
 import { expressionFor } from "@/lib/mood";
 import { actions } from "@/lib/store";
-import { wachtOpOuder, isDone, TASK_SUGGESTIONS, tasksFor } from "@/lib/tasks";
+import { wachtOpOuder, isDone, tasksFor } from "@/lib/tasks";
+import { CATALOGUS, CATS } from "@/lib/catalog";
 import { dayLabel } from "@/lib/planner";
-import type { FamilyState, Member, Task } from "@/lib/types";
+import type { FamilyState, Member, TaakCat, Task } from "@/lib/types";
 
 interface Props {
   state: FamilyState;
@@ -161,7 +162,7 @@ function TaskRow({ task, state, who, canToggle, onToggle, onConfirm, showXp, onR
   const doer = state.done[new Date().toLocaleDateString("sv-SE")]?.[task.id];
   const sub = task.study
     ? `${task.study.min} min · ${task.study.kind === "huiswerk" || task.study.kind === "inleveren" ? "inleveren" : "toets"} ${dayLabel(task.study.deadline)}`
-    : task.assignee === "beurt" ? "om de beurt" : task.repeat === "dagelijks" ? "elke dag" : "alleen vandaag";
+    : task.assignee === "beurt" ? "om de beurt" : task.repeat === "dagelijks" ? "elke dag" : task.repeat === "wekelijks" ? (task.days ?? []).map((d) => ["zo", "ma", "di", "wo", "do", "vr", "za"][d]).join(", ") : "alleen vandaag";
   const doneBy = done && doer && doer !== who ? ` · gedaan door ${state.members.find((m) => m.id === doer)?.name}` : "";
   return (
     <li className={`ff-task ${done ? "is-done" : ""}`}>
@@ -193,8 +194,12 @@ function AddTaskSheet({ open, onClose, state, me, onAdded }: { open: boolean; on
   const [icon, setIcon] = useState<Task["icon"]>("huis");
   const [xp, setXp] = useState(10);
   const [pet, setPet] = useState(false);
+  const [cat, setCat] = useState<TaakCat>("huishouden");
+  const [min, setMin] = useState(15);
+  const [groep, setGroep] = useState<TaakCat>("huishouden");
   const [assignee, setAssignee] = useState<string>(kids[0]?.id ?? me.id);
   const [repeat, setRepeat] = useState<Task["repeat"]>("dagelijks");
+  const [days, setDays] = useState<number[]>([]);
 
   useEffect(() => {
     if (open) {
@@ -202,38 +207,61 @@ function AddTaskSheet({ open, onClose, state, me, onAdded }: { open: boolean; on
       setIcon("huis");
       setXp(10);
       setPet(false);
+      setCat("huishouden");
+      setMin(15);
+      setGroep("huishouden");
       setAssignee(kids[0]?.id ?? me.id);
       setRepeat("dagelijks");
+      setDays([]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
+  const voorOuder = state.members.find((m) => m.id === assignee)?.role === "ouder";
   const save = () => {
-    if (!title.trim()) return;
-    actions.addTask({ title: title.trim(), icon, xp, pet, assignee, repeat, date: repeat === "eenmalig" ? new Date().toLocaleDateString("sv-SE") : undefined, createdBy: me.id });
+    if (!title.trim() || (repeat === "wekelijks" && !days.length)) return;
+    actions.addTask({
+      title: title.trim(), icon, xp: voorOuder ? 0 : xp, pet, assignee, repeat, cat, min,
+      days: repeat === "wekelijks" ? [...days].sort() : undefined,
+      date: repeat === "eenmalig" ? new Date().toLocaleDateString("sv-SE") : undefined,
+      createdBy: me.id,
+    });
     onAdded(assignee === "beurt" ? "Taak toegevoegd, om de beurt" : `Taak toegevoegd voor ${state.members.find((m) => m.id === assignee)?.name}`);
     onClose();
   };
+  const groepen: TaakCat[] = ["huishouden", "kinderen", "school", "sport", "werk", "overig"];
+  const lijst = CATALOGUS.filter((c) => c.cat === groep && (c.pet ? state.pet.has : true));
 
   return (
     <Sheet open={open} onClose={onClose} title="Taak toevoegen">
       <h2 className="ff-h2">Taak toevoegen</h2>
       <div className="ff-chips">
-        {TASK_SUGGESTIONS.filter((s) => (s.pet ? state.pet.has : true)).map((s) => (
-          <button key={s.title} className="ff-chip" aria-pressed={title === s.title} onClick={() => { setTitle(s.title); setIcon(s.icon); setXp(s.xp); setPet(!!s.pet); }}>
-            {s.title}
+        {groepen.map((g) => <button key={g} className="ff-chip" aria-pressed={groep === g} onClick={() => setGroep(g)}>{CATS[g].label.split(" ")[0]}</button>)}
+      </div>
+      <div className="ff-chips">
+        {lijst.map((c) => (
+          <button key={c.title} className="ff-chip" aria-pressed={title === c.title} onClick={() => { setTitle(c.title); setIcon(c.icon); setXp(c.xp); setPet(!!c.pet); setCat(c.cat); setMin(c.min); }}>
+            {c.title}
           </button>
         ))}
       </div>
       <label className="ff-field">
         <span className="ff-eyebrow">Of typ zelf</span>
-        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Bijv. fiets in de schuur zetten" maxLength={60} />
+        <input value={title} onChange={(e) => { setTitle(e.target.value); setCat(groep); }} placeholder="Bijv. fiets in de schuur zetten" maxLength={60} />
       </label>
+      <div className="ff-stack-s">
+        <span className="ff-eyebrow">Hoe lang duurt het ongeveer?</span>
+        <div className="ff-chips">
+          {[...new Set([5, 15, 30, 45, 60, 120, min])].sort((a, b) => a - b).map((m) => (
+            <button key={m} className="ff-chip" aria-pressed={min === m} onClick={() => setMin(m)}>{m >= 60 ? `${Math.round((m / 60) * 10) / 10} uur` : `${m} min`}</button>
+          ))}
+        </div>
+      </div>
       <div className="ff-stack-s">
         <span className="ff-eyebrow">Voor wie?</span>
         <div className="ff-chips">
           {state.members.map((m) => (
-            <button key={m.id} className="ff-chip" aria-pressed={assignee === m.id} onClick={() => setAssignee(m.id)}>{m.name}</button>
+            <button key={m.id} className="ff-chip" aria-pressed={assignee === m.id} onClick={() => setAssignee(m.id)}>{m.id === me.id ? "Ik" : m.name}</button>
           ))}
           {kids.length > 1 && (
             <button className="ff-chip" aria-pressed={assignee === "beurt"} onClick={() => setAssignee("beurt")}>Om de beurt</button>
@@ -244,10 +272,18 @@ function AddTaskSheet({ open, onClose, state, me, onAdded }: { open: boolean; on
         <span className="ff-eyebrow">Hoe vaak?</span>
         <div className="ff-chips">
           <button className="ff-chip" aria-pressed={repeat === "dagelijks"} onClick={() => setRepeat("dagelijks")}>Elke dag</button>
+          <button className="ff-chip" aria-pressed={repeat === "wekelijks"} onClick={() => setRepeat("wekelijks")}>Vaste dagen</button>
           <button className="ff-chip" aria-pressed={repeat === "eenmalig"} onClick={() => setRepeat("eenmalig")}>Alleen vandaag</button>
         </div>
+        {repeat === "wekelijks" && (
+          <div className="ff-chips">
+            {[1, 2, 3, 4, 5, 6, 0].map((d) => (
+              <button key={d} className="ff-chip" aria-pressed={days.includes(d)} onClick={() => setDays((l) => (l.includes(d) ? l.filter((x) => x !== d) : [...l, d]))}>{["zo", "ma", "di", "wo", "do", "vr", "za"][d]}</button>
+            ))}
+          </div>
+        )}
       </div>
-      <button className="ff-btn ff-btn-primary ff-btn-wide" onClick={save} disabled={!title.trim()}>
+      <button className="ff-btn ff-btn-primary ff-btn-wide" onClick={save} disabled={!title.trim() || (repeat === "wekelijks" && !days.length)}>
         Toevoegen
       </button>
     </Sheet>

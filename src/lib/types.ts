@@ -41,7 +41,10 @@ export interface Member {
   email?: string;
 }
 
-export type TaskIcon = "pen" | "boek" | "sport" | "huis" | "bord" | "afval" | "poot" | "bed" | "telefoon" | "zon" | "kar" | "post";
+export type TaskIcon = "pen" | "boek" | "sport" | "huis" | "bord" | "afval" | "poot" | "bed" | "telefoon" | "zon" | "kar" | "post" | "werk" | "was" | "schoon" | "kook" | "auto";
+
+/** Soort taak, voor het overzicht "Wie doet wat". */
+export type TaakCat = "huishouden" | "kinderen" | "school" | "sport" | "werk" | "overig";
 
 /** Een lid-id, of "beurt": rouleert elke dag tussen de kinderen. */
 export type Assignee = string;
@@ -51,9 +54,14 @@ export interface Task {
   title: string;
   icon: TaskIcon;
   assignee: Assignee;
-  repeat: "dagelijks" | "eenmalig";
+  repeat: "dagelijks" | "eenmalig" | "wekelijks";
   /** Alleen bij eenmalig: de dag (YYYY-MM-DD). */
   date?: string;
+  /** Alleen bij wekelijks: op welke dagen (0 = zondag … 6 = zaterdag). */
+  days?: number[];
+  /** Soort taak en hoe lang hij ongeveer duurt, voor "Wie doet wat". */
+  cat?: TaakCat;
+  min?: number;
   xp: number;
   /** Alleen tonen als het gezin een huisdier heeft. */
   pet?: boolean;
