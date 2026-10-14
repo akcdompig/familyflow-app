@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import * as cloud from "@/lib/cloud";
-import { finishLink, koppelMetWachtwoord, ontkoppel, somStatus, startLink, syncSomtoday, zoekScholen, type School, type SomStatus } from "@/lib/somtoday";
+import { addDays, iso, type SomItem } from "@/lib/planner";
+import { finishLink, koppelMetWachtwoord, ontkoppel, planSomtoday, somStatus, startLink, syncSomtoday, zoekScholen, type School, type SomStatus } from "@/lib/somtoday";
+import { actions, snapshot } from "@/lib/store";
 import type { Member } from "@/lib/types";
 
 type Stap = "uit" | "school" | "login" | "link";
@@ -12,6 +14,19 @@ const tijd = (s: string) => {
   const vandaag = d.toDateString() === new Date().toDateString();
   return vandaag ? `vandaag ${d.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" })}` : d.toLocaleDateString("nl-NL", { weekday: "short", day: "numeric", month: "short" });
 };
+
+/** Voorbeeldweek zoals Somtoday hem zou aanleveren, voor de demo. */
+function voorbeeldWeek(): SomItem[] {
+  const t = iso(new Date());
+  const r = Math.random().toString(36).slice(2, 6);
+  return [
+    { sid: `demo-${r}-1`, date: addDays(t, 6), vak: "wiskunde", type: "TOETS", onderwerp: "Toets H3", omschrijving: "Paragraaf 3.1 t/m 3.4", gemaakt: false },
+    { sid: `demo-${r}-2`, date: addDays(t, 1), vak: "Engelse taal", type: "HUISWERK", onderwerp: "Unit 2", omschrijving: "Maak opdracht 4 t/m 8", gemaakt: false },
+    { sid: `demo-${r}-3`, date: addDays(t, 4), vak: "geschiedenis", type: "HUISWERK", onderwerp: "Hoofdstuk 2", omschrijving: "Leer paragraaf 2.1", gemaakt: false },
+    { sid: `demo-${r}-4`, date: addDays(t, 3), vak: "nederlands", type: "HUISWERK", onderwerp: "Woordenlijst", omschrijving: "Leer de woordjes van les 5", gemaakt: false },
+    { sid: `demo-${r}-5`, date: addDays(t, 12), vak: "biologie", type: "GROTE_TOETS", onderwerp: "Proefwerk H4", omschrijving: "Cellen en organen", gemaakt: false },
+  ];
+}
 
 /** Somtoday koppelen voor één kind. Daarna komen toetsen en huiswerk vanzelf in de planning. */
 export function SomtodayKaart({ who, me, onToast }: { who: Member; me: Member; onToast: (m: string) => void }) {
@@ -71,7 +86,17 @@ export function SomtodayKaart({ who, me, onToast }: { who: Member; me: Member; o
     return (
       <section className="ff-card ff-stack-s">
         <b>Somtoday</b>
-        <p className="ff-small ff-muted">In de echte app kun je Somtoday koppelen. Dan komen toetsen en huiswerk vanzelf in de planning.</p>
+        <p className="ff-small ff-muted">In de echte app koppel je Somtoday één keer. Daarna komen toetsen en huiswerk vanzelf in de planning. Probeer hier hoe dat eruitziet met een voorbeeldweek.</p>
+        <button
+          className="ff-btn ff-btn-primary ff-btn-wide"
+          onClick={() => {
+            const p = planSomtoday(snapshot(), who.id, voorbeeldWeek(), me.id);
+            actions.addSomtoday(who.id, p.taken, p.sids);
+            onToast(`Uit Somtoday: ${p.toetsen} toetsen en ${p.huiswerk} huiswerk ingepland voor ${who.name}`);
+          }}
+        >
+          Doe alsof Somtoday een week stuurt
+        </button>
       </section>
     );
   }
