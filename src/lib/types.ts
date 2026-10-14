@@ -61,7 +61,7 @@ export interface Task {
   /** Gezet door school of zorg. */
   source?: ProKind;
   /** Leerblok uit de leerplanner. */
-  study?: { subject: string; kind: string; deadline: string; part: number; of: number; min: number; /** Id uit Somtoday, als het daar vandaan komt. */ sid?: string; note?: string };
+  study?: { subject: string; kind: string; deadline: string; part: number; of: number; min: number; /** Id uit Somtoday, als het daar vandaan komt. */ sid?: string; note?: string; /** Een ouder bevestigt dit blokje (overhoren). */ ouder?: boolean };
 }
 
 export interface CalmPlan {
@@ -180,4 +180,8 @@ export interface FamilyState {
   coachLog?: { at: string; by: string; scenario: string; licht: "rood" | "oranje" | "groen" | "veilig" }[];
   /** Somtoday per kind: welke items al zijn ingepland (ook als ze daarna zijn weggehaald) en wanneer het laatst is opgehaald. */
   somtoday?: Record<string, { at: string; seen: string[] }>;
+  /** Schoolvakanties per kind (uit Somtoday). Dan geen schooltaken. */
+  vakanties?: Record<string, { naam: string; van: string; tot: string }[]>;
+  /** Bevestigd door een ouder: checked[datum][taakId] = id van de ouder. */
+  checked?: Record<string, Record<string, string>>;
 }

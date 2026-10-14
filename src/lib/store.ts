@@ -239,9 +239,45 @@ export const actions = {
       const doer = wasDone ? day[task.id] : memberId;
       if (wasDone) delete day[task.id];
       else day[task.id] = memberId;
-      return { ...s, done: { ...s.done, [d]: day }, xp: isKid(s, doer) && task.xp ? addXp(s, doer, wasDone ? -task.xp : task.xp) : s.xp };
+      // Blokjes die een ouder bevestigt: XP pas na bevestigen.
+      const metOuder = !!task.study?.ouder && isKid(s, doer);
+      const bevestigd = !!s.checked?.[d]?.[task.id];
+      const telt = !metOuder || (wasDone && bevestigd);
+      let checked = s.checked;
+      if (wasDone && bevestigd) {
+        const c = { ...(s.checked?.[d] ?? {}) };
+        delete c[task.id];
+        checked = { ...(s.checked ?? {}), [d]: c };
+      }
+      return { ...s, checked, done: { ...s.done, [d]: day }, xp: telt && isKid(s, doer) && task.xp ? addXp(s, doer, wasDone ? -task.xp : task.xp) : s.xp };
     });
     return nowDone;
+  },
+  /** Ouder bevestigt een blokje (bijvoorbeeld na overhoren). Dan pas XP. */
+  confirmTask(task: Task, parentId: string) {
+    const d = todayKey();
+    update((s) => {
+      const doer = s.done[d]?.[task.id];
+      if (!doer || s.checked?.[d]?.[task.id]) return s;
+      return { ...s, checked: { ...(s.checked ?? {}), [d]: { ...(s.checked?.[d] ?? {}), [task.id]: parentId } }, xp: isKid(s, doer) && task.xp ? addXp(s, doer, task.xp) : s.xp };
+    });
+  },
+  /** Schoolvakanties van een kind bijwerken (alleen als er iets veranderd is). */
+  setVakanties(memberId: string, list: { naam: string; van: string; tot: string }[]) {
+    if (JSON.stringify(state.vakanties?.[memberId] ?? []) === JSON.stringify(list)) return;
+    const vrij = (d?: string) => !!d && list.some((v) => d >= v.van && d <= v.tot);
+    update((s) => {
+      // Somtoday-blokjes die in de vakantie vielen en nog niet af zijn: weghalen, zodat ze opnieuw worden ingepland.
+      const weg = s.tasks.filter((t) => t.assignee === memberId && t.study?.sid && vrij(t.date) && !s.done[t.date!]?.[t.id]);
+      const sids = new Set(weg.map((t) => t.study!.sid!));
+      const prev = s.somtoday?.[memberId];
+      return {
+        ...s,
+        vakanties: { ...(s.vakanties ?? {}), [memberId]: list },
+        tasks: s.tasks.filter((t) => !weg.includes(t) && !(t.study?.sid && sids.has(t.study.sid) && t.assignee === memberId && !s.done[t.date ?? ""]?.[t.id])),
+        somtoday: prev ? { ...(s.somtoday ?? {}), [memberId]: { ...prev, seen: prev.seen.filter((x) => !sids.has(x)) } } : s.somtoday,
+      };
+    });
   },
   addTask(t: Omit<Task, "id">) {
     const id = newId();

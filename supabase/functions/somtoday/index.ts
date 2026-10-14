@@ -253,10 +253,34 @@ export interface SomItem {
   gemaakt: boolean;
 }
 
+export interface Vakantie {
+  naam: string;
+  van: string;
+  tot: string;
+}
+
+/** Schoolvakanties van de leerling (vanaf een maand terug). */
+async function haalVakanties(api: string, at: string): Promise<Vakantie[]> {
+  try {
+    const h = { Authorization: `Bearer ${at}`, Accept: "application/json" };
+    const ll = await (await fetch(`${api}/rest/v1/leerlingen`, { headers: h })).json();
+    const id = ll?.items?.[0]?.links?.[0]?.id;
+    if (!id) return [];
+    const res = await fetch(`${api}/rest/v1/vakanties/leerling/${id}`, { headers: h });
+    if (!res.ok) return [];
+    const grens = ymd(new Date(Date.now() - 30 * 864e5));
+    return ((await res.json()).items ?? [])
+      .map((v: any) => ({ naam: String(v.naam ?? "Vakantie"), van: String(v.beginDatum ?? "").slice(0, 10), tot: String(v.eindDatum ?? "").slice(0, 10) }))
+      .filter((v: Vakantie) => v.van && v.tot && v.tot >= grens);
+  } catch {
+    return [];
+  }
+}
+
 async function haalOp(api: string, at: string): Promise<SomItem[]> {
   const nu = new Date();
   const van = ymd(nu);
-  const tot = ymd(new Date(nu.getTime() + 28 * 864e5));
+  const tot = ymd(new Date(nu.getTime() + 42 * 864e5)); // 6 weken vooruit, voor het maandoverzicht
   const p = new URLSearchParams({ begintNaOfOp: van });
   p.append("additional", "swigemaaktVinkjes");
   p.append("additional", "lesgroep");
@@ -403,7 +427,7 @@ Deno.serve(async (req) => {
 
       case "ophalen": {
         const links = await db(`somtoday_links?family_id=eq.${fam}&refresh_token=not.is.null&select=*`);
-        const res: Record<string, { items?: SomItem[]; fout?: string }> = {};
+        const res: Record<string, { items?: SomItem[]; vakanties?: Vakantie[]; fout?: string }> = {};
         // Na elkaar: elke vernieuwing levert een nieuw token op dat we meteen bewaren.
         for (const link of links) {
           try {
@@ -414,7 +438,7 @@ Deno.serve(async (req) => {
               headers: { Prefer: "return=minimal" },
               body: JSON.stringify({ refresh_token: t.refresh_token ?? link.refresh_token, api_url: api }),
             });
-            res[link.member_id] = { items: await haalOp(api, t.access_token) };
+            res[link.member_id] = { items: await haalOp(api, t.access_token), vakanties: await haalVakanties(api, t.access_token) };
             await db(`somtoday_links?${sleutel(link.member_id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ last_sync: new Date().toISOString(), last_error: null }) });
           } catch (e) {
             const fout = e instanceof Error ? e.message : String(e);

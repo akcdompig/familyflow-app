@@ -16,9 +16,21 @@ export function tasksToday(state: FamilyState, date = todayKey()): Task[] {
   return state.tasks.filter((t) => (t.pet ? state.pet.has : true) && (t.repeat === "dagelijks" || t.date === date));
 }
 
-export function tasksFor(state: FamilyState, memberId: string, date = todayKey()): Task[] {
-  return tasksToday(state, date).filter((t) => assigneeFor(state, t, date) === memberId);
+/** Valt deze dag in een schoolvakantie van dit kind? */
+export function vakantieOp(state: FamilyState, memberId: string, date = todayKey()) {
+  return (state.vakanties?.[memberId] ?? []).find((v) => date >= v.van && date <= v.tot) ?? null;
 }
+
+/** Vaste schooltaak, zoals "Huiswerk maken" elke dag. Niet voor losse leerblokjes. */
+export const isSchoolTaak = (t: Task) => t.repeat === "dagelijks" && !t.study && (t.icon === "pen" || /huiswerk|leren|school/i.test(t.title));
+
+export function tasksFor(state: FamilyState, memberId: string, date = todayKey()): Task[] {
+  const vrij = !!vakantieOp(state, memberId, date);
+  return tasksToday(state, date).filter((t) => assigneeFor(state, t, date) === memberId && !(vrij && isSchoolTaak(t)));
+}
+
+/** Wacht dit blokje nog op een ouder? */
+export const wachtOpOuder = (state: FamilyState, t: Task, date = todayKey()) => !!t.study?.ouder && isDone(state, t.id, date) && !state.checked?.[date]?.[t.id];
 
 export const isDone = (state: FamilyState, taskId: string, date = todayKey()) => !!state.done[date]?.[taskId];
 

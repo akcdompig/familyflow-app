@@ -187,7 +187,7 @@ export interface PlanResult {
  * Verdeel elk item over de dagen tot de deadline (de deadline zelf telt niet mee).
  * Maximaal maxPerDag minuten per dag, op drukke dagen maxDruk. Bestaande leerblokken tellen mee.
  */
-export function plan(items: PlanItem[], opts: { today?: string; maxPerDag?: number; maxDruk?: number; drukkeDagen?: number[]; bestaand?: { date: string; min: number }[] } = {}): PlanResult {
+export function plan(items: PlanItem[], opts: { today?: string; maxPerDag?: number; maxDruk?: number; drukkeDagen?: number[]; bestaand?: { date: string; min: number }[]; vrij?: (date: string) => boolean } = {}): PlanResult {
   const today = opts.today ?? iso(new Date());
   const maxPerDag = opts.maxPerDag ?? 60;
   const maxDruk = opts.maxDruk ?? 20;
@@ -203,7 +203,7 @@ export function plan(items: PlanItem[], opts: { today?: string; maxPerDag?: numb
     const { blokken: n, min, venster } = SOORT[it.kind];
     const days: string[] = [];
     const from = addDays(it.date, -venster) > today ? addDays(it.date, -venster) : today;
-    for (let d = from; d < it.date; d = addDays(d, 1)) days.push(d);
+    for (let d = from; d < it.date; d = addDays(d, 1)) if (!opts.vrij?.(d)) days.push(d);
     if (!days.length) {
       telaat.push(`${it.subject} (${SOORT[it.kind].label.toLowerCase()})`);
       continue;

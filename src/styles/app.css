@@ -585,3 +585,24 @@ a.ff-btn-whatsapp { color: #fff; }
 .ff-planblok.is-done { opacity: 0.55; text-decoration: line-through; }
 .ff-select { min-height: var(--ff-tik); border: 2px solid #e4dcd3; border-radius: var(--ff-rond-m); padding: 8px 12px; font: inherit; font-weight: 700; background: var(--ff-vlak); color: var(--ff-tekst); flex: 1; }
 .ff-field input[type="date"] { min-width: 0; width: 100%; }
+
+/* Maandoverzicht (leerplanner) */
+.ff-maand { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.ff-maand-kop { text-align: center; font-size: var(--ff-t-xs); font-weight: 800; color: var(--ff-tekst-zacht); text-transform: uppercase; letter-spacing: 0.04em; padding-bottom: 2px; }
+.ff-maand-dag { min-height: 54px; display: grid; grid-template-rows: auto 1fr; justify-items: center; align-items: start; gap: 4px; padding: 6px 2px; border-radius: var(--ff-rond-s); background: var(--ff-wolk); border: 2px solid transparent; font: inherit; color: var(--ff-tekst); cursor: pointer; }
+.ff-maand-dag.is-buiten { opacity: 0.38; }
+.ff-maand-dag.is-vakantie { background: var(--ff-munt-zacht); }
+.ff-maand-dag.is-vandaag .ff-maand-nr { background: var(--ff-nacht); color: #fff; border-radius: var(--ff-rond-pil); padding: 0 7px; }
+.ff-maand-dag.is-gekozen { border-color: var(--ff-koraal); }
+.ff-maand-dag:focus-visible { outline: 3px solid var(--ff-lucht); outline-offset: 1px; }
+.ff-maand-nr { font-weight: 800; font-size: var(--ff-t-s); font-variant-numeric: tabular-nums; }
+.ff-maand-stip { display: flex; flex-wrap: wrap; justify-content: center; gap: 3px; }
+.ff-maand-stip i, .ff-maand-legenda i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+.ff-maand-legenda { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.ff-maand-legenda span { display: inline-flex; align-items: center; gap: 5px; }
+i.is-toets { background: var(--ff-koraal-knop); }
+i.is-inleveren { background: var(--ff-zon); }
+i.is-huiswerk { background: var(--ff-lucht); }
+i.is-blok { background: var(--ff-nacht); opacity: 0.55; }
+i.is-klaar { background: var(--ff-munt-donker); }
+i.is-vak { background: var(--ff-munt-zacht); border: 1px solid var(--ff-munt-donker); }

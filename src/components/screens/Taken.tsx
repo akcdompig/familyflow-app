@@ -8,7 +8,7 @@ import { Sheet } from "@/components/ui/Sheet";
 import { TaskIcon } from "@/components/ui/TaskIcon";
 import { expressionFor } from "@/lib/mood";
 import { actions } from "@/lib/store";
-import { isDone, TASK_SUGGESTIONS, tasksFor } from "@/lib/tasks";
+import { wachtOpOuder, isDone, TASK_SUGGESTIONS, tasksFor } from "@/lib/tasks";
 import { dayLabel } from "@/lib/planner";
 import type { FamilyState, Member, Task } from "@/lib/types";
 
@@ -31,7 +31,7 @@ export function Taken({ state, me, onToast, onPlay, onPlanner }: Props) {
   const toggle = (t: Task, who: string) => {
     const nowDone = actions.toggleTask(t, who);
     const kid = state.members.find((m) => m.id === who)?.role !== "ouder";
-    if (nowDone) onToast(kid && t.xp ? `Top! +${t.xp} XP` : "Afgevinkt");
+    if (nowDone) onToast(t.study?.ouder && kid ? "Goed bezig! Laat je ouder je nu overhoren" : kid && t.xp ? `Top! +${t.xp} XP` : "Afgevinkt");
   };
 
   return (
@@ -97,6 +97,7 @@ export function Taken({ state, me, onToast, onPlay, onPlanner }: Props) {
                     who={m.id}
                     canToggle={m.id === me.id || isParent}
                     onToggle={() => toggle(t, m.id)}
+                    onConfirm={isParent && m.id !== me.id ? () => { actions.confirmTask(t, me.id); onToast(`Bevestigd, ${m.name} krijgt +${t.xp} XP`); } : undefined}
                     showXp={m.role !== "ouder"}
                     onRemove={isParent ? () => { actions.removeTask(t.id); onToast("Taak verwijderd"); } : undefined}
                   />
@@ -153,7 +154,9 @@ function Quests({ state, memberId, onToast, onPlay, compact = false }: { state: 
   );
 }
 
-function TaskRow({ task, state, who, canToggle, onToggle, showXp, onRemove }: { task: Task; state: FamilyState; who: string; canToggle: boolean; onToggle: () => void; showXp: boolean; onRemove?: () => void }) {
+function TaskRow({ task, state, who, canToggle, onToggle, onConfirm, showXp, onRemove }: { task: Task; state: FamilyState; who: string; canToggle: boolean; onToggle: () => void; onConfirm?: () => void; showXp: boolean; onRemove?: () => void }) {
+  const wacht = wachtOpOuder(state, task);
+  const bevestigd = !!task.study?.ouder && !!state.checked?.[new Date().toLocaleDateString("sv-SE")]?.[task.id];
   const done = isDone(state, task.id);
   const doer = state.done[new Date().toLocaleDateString("sv-SE")]?.[task.id];
   const sub = task.study
@@ -170,8 +173,10 @@ function TaskRow({ task, state, who, canToggle, onToggle, showXp, onRemove }: { 
         <span className="ff-small ff-muted">
           {task.source && <span className={`ff-src ff-src-${task.source}`}>{task.source === "school" ? "Van school" : "Van coach"}</span>}
           {sub}{doneBy}
+          {task.study?.ouder && (wacht ? " · wacht op ouder" : bevestigd ? " · bevestigd door ouder" : " · ouder overhoort")}
         </span>
       </div>
+      {wacht && onConfirm && <button className="ff-btn ff-btn-primary ff-btn-sm" onClick={onConfirm}>Bevestig</button>}
       {showXp && task.xp > 0 && <span className="ff-xp">+{task.xp}</span>}
       {onRemove && (
         <button className="ff-task-del" onClick={onRemove} aria-label={`${task.title} verwijderen`}>

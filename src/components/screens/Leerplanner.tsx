@@ -7,6 +7,7 @@ import { addDays, dayLabel, herken, iso, plan, SOORT, VAKKEN, type PlanItem, typ
 import { blokNaarTaak } from "@/lib/somtoday";
 import { isDone } from "@/lib/tasks";
 import { SomtodayKaart } from "@/components/screens/SomtodayKaart";
+import { MaandOverzicht } from "@/components/screens/MaandOverzicht";
 import type { FamilyState, Member, Task } from "@/lib/types";
 
 type Stage = "week" | "plak" | "check" | "voorstel";
@@ -20,6 +21,7 @@ export function Leerplanner({ state, me, onClose, onToast }: { state: FamilyStat
   const kids = state.members.filter((m) => m.role !== "ouder");
   const [who, setWho] = useState(me.role === "ouder" ? kids[0]?.id ?? me.id : me.id);
   const [stage, setStage] = useState<Stage>("week");
+  const [weergave, setWeergave] = useState<"week" | "maand">("week");
   const [text, setText] = useState("");
   const [items, setItems] = useState<PlanItem[]>([]);
   const [druk, setDruk] = useState<number[]>([]);
@@ -71,7 +73,11 @@ export function Leerplanner({ state, me, onClose, onToast }: { state: FamilyStat
 
       {stage === "week" && (
         <>
-          {studyTasks.length ? (
+          <div className="ff-chips">
+            <button className="ff-chip" aria-pressed={weergave === "week"} onClick={() => setWeergave("week")}>Komende dagen</button>
+            <button className="ff-chip" aria-pressed={weergave === "maand"} onClick={() => setWeergave("maand")}>Maand</button>
+          </div>
+          {weergave === "maand" ? <MaandOverzicht state={state} who={who} /> : studyTasks.length ? (
             <section className="ff-stack-s">
               {perDag(studyTasks.map((t) => ({ date: t.date!, min: t.study!.min, title: t.title, done: isDone(state, t.id, t.date) }))).map(([d, list]) => (
                 <div key={d} className="ff-card ff-planday">

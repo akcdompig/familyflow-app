@@ -44,17 +44,22 @@ export function blokNaarTaak(b: Blok, who: string, createdBy: string): Omit<Task
     date: b.date,
     xp: Math.round(b.min / 2),
     createdBy,
-    study: { subject: b.subject, kind: b.kind, deadline: b.deadline, part: b.part, of: b.of, min: b.min, sid: b.sid, note: b.note },
+    study: {
+      subject: b.subject, kind: b.kind, deadline: b.deadline, part: b.part, of: b.of, min: b.min, sid: b.sid, note: b.note,
+      // Het laatste blokje voor een toets: een ouder overhoort en bevestigt.
+      ouder: (b.kind === "toets" || b.kind === "so") && b.part === b.of && b.of > 1 ? true : undefined,
+    },
   };
 }
 
 /** Plan de nieuwe Somtoday-items van één kind in. Geeft terug wat er is toegevoegd. */
-export function planSomtoday(state: FamilyState, who: string, items: SomItem[], createdBy: string, today = iso(new Date())) {
+export function planSomtoday(state: FamilyState, who: string, items: SomItem[], createdBy: string, today = iso(new Date()), vakanties = state.vakanties?.[who] ?? []) {
   const seen = new Set(state.somtoday?.[who]?.seen ?? []);
   const nieuw = items.filter((i) => !seen.has(i.sid));
   const planItems = nieuw.map(vanSomtoday).filter((x): x is NonNullable<typeof x> => !!x);
   const bestaand = state.tasks.filter((t) => t.study && t.assignee === who && t.date && t.date >= today).map((t) => ({ date: t.date!, min: t.study!.min }));
-  const result = plan(planItems, { today, bestaand });
+  const vrij = (d: string) => vakanties.some((v) => d >= v.van && d <= v.tot);
+  const result = plan(planItems, { today, bestaand, vrij });
   const taken = result.blokken.map((b) => blokNaarTaak(b, who, createdBy));
   return {
     taken,
@@ -83,7 +88,7 @@ export async function syncSomtoday(force = false): Promise<string | null> {
   }
   bezig = true;
   try {
-    const res = await fn<Record<string, { items?: SomItem[]; fout?: string }>>({ action: "ophalen" });
+    const res = await fn<Record<string, { items?: SomItem[]; vakanties?: { naam: string; van: string; tot: string }[]; fout?: string }>>({ action: "ophalen" });
     try {
       window.localStorage.setItem(LAATST, String(Date.now()));
     } catch {
@@ -99,7 +104,8 @@ export async function syncSomtoday(force = false): Promise<string | null> {
         if (meIsParent || who === state.me) meldingen.push(`Somtoday ${naam}: ${r.fout}`);
         continue;
       }
-      const p = planSomtoday(state, who, r.items ?? [], state.me);
+      if (r.vakanties) actions.setVakanties(who, r.vakanties);
+      const p = planSomtoday(snapshot(), who, r.items ?? [], state.me, iso(new Date()), r.vakanties ?? state.vakanties?.[who] ?? []);
       if (!p.sids.length) continue;
       actions.addSomtoday(who, p.taken, p.sids);
       if (p.toetsen || p.huiswerk) {
