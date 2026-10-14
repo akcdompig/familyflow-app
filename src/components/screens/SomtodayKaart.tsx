@@ -146,6 +146,11 @@ export function SomtodayKaart({ who, me, onToast }: { who: Member; me: Member; o
               {s.naam} <span className="ff-small ff-muted">· {s.plaats}</span>
             </button>
           ))}
+          {fout && (
+            <button className="ff-btn ff-btn-ghost ff-btn-wide" onClick={() => { setFout(""); setSchool({ uuid: "", naam: "", plaats: "", sso: true }); setUrl(""); setStap("link"); }}>
+              Kies de school op de Somtoday-site
+            </button>
+          )}
           <button className="ff-link" onClick={() => setStap("uit")}>Annuleren</button>
         </>
       )}
@@ -170,7 +175,7 @@ export function SomtodayKaart({ who, me, onToast }: { who: Member; me: Member; o
 
       {stap === "link" && school && (
         <>
-          <p className="ff-small"><b>{school.naam}</b>. Dit gaat het makkelijkst op een laptop of computer.</p>
+          <p className="ff-small">{school.naam ? <><b>{school.naam}</b>. </> : "Je kiest de school straks zelf op de Somtoday-site. "}Dit gaat het makkelijkst op een laptop of computer.</p>
           <ol className="ff-list ff-small">
             <li>Open de inloglink en log in met het Somtoday-account van {me.id === who.id ? "jou" : who.name}.</li>
             <li>Daarna probeert de browser een <b>somtoday://</b>-link te openen. Dat lukt niet, dat is goed.</li>
@@ -185,7 +190,7 @@ export function SomtodayKaart({ who, me, onToast }: { who: Member; me: Member; o
           <button className="ff-btn ff-btn-primary ff-btn-wide" disabled={bezig || !url || !terug.includes("code=")} onClick={() => doe(async () => { await finishLink(who.id, terug); await klaar(); })}>
             {bezig ? "Koppelen…" : "Klaar"}
           </button>
-          {!school.sso && <button className="ff-link" onClick={() => setStap("login")}>Toch met gebruikersnaam en wachtwoord</button>}
+          {!school.sso && school.uuid && <button className="ff-link" onClick={() => setStap("login")}>Toch met gebruikersnaam en wachtwoord</button>}
         </>
       )}
 

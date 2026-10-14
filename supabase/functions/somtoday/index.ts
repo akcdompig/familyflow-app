@@ -83,7 +83,7 @@ function authorizeUrl(tenant: string, challenge: string) {
     session: "no_session",
     code_challenge: challenge,
     code_challenge_method: "S256",
-  }).forEach(([k, v]) => u.searchParams.set(k, v));
+  }).forEach(([k, v]) => v && u.searchParams.set(k, v));
   return u.toString();
 }
 
@@ -169,6 +169,30 @@ async function loginMetWachtwoord(tenant: string, username: string, password: st
   if (!code) throw new Fout("Inloggen lukte niet. Klopt de gebruikersnaam en het wachtwoord? Logt de school in via Microsoft, kies dan 'Inloggen via de link'", 400);
 
   return token({ grant_type: "authorization_code", session: "no_session", scope: "openid", client_id: CLIENT_ID, tenant_uuid: tenant, redirect_uri: REDIRECT, code, code_verifier: verifier });
+}
+
+// ---------- Scholenlijst ----------
+// Somtoday stuurt soms door met een cookie; zonder cookie blijft het rondjes draaien. Daarom zelf redirects volgen.
+let scholenCache: { at: number; data: any } | null = null;
+async function scholenLijst() {
+  if (scholenCache && Date.now() - scholenCache.at < 6 * 3600e3) return scholenCache.data;
+  const jar = new Koekjes();
+  let url = "https://servers.somtoday.nl/organisaties.json";
+  for (let i = 0; i < 10; i++) {
+    const res = await fetch(url, { redirect: "manual", headers: { "User-Agent": UA, Accept: "application/json", Cookie: jar.header } });
+    jar.neem(res);
+    const loc = res.headers.get("location");
+    if (res.status >= 300 && res.status < 400 && loc) {
+      await res.body?.cancel();
+      url = new URL(loc, url).toString();
+      continue;
+    }
+    if (!res.ok) throw new Fout(`Scholenlijst niet bereikbaar (${res.status})`, 502);
+    const data = await res.json();
+    scholenCache = { at: Date.now(), data };
+    return data;
+  }
+  throw new Fout("Scholenlijst niet bereikbaar. Kies de school op de Somtoday-site", 502);
 }
 
 // ---------- Somtoday-gegevens ----------
@@ -285,7 +309,7 @@ Deno.serve(async (req) => {
       case "scholen": {
         const q = String(body.q ?? "").toLowerCase().trim();
         if (q.length < 3) return json([]);
-        const orgs = await (await fetch("https://servers.somtoday.nl/organisaties.json")).json();
+        const orgs = await scholenLijst();
         const lijst = (orgs[0]?.instellingen ?? []).filter((s: any) => `${s.naam} ${s.plaats}`.toLowerCase().includes(q)).slice(0, 15);
         return json(lijst.map((s: any) => ({ uuid: s.uuid, naam: s.naam, plaats: s.plaats, sso: (s.oidcurls ?? []).length > 0 })));
       }
@@ -308,9 +332,9 @@ Deno.serve(async (req) => {
         await db("somtoday_links", {
           method: "POST",
           headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
-          body: JSON.stringify({ family_id: fam, member_id: body.member_id, tenant_uuid: body.tenant_uuid, school: body.school ?? null, client_id: CLIENT_ID, pending_verifier: verifier }),
+          body: JSON.stringify({ family_id: fam, member_id: body.member_id, tenant_uuid: body.tenant_uuid ?? "", school: body.school ?? null, client_id: CLIENT_ID, pending_verifier: verifier }),
         });
-        return json({ url: authorizeUrl(body.tenant_uuid, challenge) });
+        return json({ url: authorizeUrl(body.tenant_uuid ?? "", challenge) });
       }
 
       case "finishLink": {
@@ -320,7 +344,9 @@ Deno.serve(async (req) => {
         if (!link?.pending_verifier) throw new Fout("Begin opnieuw met koppelen");
         const code = codeUit(String(body.callback ?? "").trim());
         if (!code) throw new Fout("In deze link staat geen code. Kopieer de hele somtoday://-link");
-        const t = await token({ grant_type: "authorization_code", session: "no_session", scope: "openid", client_id: CLIENT_ID, tenant_uuid: link.tenant_uuid, redirect_uri: REDIRECT, code, code_verifier: link.pending_verifier });
+        const velden: Record<string, string> = { grant_type: "authorization_code", session: "no_session", scope: "openid", client_id: CLIENT_ID, redirect_uri: REDIRECT, code, code_verifier: link.pending_verifier };
+        if (link.tenant_uuid) velden.tenant_uuid = link.tenant_uuid;
+        const t = await token(velden);
         await db(`somtoday_links?${sleutel(body.member_id)}`, {
           method: "PATCH",
           headers: { Prefer: "return=minimal" },
