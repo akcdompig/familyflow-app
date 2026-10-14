@@ -10,6 +10,8 @@ import { goalSeries, thermSeries, weekSignal } from "@/lib/signals";
 import { actions } from "@/lib/store";
 import { isDone } from "@/lib/tasks";
 import type { FamilyState, Pro, Task } from "@/lib/types";
+import { COACH_SCENARIOS, SKILLS } from "@/lib/coach";
+import { Vaardigheden } from "@/components/screens/Gezin";
 
 /* Verzonnen extra gezinnen, zodat je ziet hoe een caseload eruitziet. Niet te openen. */
 const OTHERS = [
@@ -84,7 +86,8 @@ function FamilyDetail({ state, pro, onBack, onToast }: { state: FamilyState; pro
   const sent = state.messages.filter((m) => m.from === pro.id).slice().reverse();
   const targets = school ? kids : [...kids, ...parents];
 
-  const [mode, setMode] = useState<"taak" | "bericht">("taak");
+  const [mode, setMode] = useState<"taak" | "oefening" | "bericht">("taak");
+  const [scen, setScen] = useState<string>("");
   const [title, setTitle] = useState("");
   const [to, setTo] = useState<string>(kids[0]?.id ?? "");
   const [repeat, setRepeat] = useState<Task["repeat"]>("eenmalig");
@@ -135,6 +138,8 @@ function FamilyDetail({ state, pro, onBack, onToast }: { state: FamilyState; pro
         {sig.level === "oranje" && <p className="ff-small"><b>Tip:</b> {school ? "vraag de leerling na de les even hoe het gaat, of bel de ouders." : "plan een kort belmoment met de ouders in."}</p>}
       </section>
 
+      <Vaardigheden state={state} title="Vaardigheden van de kinderen" />
+
       {!school && (
         <section className="ff-card ff-stack-s">
           <h2 className="ff-h2">Gezinsdoelen</h2>
@@ -149,11 +154,39 @@ function FamilyDetail({ state, pro, onBack, onToast }: { state: FamilyState; pro
 
       <section className="ff-card ff-stack">
         <div className="ff-seg" role="tablist" aria-label="Wat wil je klaarzetten">
-          <button role="tab" aria-selected={mode === "taak"} onClick={() => setMode("taak")}>Taak meegeven</button>
-          <button role="tab" aria-selected={mode === "bericht"} onClick={() => setMode("bericht")}>Bericht sturen</button>
+          <button role="tab" aria-selected={mode === "taak"} onClick={() => setMode("taak")}>Taak</button>
+          <button role="tab" aria-selected={mode === "oefening"} onClick={() => setMode("oefening")}>Oefening</button>
+          <button role="tab" aria-selected={mode === "bericht"} onClick={() => setMode("bericht")}>Bericht</button>
         </div>
 
-        {mode === "taak" ? (
+        {mode === "oefening" ? (
+          <>
+            <p className="ff-small ff-muted">Kies een scenario uit de conflictcoach. Het kind krijgt het als quest, met daarna de opdracht voor het echte leven.</p>
+            <div className="ff-stack-s">
+              {COACH_SCENARIOS.map((c) => (
+                <button key={c.id} className="ff-choice" aria-pressed={scen === c.id} onClick={() => setScen(c.id)}>
+                  <span className="ff-grow"><b>{c.title}</b><br /><span className="ff-small ff-muted">{SKILLS[c.skill].label}</span></span>
+                </button>
+              ))}
+            </div>
+            <div className="ff-stack-s">
+              <span className="ff-eyebrow">Voor wie?</span>
+              <div className="ff-chips">{kids.map((m) => <button key={m.id} className="ff-chip" aria-pressed={to === m.id} onClick={() => setTo(m.id)}>{m.name}</button>)}</div>
+            </div>
+            <button
+              className="ff-btn ff-btn-primary ff-btn-wide"
+              disabled={!scen || !kids.some((k) => k.id === to)}
+              onClick={() => {
+                const c = COACH_SCENARIOS.find((x) => x.id === scen)!;
+                actions.addQuest({ member: to, title: `Oefen: ${c.title}`, scenario: c.id, skill: c.skill, from: pro.id });
+                onToast(`Oefening klaargezet voor ${name(to)}`);
+                setScen("");
+              }}
+            >
+              Oefening klaarzetten
+            </button>
+          </>
+        ) : mode === "taak" ? (
           <>
             <div className="ff-chips">
               {(school ? SCHOOL_IDEAS : ZORG_IDEAS).map((s) => <button key={s} className="ff-chip" aria-pressed={title === s} onClick={() => setTitle(s)}>{s}</button>)}

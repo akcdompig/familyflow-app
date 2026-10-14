@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Flo } from "@/components/ui/Flo";
 import { Icon } from "@/components/ui/Icon";
+import { CoachList } from "@/components/screens/Coach";
 import { SCENARIOS, type Scenario } from "@/lib/scenarios";
 import { actions } from "@/lib/store";
 import type { FamilyState, Member } from "@/lib/types";
@@ -31,7 +32,7 @@ function Listen({ text }: { text: string }) {
   );
 }
 
-export function Oefenen({ state, me, onToast, onCalm, onRuzie }: { state: FamilyState; me: Member; onToast: (m: string) => void; onCalm: () => void; onRuzie: () => void }) {
+export function Oefenen({ state, me, onToast, onCalm, onRuzie, onCoach }: { state: FamilyState; me: Member; onToast: (m: string) => void; onCalm: () => void; onRuzie: () => void; onCoach: (id: string) => void }) {
   const [play, setPlay] = useState<Scenario | null>(null);
   const played = state.played[me.id] ?? [];
   const isParent = me.role === "ouder";
@@ -60,7 +61,10 @@ export function Oefenen({ state, me, onToast, onCalm, onRuzie }: { state: Family
         </button>
       )}
 
-      <p className="ff-muted">Oefen wat je doet als het lastig wordt. Er is geen fout antwoord. {isParent ? "Probeer ze zelf ook eens." : "Je krijgt XP voor het oefenen."}</p>
+      <CoachList state={state} me={me} onPlay={onCoach} />
+
+      <h2 className="ff-h2">Korte oefeningen</h2>
+      <p className="ff-muted ff-small">Oefen wat je doet als het lastig wordt. Er is geen fout antwoord. {isParent ? "Probeer ze zelf ook eens." : "Je krijgt XP voor het oefenen."}</p>
 
       <ul className="ff-levels">
         {SCENARIOS.map((s) => {

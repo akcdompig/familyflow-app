@@ -81,6 +81,8 @@ export function newFamily(familyName: string, people: NewMember[]): FamilyState 
     consent: { school: false, zorg: false },
     messages: [],
     proNotes: { school: "", zorg: "" },
+    quests: [],
+    coach: {},
   };
 }
 

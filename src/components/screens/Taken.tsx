@@ -15,9 +15,10 @@ interface Props {
   state: FamilyState;
   me: Member;
   onToast: (m: string) => void;
+  onPlay: (scenarioId: string) => void;
 }
 
-export function Taken({ state, me, onToast }: Props) {
+export function Taken({ state, me, onToast, onPlay }: Props) {
   const isParent = me.role === "ouder";
   const [view, setView] = useState<"mijn" | "iedereen">(isParent ? "iedereen" : "mijn");
   const [adding, setAdding] = useState(false);
@@ -52,6 +53,7 @@ export function Taken({ state, me, onToast }: Props) {
 
       {view === "mijn" && (
         <>
+          <Quests state={state} memberId={me.id} onToast={onToast} onPlay={onPlay} />
           {mine.length > 0 && doneCount === mine.length ? (
             <div className="ff-card ff-done-card">
               <Flo size={56} />
@@ -79,6 +81,7 @@ export function Taken({ state, me, onToast }: Props) {
                 <b>{m.id === me.id ? "Jij" : m.name}</b>
                 <span className="ff-small ff-muted ff-push">{n} van {list.length}</span>
               </div>
+              <Quests state={state} memberId={m.id} onToast={onToast} onPlay={onPlay} compact />
               <ul className="ff-tasklist">
                 {list.map((t) => (
                   <TaskRow
@@ -103,6 +106,44 @@ export function Taken({ state, me, onToast }: Props) {
 
       <AddTaskSheet open={adding} onClose={() => setAdding(false)} state={state} me={me} onAdded={onToast} />
     </div>
+  );
+}
+
+const FROM_LABEL: Record<string, string> = { coach: "Van de coach", ouder: "Van je ouder", school: "Van school", zorg: "Van je coach" };
+
+/** Opdrachten voor het echte leven en oefeningen van school of zorg. Open quests, en wat deze week af is. */
+function Quests({ state, memberId, onToast, onPlay, compact = false }: { state: FamilyState; memberId: string; onToast: (m: string) => void; onPlay: (id: string) => void; compact?: boolean }) {
+  const week = Date.now() - 7 * 864e5;
+  const list = (state.quests ?? []).filter((q) => q.member === memberId && (!q.done || new Date(q.done).getTime() > week));
+  if (!list.length) return null;
+  const kid = state.members.find((m) => m.id === memberId)?.role !== "ouder";
+  return (
+    <section className="ff-stack-s" aria-label="Quests">
+      {!compact && <span className="ff-eyebrow">Quests</span>}
+      <ul className="ff-tasklist">
+        {list.map((q) => (
+          <li key={q.id} className={`ff-task ff-quest ${q.done ? "is-done" : ""}`}>
+            <button
+              className="ff-task-check"
+              aria-pressed={!!q.done}
+              onClick={() => {
+                actions.toggleQuest(q.id);
+                if (!q.done) onToast(kid ? "Quest gehaald! +25 XP" : "Quest gehaald");
+              }}
+              aria-label={q.done ? `${q.title}: gehaald. Tik om terug te zetten` : `${q.title}: afvinken`}
+            >
+              {q.done ? <Icon name="check" size={22} /> : <Icon name="oefenen" size={22} />}
+            </button>
+            <div className="ff-task-t">
+              <b>{q.title}</b>
+              <span className="ff-small ff-muted"><span className={`ff-src ff-src-${q.from === "zorg" ? "zorg" : q.from === "school" ? "school" : "coach"}`}>{FROM_LABEL[q.from]}</span>{q.done ? "gehaald" : "deze week"}</span>
+              {q.scenario && !q.done && <button className="ff-link ff-small" style={{ justifySelf: "start", minHeight: 32, padding: "4px 0" }} onClick={() => onPlay(q.scenario!)}>Nu oefenen</button>}
+            </div>
+            {kid && <span className="ff-xp">+25</span>}
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 

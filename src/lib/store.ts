@@ -4,7 +4,7 @@ import { useSyncExternalStore } from "react";
 import * as cloud from "./cloud";
 import { demoFamily } from "./demo";
 import { phoneTaskTitle, todayKey } from "./tasks";
-import type { AvatarConfig, CalmPlan, CheckIn, Conflict, ConflictSide, FamilyState, Meeting, ProKind, Task } from "./types";
+import type { CoachRun, Quest, AvatarConfig, CalmPlan, CheckIn, Conflict, ConflictSide, FamilyState, Meeting, ProKind, Task } from "./types";
 
 /*
   Eén store voor demo en echt.
@@ -314,6 +314,39 @@ export const actions = {
       members: s.members.map((m) => (m.id === memberId ? { ...m, bedtime } : m)),
       tasks: s.tasks.map((t) => (t.icon === "telefoon" && t.assignee === memberId ? { ...t, title: phoneTaskTitle(bedtime) } : t)),
     }));
+  },
+  /** Coachscenario uitgespeeld. Eerste keer 20 XP, daarna 5. */
+  coachDone(memberId: string, run: Omit<CoachRun, "at">) {
+    const at = new Date().toISOString();
+    update((s) => {
+      const list = s.coach?.[memberId] ?? [];
+      const first = !list.some((r) => r.id === run.id);
+      return { ...s, coach: { ...(s.coach ?? {}), [memberId]: [...list, { ...run, at }].slice(-200) }, xp: addXp(s, memberId, first ? 20 : 5) };
+    });
+  },
+  addQuest(q: Omit<Quest, "id" | "at">) {
+    const extra = { id: newId("q"), at: new Date().toISOString() };
+    update((s) => {
+      // Dezelfde open opdracht niet dubbel.
+      if ((s.quests ?? []).some((x) => x.member === q.member && x.title === q.title && !x.done)) return s;
+      return { ...s, quests: [...(s.quests ?? []), { ...q, ...extra }].slice(-200) };
+    });
+  },
+  /** Quest afvinken of terugzetten. Afvinken geeft 25 XP aan kinderen. */
+  toggleQuest(id: string) {
+    update((s) => {
+      const q = (s.quests ?? []).find((x) => x.id === id);
+      if (!q) return s;
+      const done = q.done ? undefined : new Date().toISOString();
+      return {
+        ...s,
+        quests: (s.quests ?? []).map((x) => (x.id === id ? { ...x, done } : x)),
+        xp: isKid(s, q.member) ? addXp(s, q.member, done ? 25 : -25) : s.xp,
+      };
+    });
+  },
+  removeQuest(id: string) {
+    update((s) => ({ ...s, quests: (s.quests ?? []).filter((x) => x.id !== id) }));
   },
   /** Alleen demo. */
   reset() {

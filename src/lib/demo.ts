@@ -93,6 +93,15 @@ export function demoFamily(): FamilyState {
       { id: "m1", from: "school", to: "k1", text: "Vrijdag toets wiskunde, hoofdstuk 4. Elke dag 20 minuten oefenen helpt echt.", at: at(9, 15), read: false },
       { id: "m2", from: "zorg", to: "ouders", text: "Fijn gesprek vorige week. Probeer deze week elk kind elke dag één compliment te geven.", at: daysAgo(1, 10), read: false },
     ],
+    quests: [
+      { id: "q1", member: "k1", title: "Spreek een vast stopseintje af en stop deze week 3 keer op tijd zonder ruzie.", skill: "overgang", from: "coach", at: daysAgo(2) },
+      { id: "q2", member: "k1", title: "Oefen: Een normale vraag, een vals antwoord", scenario: "vals-antwoord", skill: "toon", from: "zorg", at: daysAgo(1) },
+      { id: "q3", member: "k2", title: "Geef deze week één keer rustig een grens aan.", skill: "grens", from: "coach", at: daysAgo(4), done: daysAgo(1) },
+    ],
+    coach: {
+      k1: [{ id: "gamen-stoppen", at: daysAgo(2), path: ["aanval", "opkomen"], outcome: "opgelost" }],
+      k2: [{ id: "iemand-doet-vals", at: daysAgo(4), path: ["opkomen"], outcome: "opgelost" }],
+    },
     proNotes: { school: "", zorg: "Gezin is gemotiveerd. Ochtenden gaan beter. Let op ruzies bij spelletjes." },
   };
 }

@@ -114,6 +114,27 @@ export interface ProMessage {
   read: boolean;
 }
 
+/** Opdracht voor het echte leven, of een oefening die school of zorg klaarzet. */
+export interface Quest {
+  id: string;
+  member: string;
+  title: string;
+  skill?: string;
+  /** Id van een coachscenario om te oefenen. */
+  scenario?: string;
+  from: "coach" | "ouder" | ProKind;
+  at: string;
+  done?: string;
+}
+
+/** Eén keer een coachscenario gespeeld. */
+export interface CoachRun {
+  id: string;
+  at: string;
+  path: ("aanval" | "wegduik" | "opkomen")[];
+  outcome: "opgelost" | "half" | "escalatie";
+}
+
 export interface FamilyState {
   version: 3;
   family: string;
@@ -139,4 +160,7 @@ export interface FamilyState {
   consent: Record<ProKind, boolean>;
   messages: ProMessage[];
   proNotes: Record<ProKind, string>;
+  quests?: Quest[];
+  /** coach[lid] = gespeelde coachscenario's */
+  coach?: Record<string, CoachRun[]>;
 }

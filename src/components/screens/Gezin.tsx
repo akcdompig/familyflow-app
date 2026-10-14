@@ -9,6 +9,7 @@ import { calmThisWeek, conflictsLastWeek, conflictsThisWeek, goalSeries, thermSe
 import { actions, isLive } from "@/lib/store";
 import { phoneTime } from "@/lib/tasks";
 import { Uitnodigen } from "@/components/screens/Uitnodigen";
+import { SKILLS, scenarioById, type SkillId } from "@/lib/coach";
 import type { FamilyState, Member, Meeting } from "@/lib/types";
 
 const GOAL_COLORS = ["#d9442f", "#3cc6a0", "#6c8cff"];
@@ -129,6 +130,8 @@ export function Gezin({ state, me, onToast, onOefenen }: Props) {
           <span className="ff-trend">deze week</span>
         </div>
       </section>
+
+      <Vaardigheden state={state} />
 
       {recent.length > 0 && (
         <section className="ff-card ff-stack-s">
@@ -290,5 +293,52 @@ function Overleg({ state, onClose, onToast }: { state: FamilyState; onClose: () 
         </button>
       </div>
     </div>
+  );
+}
+
+/** Per kind: welke vaardigheden geoefend zijn, en hoe vaak in het echt gedaan. Geen antwoorden, alleen voortgang. */
+export function Vaardigheden({ state, title = "Vaardigheden" }: { state: FamilyState; title?: string }) {
+  const kids = state.members.filter((m) => m.role !== "ouder");
+  const rows = kids.map((k) => {
+    const practiced: Partial<Record<SkillId, number>> = {};
+    for (const r of state.coach?.[k.id] ?? []) {
+      const sk = scenarioById(r.id)?.skill;
+      if (sk) practiced[sk] = (practiced[sk] ?? 0) + 1;
+    }
+    const real: Partial<Record<SkillId, number>> = {};
+    for (const q of state.quests ?? []) if (q.member === k.id && q.done && q.skill && q.skill in SKILLS) real[q.skill as SkillId] = (real[q.skill as SkillId] ?? 0) + 1;
+    const skills = [...new Set([...Object.keys(practiced), ...Object.keys(real)])] as SkillId[];
+    return { k, practiced, real, skills, open: (state.quests ?? []).filter((q) => q.member === k.id && !q.done).length };
+  });
+  if (!rows.some((r) => r.skills.length || r.open)) {
+    return (
+      <section className="ff-card ff-stack-s">
+        <h2 className="ff-h2">{title}</h2>
+        <p className="ff-small ff-muted">Zodra de kinderen met de conflictcoach oefenen, zie je hier welke vaardigheden ze leren. Hun antwoorden blijven van hen.</p>
+      </section>
+    );
+  }
+  return (
+    <section className="ff-card ff-stack-s">
+      <h2 className="ff-h2">{title}</h2>
+      <p className="ff-small ff-muted">Geoefend in de app, en hoe vaak echt gedaan. De antwoorden zelf blijven van de kinderen.</p>
+      {rows.map(({ k, practiced, real, skills, open }) => (
+        <div key={k.id} className="ff-planrow">
+          <b>{k.name}{open ? <span className="ff-small ff-muted"> · {open} open {open === 1 ? "quest" : "quests"}</span> : null}</b>
+          {skills.length ? (
+            <div className="ff-chips">
+              {skills.map((sk) => (
+                <span key={sk} className="ff-chip ff-chip-static ff-skill">
+                  {SKILLS[sk].short}
+                  <span className="ff-skill-n">{practiced[sk] ? `${practiced[sk]}× geoefend` : ""}{practiced[sk] && real[sk] ? " · " : ""}{real[sk] ? `${real[sk]}× echt` : ""}</span>
+                </span>
+              ))}
+            </div>
+          ) : (
+            <span className="ff-small ff-muted">Nog niet geoefend.</span>
+          )}
+        </div>
+      ))}
+    </section>
   );
 }
