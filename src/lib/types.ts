@@ -61,7 +61,7 @@ export interface Task {
   /** Gezet door school of zorg. */
   source?: ProKind;
   /** Leerblok uit de leerplanner. */
-  study?: { subject: string; kind: string; deadline: string; part: number; of: number; min: number };
+  study?: { subject: string; kind: string; deadline: string; part: number; of: number; min: number; /** Id uit Somtoday, als het daar vandaan komt. */ sid?: string; note?: string };
 }
 
 export interface CalmPlan {
@@ -178,4 +178,6 @@ export interface FamilyState {
   allesAan?: boolean;
   /** Alleen dat de coach gebruikt is, niet wat er gebeurde. */
   coachLog?: { at: string; by: string; scenario: string; licht: "rood" | "oranje" | "groen" | "veilig" }[];
+  /** Somtoday per kind: welke items al zijn ingepland (ook als ze daarna zijn weggehaald) en wanneer het laatst is opgehaald. */
+  somtoday?: Record<string, { at: string; seen: string[] }>;
 }

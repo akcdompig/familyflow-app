@@ -181,6 +181,8 @@ export function stopLive() {
 }
 
 export const isLive = () => live;
+/** De stand zoals de schermen hem zien, voor code buiten React. */
+export const snapshot = () => view;
 export const lastSyncError = () => syncError;
 export const syncNow = () => {
   void flush();
@@ -382,6 +384,21 @@ export const actions = {
   addTasks(list: Omit<Task, "id">[]) {
     const withIds = list.map((t, i) => ({ ...t, id: newId("t") + i }));
     update((s) => ({ ...s, tasks: [...s.tasks, ...withIds] }));
+  },
+  /** Leerblokken uit Somtoday toevoegen. Dubbele items (ook vanaf een andere telefoon) vallen eruit. */
+  addSomtoday(memberId: string, list: Omit<Task, "id">[], sids: string[]) {
+    const stamp = newId("t");
+    update((s) => {
+      const prev = s.somtoday?.[memberId];
+      const seen = new Set(prev?.seen ?? []);
+      const nieuw = list.filter((t) => !t.study?.sid || !seen.has(t.study.sid)).map((t, i) => ({ ...t, id: stamp + "s" + i }));
+      sids.forEach((x) => seen.add(x));
+      return {
+        ...s,
+        tasks: [...s.tasks, ...nieuw],
+        somtoday: { ...(s.somtoday ?? {}), [memberId]: { at: new Date().toISOString(), seen: [...seen].slice(-600) } },
+      };
+    });
   },
   addFeedback(by: string, vibe: "fijn" | "lastig", text: string) {
     const f = { id: newId("f"), by, at: new Date().toISOString(), vibe, text: text.trim().slice(0, 300) };

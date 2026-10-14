@@ -22,6 +22,7 @@ import { Icon, type IconName } from "@/components/ui/Icon";
 import { Sheet } from "@/components/ui/Sheet";
 import { expressionFor, moodLabel, timeLabel } from "@/lib/mood";
 import { actions, isLive, lastSyncError, useFamily } from "@/lib/store";
+import { syncSomtoday } from "@/lib/somtoday";
 import { energyOf, isDone, tasksFor } from "@/lib/tasks";
 import type { FamilyState } from "@/lib/types";
 
@@ -77,6 +78,18 @@ export function FamilyFlowApp() {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [screen]);
+  // Somtoday: bij openen (en terugkomen in de app) nieuwe toetsen en huiswerk inplannen. Hooguit om de 3 uur.
+  useEffect(() => {
+    const run = () => {
+      if (document.visibilityState === "visible") void syncSomtoday().then((m) => m && setToast(m));
+    };
+    const t = window.setTimeout(run, 1500);
+    document.addEventListener("visibilitychange", run);
+    return () => {
+      window.clearTimeout(t);
+      document.removeEventListener("visibilitychange", run);
+    };
+  }, []);
 
   const closeCheckIn = useCallback(() => setCheckIn(false), []);
   const closeCalm = useCallback(() => setCalm(false), []);

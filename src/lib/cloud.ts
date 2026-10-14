@@ -161,3 +161,6 @@ export async function loadRev(): Promise<number | null> {
   const rows = await call<{ rev: number }[]>("/rest/v1/families?select=rev&limit=1");
   return rows[0]?.rev ?? null;
 }
+
+/** Supabase Edge Function aanroepen, met de login van deze telefoon. */
+export const edge = <T,>(name: string, body: Record<string, unknown>) => call<T>(`/functions/v1/${name}`, { method: "POST", body: JSON.stringify(body) });

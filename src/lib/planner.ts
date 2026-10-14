@@ -15,6 +15,8 @@ export interface PlanItem {
   /** Inleverdatum of toetsdatum, YYYY-MM-DD. Leeg = nog kiezen. */
   date: string;
   note: string;
+  /** Id uit Somtoday. */
+  sid?: string;
 }
 
 export interface Blok {
@@ -27,6 +29,8 @@ export interface Blok {
   of: number;
   title: string;
   deadline: string;
+  sid?: string;
+  note?: string;
 }
 
 /** venster = hoeveel dagen vóór de deadline je begint. */
@@ -229,7 +233,7 @@ export function plan(items: PlanItem[], opts: { today?: string; maxPerDag?: numb
       }
       const d = days[chosen];
       load.set(d, (load.get(d) ?? 0) + min);
-      blokken.push({ itemId: it.id, subject: it.subject, kind: it.kind, date: d, min, part: i + 1, of: n, title: titel(it.subject, it.kind, i + 1, n), deadline: it.date });
+      blokken.push({ itemId: it.id, subject: it.subject, kind: it.kind, date: d, min, part: i + 1, of: n, title: titel(it.subject, it.kind, i + 1, n), deadline: it.date, sid: it.sid, note: it.note || undefined });
     });
     if (over) krap.push(`${it.subject}: sommige dagen worden vol`);
   }
@@ -244,4 +248,45 @@ export function plan(items: PlanItem[], opts: { today?: string; maxPerDag?: numb
     });
   }
   return { blokken: blokken.sort((a, b) => a.date.localeCompare(b.date)), krap: [...new Set(krap)], telaat };
+}
+
+/** Een item zoals de Edge Function "somtoday" het teruggeeft. */
+export interface SomItem {
+  sid: string;
+  date: string;
+  vak: string;
+  type: string; // HUISWERK | TOETS | GROTE_TOETS
+  onderwerp: string;
+  omschrijving: string;
+  gemaakt: boolean;
+}
+
+/** Vaknaam uit Somtoday naar onze vaknaam ("wiskunde" → "Wiskunde", "nask1" → "NaSk"). */
+const STAMMEN: [string, string][] = [
+  ["wisk", "Wiskunde"], ["neder", "Nederlands"], ["engel", "Engels"], ["fran", "Frans"], ["duit", "Duits"], ["biol", "Biologie"],
+  ["gesch", "Geschiedenis"], ["aardr", "Aardrijkskunde"], ["nask", "NaSk"], ["natuurk", "Natuurkunde"], ["scheik", "Scheikunde"],
+  ["econ", "Economie"], ["maatsch", "Maatschappijleer"], ["techn", "Techniek"], ["lichamelijk", "LO"], ["mens en natuur", "Mens en natuur"], ["mens en maat", "Mens en maatschappij"],
+];
+export function vakNaam(naam: string): string {
+  const laag = naam.toLowerCase();
+  for (const [stam, v] of STAMMEN) if (laag.includes(stam)) return v;
+  const v = vakVan(naam);
+  if (v) return v;
+  const t = naam.trim();
+  return t ? t.charAt(0).toUpperCase() + t.slice(1) : "School";
+}
+
+/** Somtoday-item naar een planitem voor de leerplanner. Al gemaakt huiswerk slaan we over. */
+export function vanSomtoday(i: SomItem): PlanItem | null {
+  const tekst = `${i.onderwerp} ${i.omschrijving}`;
+  let kind: Soort;
+  if (i.type === "GROTE_TOETS") kind = "toets";
+  else if (i.type === "TOETS") kind = /\bso\b|overhoring|schriftelijke/i.test(tekst) ? "so" : "toets";
+  else {
+    if (i.gemaakt) return null;
+    kind = soortVan(tekst) ?? "huiswerk";
+    if (kind === "toets" || kind === "so") kind = "leren"; // als huiswerk opgegeven: leren, geen echte toets
+  }
+  const note = [i.onderwerp, i.omschrijving].filter(Boolean).join(" – ").slice(0, 120);
+  return { id: "s" + i.sid, sid: i.sid, subject: vakNaam(i.vak), kind, date: i.date, note };
 }

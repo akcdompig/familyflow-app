@@ -47,6 +47,23 @@ De demo blijft bereikbaar via `/#demo`.
 
 **Opnieuw bouwen** na een wijziging in de code: `node preview/build.mjs`. Daarmee worden `dist/` en de demo bijgewerkt.
 
+## Somtoday-koppeling (versie 1.3)
+
+Toetsen en huiswerk komen vanzelf uit Somtoday in de planning van het kind. Toetsen worden verdeeld in korte leerblokjes over de dagen ervoor (de regels van de leerplanner). Wat één keer is ingepland komt niet terug, ook niet als iemand het weghaalt.
+
+**Eenmalig in Supabase, ± 5 minuten**
+1. **SQL Editor › New query**: plak `supabase/somtoday.sql` en klik op **Run**.
+2. **Edge Functions › Deploy a new function › Via Editor**. Noem hem precies `somtoday`, plak de inhoud van `supabase/functions/somtoday/index.ts` en klik op **Deploy**. Laat "Verify JWT" aan.
+
+**Koppelen in de app**
+Taken › Leren › kaart **Somtoday** › Somtoday koppelen. Kies de school en log in met het Somtoday-account van het kind. Het wachtwoord wordt niet bewaard, alleen een token, en dat staat alleen op de server.
+Logt de school in via Microsoft, dan gaat het via een inloglink (het makkelijkst op een laptop).
+
+**Hoe het loopt**
+- Bij openen van de app (hooguit om de 3 uur) haalt de app 4 weken vooruit op en plant nieuwe dingen in. Er komt een melding: "Uit Somtoday: 1 toets en 3 huiswerk ingepland voor Kian".
+- "Nu ophalen" op de Somtoday-kaart doet het meteen.
+- De Somtoday-API is niet officieel. Werkt het opeens niet meer, dan zie je de fout op de kaart. Opnieuw koppelen helpt meestal.
+
 ## Wat er nu in zit (stukje 1, 2, 3 en release 1)
 
 - **Designsysteem "Zonsondergang"**: `src/styles/tokens.css`. Alle kleuren, letters, ruimtes, rondingen en bewegingen staan hier.

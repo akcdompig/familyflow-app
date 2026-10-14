@@ -4,7 +4,9 @@ import { useMemo, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { actions } from "@/lib/store";
 import { addDays, dayLabel, herken, iso, plan, SOORT, VAKKEN, type PlanItem, type Soort } from "@/lib/planner";
+import { blokNaarTaak } from "@/lib/somtoday";
 import { isDone } from "@/lib/tasks";
+import { SomtodayKaart } from "@/components/screens/SomtodayKaart";
 import type { FamilyState, Member, Task } from "@/lib/types";
 
 type Stage = "week" | "plak" | "check" | "voorstel";
@@ -23,7 +25,8 @@ export function Leerplanner({ state, me, onClose, onToast }: { state: FamilyStat
   const [druk, setDruk] = useState<number[]>([]);
   const [max, setMax] = useState(60);
   const today = iso(new Date());
-  const whoName = state.members.find((m) => m.id === who)?.name ?? "";
+  const whoMember = state.members.find((m) => m.id === who);
+  const whoName = whoMember?.name ?? "";
 
   const studyTasks = state.tasks.filter((t) => t.study && t.assignee === who && t.date && t.date >= today).sort((a, b) => (a.date ?? "").localeCompare(b.date ?? ""));
   const result = useMemo(
@@ -35,18 +38,7 @@ export function Leerplanner({ state, me, onClose, onToast }: { state: FamilyStat
 
   const save = () => {
     const exists = (b: (typeof result.blokken)[number]) => state.tasks.some((t) => t.study && t.assignee === who && t.study.subject === b.subject && t.study.kind === b.kind && t.study.deadline === b.deadline);
-    const list: Omit<Task, "id">[] = result.blokken
-      .filter((b) => !exists(b))
-      .map((b) => ({
-        title: b.title,
-        icon: b.kind === "huiswerk" || b.kind === "inleveren" ? "pen" : "boek",
-        assignee: who,
-        repeat: "eenmalig",
-        date: b.date,
-        xp: Math.round(b.min / 2),
-        createdBy: me.id,
-        study: { subject: b.subject, kind: b.kind, deadline: b.deadline, part: b.part, of: b.of, min: b.min },
-      }));
+    const list: Omit<Task, "id">[] = result.blokken.filter((b) => !exists(b)).map((b) => blokNaarTaak(b, who, me.id));
     actions.addTasks(list);
     onToast(list.length ? `${list.length} leerblokjes ingepland` : "Dit stond al in de planning");
     setItems([]);
@@ -98,6 +90,7 @@ export function Leerplanner({ state, me, onClose, onToast }: { state: FamilyStat
               <p className="ff-small">Zet je toetsen en huiswerk erin. De app maakt er korte blokjes van, verspreid over de dagen. Kort en vaak leren werkt beter dan alles op de laatste avond.</p>
             </section>
           )}
+          {whoMember && <SomtodayKaart who={whoMember} me={me} onToast={onToast} />}
           <button className="ff-btn ff-btn-primary ff-btn-wide" onClick={() => setStage("plak")}>Somtoday-week plakken</button>
           <button className="ff-btn ff-btn-ghost ff-btn-wide" onClick={() => { setItems([newItem()]); setStage("check"); }}>Zelf een toets of opdracht toevoegen</button>
         </>
