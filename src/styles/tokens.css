@@ -1,0 +1,74 @@
+/* FamilyFlow designsysteem — palet "Zonsondergang".
+   Alle kleuren, maten en bewegingen komen hier vandaan. Componenten gebruiken alleen deze variabelen. */
+:root {
+  /* Merk */
+  --ff-koraal: #ff6b57;        /* merk, illustraties */
+  --ff-koraal-knop: #d9442f;   /* knoppen met witte tekst (contrast > 4.5:1) */
+  --ff-koraal-zacht: #ffe9e4;
+  --ff-nacht: #23204a;         /* tekst, donkere vlakken */
+  --ff-nacht-2: #3a3670;
+  --ff-zon: #ffc845;           /* XP, beloningen */
+  --ff-zon-zacht: #fff3d1;
+  --ff-munt: #3cc6a0;          /* rust, gelukt */
+  --ff-munt-donker: #1f6b57;
+  --ff-munt-zacht: #e3f7f0;
+  --ff-lucht: #6c8cff;         /* info, focus */
+  --ff-lucht-donker: #3d52b8;
+  --ff-lucht-zacht: #e8edff;
+
+  /* Neutralen (licht warm, met een tik paars) */
+  --ff-grond: #fff6ee;         /* achtergrond kind en huiskamer */
+  --ff-wolk: #f4f3fb;          /* achtergrond ouder en coach */
+  --ff-vlak: #ffffff;
+  --ff-lijn: #ece4dc;
+  --ff-tekst: var(--ff-nacht);
+  --ff-tekst-zacht: #5f5b8a;
+
+  /* Stemming (gezichtjes) */
+  --ff-mood-1: #ffb09f;
+  --ff-mood-2: #ffd3a8;
+  --ff-mood-3: #ffe59a;
+  --ff-mood-4: #a6ebd6;
+  --ff-mood-5: #c9d4ff;
+  --ff-mood-rust: #c9d4ff;
+
+  /* Letters */
+  --ff-font-speels: var(--font-fredoka, "Fredoka"), ui-rounded, "Nunito", system-ui, sans-serif;
+  --ff-font-tekst: var(--font-jakarta, "Plus Jakarta Sans"), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --ff-t-xs: 0.78rem;
+  --ff-t-s: 0.88rem;
+  --ff-t-m: 1rem;
+  --ff-t-l: 1.2rem;
+  --ff-t-xl: 1.6rem;
+  --ff-t-xxl: 2rem;
+
+  /* Ruimte (4-puntsraster) */
+  --ff-r1: 4px;
+  --ff-r2: 8px;
+  --ff-r3: 12px;
+  --ff-r4: 16px;
+  --ff-r5: 20px;
+  --ff-r6: 24px;
+  --ff-r8: 32px;
+
+  /* Rondingen */
+  --ff-rond-s: 12px;
+  --ff-rond-m: 18px;
+  --ff-rond-l: 24px;
+  --ff-rond-xl: 32px;
+  --ff-rond-pil: 999px;
+
+  /* Schaduw */
+  --ff-schaduw-s: 0 2px 8px rgba(35, 32, 74, 0.08);
+  --ff-schaduw-m: 0 10px 30px rgba(35, 32, 74, 0.12);
+  --ff-schaduw-knop: 0 10px 24px rgba(217, 68, 47, 0.32);
+
+  /* Beweging */
+  --ff-snel: 160ms;
+  --ff-normaal: 280ms;
+  --ff-veer: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ff-zacht: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Minimale klikmaat */
+  --ff-tik: 44px;
+}

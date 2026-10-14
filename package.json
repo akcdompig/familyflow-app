@@ -1,0 +1,25 @@
+{
+  "name": "familyflow-app",
+  "version": "0.1.0",
+  "private": true,
+  "description": "FamilyFlow: één app voor het hele gezin. Huiskamer met levende avatars, check-ins, rustplan en coaching.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "preview:build": "node preview/build.mjs"
+  },
+  "dependencies": {
+    "next": "15.5.4",
+    "react": "19.1.1",
+    "react-dom": "19.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "22.18.6",
+    "@types/react": "19.1.13",
+    "@types/react-dom": "19.1.9",
+    "esbuild": "0.25.10",
+    "typescript": "5.9.2"
+  }
+}
