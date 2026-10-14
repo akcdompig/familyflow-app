@@ -337,6 +337,46 @@ Deno.serve(async (req) => {
         return json({ url: authorizeUrl(body.tenant_uuid ?? "", challenge) });
       }
 
+      case "plakLogin": {
+        // De login van leerling.somtoday.nl (Local Storage, "CapacitorStorage.<uuid>") geplakt als JSON.
+        magVoor(wie, body.member_id);
+        let data: any;
+        try {
+          data = JSON.parse(String(body.data ?? "").trim());
+        } catch {
+          throw new Fout("Dit is niet de goede waarde. Kopieer de hele waarde van de regel CapacitorStorage.… met de lange code");
+        }
+        const rt = data?.refresh_token;
+        if (!rt) throw new Fout("Hier staat geen refresh_token in. Kies de regel CapacitorStorage.… met een lange code erachter");
+        const claims = (() => {
+          try {
+            if (data.id_token_claims_obj) return typeof data.id_token_claims_obj === "string" ? JSON.parse(data.id_token_claims_obj) : data.id_token_claims_obj;
+            const p = String(data.id_token ?? "").split(".")[1];
+            return p ? JSON.parse(atob(p.replace(/-/g, "+").replace(/_/g, "/"))) : {};
+          } catch {
+            return {};
+          }
+        })();
+        const aud = Array.isArray(claims.aud) ? claims.aud[0] : claims.aud;
+        const kandidaten = [...new Set([aud, claims.azp, "somtoday-leerling-web", "somtoday-leerling-native", "D50E0C06-32D1-4B41-A137-A9A850C892C2"].filter(Boolean))] as string[];
+        let gelukt: { client: string; t: any } | null = null;
+        for (const client of kandidaten) {
+          try {
+            gelukt = { client, t: await vernieuw({ refresh_token: rt, client_id: client }) };
+            break;
+          } catch {
+            /* volgende proberen */
+          }
+        }
+        if (!gelukt) throw new Fout("Somtoday accepteert deze login niet (meer). Ververs leerling.somtoday.nl, en kopieer de waarde opnieuw");
+        await db("somtoday_links", {
+          method: "POST",
+          headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+          body: JSON.stringify({ family_id: fam, member_id: body.member_id, tenant_uuid: claims.tenant ?? "", school: body.school ?? null, client_id: gelukt.client, refresh_token: gelukt.t.refresh_token ?? rt, api_url: gelukt.t.somtoday_api_url ?? "https://api.somtoday.nl", last_error: null, pending_verifier: null }),
+        });
+        return json({ ok: true });
+      }
+
       case "finishLink": {
         magVoor(wie, body.member_id);
         const rows = await db(`somtoday_links?${sleutel(body.member_id)}&select=*`);

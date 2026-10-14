@@ -3,11 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 import * as cloud from "@/lib/cloud";
 import { addDays, iso, type SomItem } from "@/lib/planner";
-import { finishLink, koppelMetWachtwoord, ontkoppel, planSomtoday, somStatus, startLink, syncSomtoday, zoekScholen, type School, type SomStatus } from "@/lib/somtoday";
+import { finishLink, plakLogin, koppelMetWachtwoord, ontkoppel, planSomtoday, somStatus, startLink, syncSomtoday, zoekScholen, type School, type SomStatus } from "@/lib/somtoday";
 import { actions, snapshot } from "@/lib/store";
 import type { Member } from "@/lib/types";
 
-type Stap = "uit" | "school" | "login" | "link";
+type Stap = "uit" | "school" | "login" | "link" | "plak";
 
 const tijd = (s: string) => {
   const d = new Date(s);
@@ -130,7 +130,12 @@ export function SomtodayKaart({ who, me, onToast }: { who: Member; me: Member; o
       {stap === "uit" && !gekoppeld && (
         <>
           <p className="ff-small">Koppel Somtoday, dan zet de app toetsen en huiswerk vanzelf in de planning. Toetsen worden verdeeld over de dagen ervoor.</p>
-          {mag ? <button className="ff-btn ff-btn-primary ff-btn-wide" onClick={() => setStap("school")}>Somtoday koppelen</button> : <p className="ff-small ff-muted">Vraag je ouder om dit te koppelen.</p>}
+          {mag ? (
+            <>
+              <button className="ff-btn ff-btn-primary ff-btn-wide" onClick={() => setStap("plak")}>Somtoday koppelen (via laptop)</button>
+              <button className="ff-link" onClick={() => setStap("school")}>Andere manier: school zoeken en inloggen</button>
+            </>
+          ) : <p className="ff-small ff-muted">Vraag je ouder om dit te koppelen.</p>}
         </>
       )}
 
@@ -170,6 +175,23 @@ export function SomtodayKaart({ who, me, onToast }: { who: Member; me: Member; o
             {bezig ? "Koppelen…" : "Koppelen"}
           </button>
           <button className="ff-link" onClick={() => setStap("link")}>Logt de school in via Microsoft? Klik hier</button>
+        </>
+      )}
+
+      {stap === "plak" && (
+        <>
+          <p className="ff-small">Dit doe je één keer, op een laptop met Chrome.</p>
+          <ol className="ff-list ff-small">
+            <li>Open <b>leerling.somtoday.nl</b> en log in als {me.id === who.id ? "jezelf" : who.name}.</li>
+            <li>Druk op <b>F12</b> › tabblad <b>Application</b> › links <b>Local storage</b> › <b>https://leerling.somtoday.nl</b>.</li>
+            <li>Dubbelklik bij de regel <b>CapacitorStorage.</b> met een lange code (bijvoorbeeld CapacitorStorage.39bc1e28-…) op de waarde rechts. Druk op Ctrl+A en Ctrl+C.</li>
+            <li>Plak het hieronder en tik op Koppelen. Open deze app daarvoor gewoon op de laptop, of stuur het naar je telefoon.</li>
+          </ol>
+          <textarea className="ff-text" rows={4} value={terug} onChange={(e) => setTerug(e.target.value)} placeholder='{"nonce":"…","refresh_token":"…", …}' />
+          <button className="ff-btn ff-btn-primary ff-btn-wide" disabled={bezig || !terug.includes("refresh_token")} onClick={() => doe(async () => { await plakLogin(who.id, terug); await klaar(); })}>
+            {bezig ? "Koppelen…" : "Koppelen"}
+          </button>
+          <button className="ff-link" onClick={() => { setTerug(""); setStap("uit"); }}>Annuleren</button>
         </>
       )}
 

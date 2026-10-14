@@ -31,6 +31,7 @@ export const koppelMetWachtwoord = (member_id: string, school: School, username:
   fn<{ ok: true }>({ action: "login", member_id, tenant_uuid: school.uuid, school: school.naam, username, password });
 export const startLink = (member_id: string, school: School) => fn<{ url: string }>({ action: "startLink", member_id, tenant_uuid: school.uuid, school: school.naam });
 export const finishLink = (member_id: string, callback: string) => fn<{ ok: true }>({ action: "finishLink", member_id, callback });
+export const plakLogin = (member_id: string, data: string) => fn<{ ok: true }>({ action: "plakLogin", member_id, data });
 export const ontkoppel = (member_id: string) => fn<{ ok: true }>({ action: "ontkoppel", member_id });
 
 /** Leerblok uit de planner als taak. */
