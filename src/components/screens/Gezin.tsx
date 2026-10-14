@@ -19,9 +19,10 @@ interface Props {
   me: Member;
   onToast: (m: string) => void;
   onOefenen: () => void;
+  onCoachNu: () => void;
 }
 
-export function Gezin({ state, me, onToast, onOefenen }: Props) {
+export function Gezin({ state, me, onToast, onOefenen, onCoachNu }: Props) {
   const [meeting, setMeeting] = useState(false);
   const [editGoals, setEditGoals] = useState(false);
   const [showInvites, setShowInvites] = useState(false);
@@ -132,6 +133,24 @@ export function Gezin({ state, me, onToast, onOefenen }: Props) {
       </section>
 
       <Vaardigheden state={state} />
+
+      <section className="ff-card ff-stack-s">
+        <div className="ff-row" style={{ justifyContent: "space-between" }}>
+          <h2 className="ff-h2">Onze afspraken</h2>
+          <button className="ff-link" onClick={onCoachNu}>Conflictcoach</button>
+        </div>
+        {(state.afspraken ?? []).length ? (
+          (state.afspraken ?? []).map((a) => (
+            <div key={a.id} className="ff-afspraak">
+              <span className="ff-grow">{a.text}</span>
+              <button className="ff-task-del" aria-label={`Afspraak weghalen: ${a.text}`} onClick={() => { actions.removeAfspraak(a.id); onToast("Afspraak weggehaald"); }}><Icon name="sluit" size={14} /></button>
+            </div>
+          ))
+        ) : (
+          <p className="ff-small ff-muted">Afspraken die jullie met de conflictcoach maken, komen hier te staan. Bespreek ze in het gezinsoverleg.</p>
+        )}
+        {(state.coachLog ?? []).length > 0 && <p className="ff-small ff-muted">Coach deze week {(state.coachLog ?? []).filter((l) => Date.now() - new Date(l.at).getTime() < 7 * 864e5).length} keer gebruikt.</p>}
+      </section>
 
       {recent.length > 0 && (
         <section className="ff-card ff-stack-s">

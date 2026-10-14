@@ -1,15 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Avatar } from "@/components/avatar/Avatar";
 import { Icon } from "@/components/ui/Icon";
+import { RustKeuze, StoplichtKiezer } from "@/components/ui/Stoplicht";
+import type { Licht } from "@/lib/methodiek";
 import { actions } from "@/lib/store";
 import type { ConflictSide, FamilyState, Member } from "@/lib/types";
 
 export const TOPICS = ["Spullen pakken of lenen", "Taken in huis", "Plagen of uitlachen", "Iets eerlijk verdelen", "Fysiek: duwen, slaan, schoppen", "Iets anders"];
 const FEEL = ["Boos", "Verdrietig", "Oneerlijk behandeld", "Gekwetst", "Schuldig"];
 const WANT = ["Sorry horen", "Een eerlijke verdeling", "Met rust gelaten worden", "Het weer goedmaken", "Een afspraak maken"];
-export const SOLUTIONS = ["We zeggen allebei sorry", "We spreken een regel af", "Om de beurt", "Het goedmaken met een actie", "Een ouder helpt ons"];
+export const SOLUTIONS = ["Sorry zeggen, als we het menen", "We spreken een regel af", "Om de beurt", "Het goedmaken met een actie", "Een ouder helpt ons"];
 
 interface Props {
   state: FamilyState;
@@ -29,18 +31,8 @@ export function Ruzie({ state, me, conflictId, onClose, onToast, onAfter }: Prop
   const [step, setStep] = useState(0);
   const [other, setOther] = useState<string>(existing ? existing.from : siblings.length === 1 ? siblings[0].id : "");
   const [topic, setTopic] = useState(existing?.topic ?? "");
-  const [emo, setEmo] = useState(0);
-  const [left, setLeft] = useState(0);
+  const [licht, setLicht] = useState<Licht | null>(null);
   const [side, setSide] = useState<ConflictSide>({ feel: [], want: [], story: "" });
-
-  useEffect(() => {
-    if (left <= 0) return;
-    const t = window.setTimeout(() => {
-      setLeft((n) => n - 1);
-      if (left === 1) setStep(2);
-    }, 1000);
-    return () => window.clearTimeout(t);
-  }, [left]);
 
   const otherM = state.members.find((m) => m.id === other);
   const otherSide = existing?.sides[existing.from];
@@ -121,20 +113,10 @@ export function Ruzie({ state, me, conflictId, onClose, onToast, onAfter }: Prop
       )}
 
       {step === 1 && (
-        <section className="ff-card ff-stack">
-          <h2 className="ff-h2">Hoe boos ben je nu?</h2>
-          <div className="ff-thermo" role="group" aria-label="Van 1, rustig, tot 10, ontploffen">
-            {Array.from({ length: 10 }, (_, i) => (
-              <button key={i} aria-pressed={emo === i + 1} onClick={() => { setEmo(i + 1); if (i + 1 >= 7) setLeft(30); else setStep(2); }}>{i + 1}</button>
-            ))}
-          </div>
-          {left > 0 && (
-            <div className="ff-stack ff-calm" style={{ borderRadius: 18, padding: 14 }}>
-              <p>Eerst even afkoelen. Adem mee: 4 tellen in, 4 tellen uit.</p>
-              <div className="ff-breath"><span>{left}</span></div>
-              <button className="ff-btn ff-btn-ghost" onClick={() => { setLeft(0); setStep(2); }}>Ik ben rustig, verder</button>
-            </div>
-          )}
+        <section className="ff-stack-s">
+          <h2 className="ff-h2">Hoe hoog is de spanning bij jou?</h2>
+          {!licht && <StoplichtKiezer onPick={(l) => { setLicht(l); if (l !== "rood") setStep(2); }} />}
+          {licht === "rood" && <RustKeuze onDone={() => setStep(2)} knop="Ik ben rustig genoeg, verder" />}
         </section>
       )}
 

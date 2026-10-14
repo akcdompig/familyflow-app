@@ -51,7 +51,7 @@ export interface CoachScenario {
   otherStart: number;
   start: CoachNode;
   nodes: Record<string, CoachNode>;
-  advice: { coach: string; psy: string; quest: string };
+  advice: { coach: string; psy: string; quest: string; safety?: string };
 }
 
 export const SKILLS: Record<SkillId, { label: string; short: string }> = {
@@ -401,6 +401,7 @@ export const COACH_SCENARIOS: CoachScenario[] = [
       coach: "Online voelt alles groter, omdat iedereen meekijkt. Reageer nooit in de groep als je boos bent. Maak een screenshot, zeg het privé, of laat een volwassene het oplossen.",
       psy: "Wie pest, zoekt vaak de aandacht van de groep. Een boze reactie in de groep geeft precies die aandacht. Hulp vragen is geen zwakte: wie hulp vraagt, komt er sneller en met minder schade uit.",
       quest: "Spreek met je ouders af wat je doet als er online iets naars gebeurt. Zet het in je rustplan.",
+      safety: "Gaat het om een naaktfoto, chantage of iemand die dreigt? Dat is geen gewone ruzie. Stuur niks door, vertel het meteen aan een volwassene en kijk op helpwanted.nl. Het is nooit jouw schuld.",
     },
   },
   {

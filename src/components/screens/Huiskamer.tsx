@@ -19,6 +19,7 @@ interface Props {
   onGoTasks: () => void;
   onRuzie: (id?: string) => void;
   onGoGezin: () => void;
+  onCoachNu: () => void;
 }
 
 function timeOfDay() {
@@ -28,7 +29,7 @@ function timeOfDay() {
   return "nacht";
 }
 
-export function Huiskamer({ state, me, onCheckIn, onOpenMember, onTalkTips, onWho, onGoTasks, onRuzie, onGoGezin }: Props) {
+export function Huiskamer({ state, me, onCheckIn, onOpenMember, onTalkTips, onWho, onGoTasks, onRuzie, onGoGezin, onCoachNu }: Props) {
   const back = state.members.filter((m) => m.role === "ouder");
   const front = state.members.filter((m) => m.role !== "ouder");
   const tod = timeOfDay();
@@ -62,6 +63,12 @@ export function Huiskamer({ state, me, onCheckIn, onOpenMember, onTalkTips, onWh
 
       <Attention state={state} me={me} onTalkTips={onTalkTips} onCheckIn={onCheckIn} onGoTasks={onGoTasks} onRuzie={onRuzie} onGoGezin={onGoGezin} />
       <Inbox state={state} me={me} />
+
+      <button className="ff-coachnu-btn" onClick={onCoachNu}>
+        <Icon name="chat" size={22} />
+        <span className="ff-grow"><b>Ruzie of gedoe?</b><br /><span className="ff-small">De coach helpt je stap voor stap</span></span>
+        <span className="ff-chev"><Icon name="terug" size={18} /></span>
+      </button>
 
       <div className="ff-mybar">
         <MoodFace mood={mine ? (mine.rest ? "rust" : mine.mood) : 3} size={36} />

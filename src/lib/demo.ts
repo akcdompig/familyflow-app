@@ -98,6 +98,14 @@ export function demoFamily(): FamilyState {
       { id: "q2", member: "k1", title: "Oefen: Een normale vraag, een vals antwoord", scenario: "vals-antwoord", skill: "toon", from: "zorg", at: daysAgo(1) },
       { id: "q3", member: "k2", title: "Geef deze week één keer rustig een grens aan.", skill: "grens", from: "coach", at: daysAgo(4), done: daysAgo(1) },
     ],
+    afspraken: [
+      { id: "a1", text: "Een seintje 10 minuten voordat de gametijd voorbij is", at: daysAgo(5), by: "p1", scenario: "gamen" },
+      { id: "a2", text: "Kloppen voordat je bij een ander binnenkomt", at: daysAgo(3), by: "p2", scenario: "in-de-weg" },
+    ],
+    coachLog: [
+      { at: daysAgo(5), by: "p1", scenario: "gamen", licht: "oranje" },
+      { at: daysAgo(3), by: "k2", scenario: "in-de-weg", licht: "rood" },
+    ],
     coach: {
       k1: [{ id: "gamen-stoppen", at: daysAgo(2), path: ["aanval", "opkomen"], outcome: "opgelost" }],
       k2: [{ id: "iemand-doet-vals", at: daysAgo(4), path: ["opkomen"], outcome: "opgelost" }],

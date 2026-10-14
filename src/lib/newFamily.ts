@@ -83,6 +83,8 @@ export function newFamily(familyName: string, people: NewMember[]): FamilyState 
     proNotes: { school: "", zorg: "" },
     quests: [],
     coach: {},
+    afspraken: [],
+    coachLog: [],
   };
 }
 

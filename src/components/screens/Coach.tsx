@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Avatar } from "@/components/avatar/Avatar";
 import { Icon } from "@/components/ui/Icon";
+import { lichtNaarGetal, RustKeuze, StoplichtKiezer } from "@/components/ui/Stoplicht";
 import type { Expression } from "@/lib/mood";
 import { actions } from "@/lib/store";
 import {
@@ -97,17 +98,7 @@ export function CoachPlay({ id, state, me, onClose, onToast }: { id: string; sta
   const [otherFeel, setOtherFeel] = useState<Feel>(s.start.feel);
   const [startSelf, setStartSelf] = useState(s.selfStart);
   const [end, setEnd] = useState<End | null>(null);
-  const [left, setLeft] = useState(0);
   const [questTaken, setQuestTaken] = useState(() => (state.quests ?? []).some((q) => q.member === me.id && q.title === s.advice.quest && !q.done));
-
-  useEffect(() => {
-    if (stage !== "adem" || left <= 0) return;
-    const tm = window.setTimeout(() => {
-      setLeft((n) => n - 1);
-      if (left === 1) setStage("kies");
-    }, 1000);
-    return () => window.clearTimeout(tm);
-  }, [stage, left]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -167,38 +158,21 @@ export function CoachPlay({ id, state, me, onClose, onToast }: { id: string; sta
       )}
 
       {stage === "voel" && (
-        <section className="ff-card ff-stack">
-          <h2 className="ff-h2">Hoe boos ben jij nu?</h2>
+        <section className="ff-card ff-stack-s">
+          <h2 className="ff-h2">Hoe hoog is jouw spanning nu?</h2>
           <p className="ff-small ff-muted">Stel je voor dat dit nu echt gebeurt.</p>
-          <div className="ff-thermo" role="group" aria-label="Van 1, rustig, tot 10, ontploffen">
-            {Array.from({ length: 10 }, (_, i) => (
-              <button
-                key={i}
-                aria-pressed={startSelf === i + 1}
-                onClick={() => {
-                  setStartSelf(i + 1);
-                  setSelf(i + 1);
-                  if (i + 1 >= 7) {
-                    setLeft(20);
-                    setStage("adem");
-                  } else setStage("kies");
-                }}
-              >
-                {i + 1}
-              </button>
-            ))}
-          </div>
+          <StoplichtKiezer
+            onPick={(l) => {
+              const v = lichtNaarGetal(l);
+              setStartSelf(v);
+              setSelf(v);
+              setStage(l === "rood" ? "adem" : "kies");
+            }}
+          />
         </section>
       )}
 
-      {stage === "adem" && (
-        <section className="ff-card ff-stack ff-calm">
-          <b>Stop. Eerst ademen.</b>
-          <p className="ff-small">Boven de 7 denk je minder helder. Adem mee: 4 tellen in, 4 tellen uit. Wat wil je eigenlijk bereiken?</p>
-          <div className="ff-breath"><span>{left}</span></div>
-          <button className="ff-btn ff-btn-ghost" onClick={() => { setLeft(0); setStage("kies"); }}>Ik ben rustiger, verder</button>
-        </section>
-      )}
+      {stage === "adem" && <RustKeuze onDone={() => setStage("kies")} />}
 
       {stage === "kies" && (
         <section className="ff-stack-s">
@@ -345,6 +319,7 @@ function Terugblik({
         <p>{usedGood ? "Goed dat je voor jezelf opkwam. " : "Dit was lastig, en dat is precies waarom we het oefenen. "}{t(s.advice.coach)}</p>
         <span className="ff-eyebrow">Waarom werkt dit?</span>
         <p className="ff-small">{t(s.advice.psy)}</p>
+        {s.advice.safety && <p className="ff-alert">{s.advice.safety}</p>}
         <span className="ff-eyebrow">Wat deden jouw keuzes?</span>
         {[...new Set(steps.map((x) => x.choice.type))].map((ty) => <p key={ty} className="ff-small"><b>{TYPE_INFO[ty].label}:</b> {TYPE_INFO[ty].uitleg}</p>)}
       </section>

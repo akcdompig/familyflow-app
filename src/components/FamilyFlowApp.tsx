@@ -12,6 +12,8 @@ import { Ik } from "@/components/screens/Ik";
 import { ProApp } from "@/components/screens/Pro";
 import { Ruzie } from "@/components/screens/Ruzie";
 import { CoachPlay } from "@/components/screens/Coach";
+import { CoachNu } from "@/components/screens/CoachNu";
+import { scenarioById } from "@/lib/coach";
 import { Oefenen } from "@/components/screens/Oefenen";
 import { Taken } from "@/components/screens/Taken";
 import { Icon, type IconName } from "@/components/ui/Icon";
@@ -58,6 +60,7 @@ export function FamilyFlowApp() {
   // Ruzie-scherm: null = dicht, "" = nieuwe ruzie, anders id van een ruzie om op te reageren.
   const [ruzie, setRuzie] = useState<string | null>(null);
   const [coach, setCoach] = useState<string | null>(null);
+  const [coachNu, setCoachNu] = useState<string | null>(null);
 
   // Energie van elke avatar komt uit de taken van vandaag.
   const state: FamilyState = useMemo(() => ({ ...raw, members: raw.members.map((m) => ({ ...m, energy: energyOf(raw, m) })) }), [raw]);
@@ -84,6 +87,7 @@ export function FamilyFlowApp() {
     setScreen("huis");
     setRuzie(null);
     setCoach(null);
+    setCoachNu(null);
     setToast(null);
     window.scrollTo(0, 0);
   };
@@ -120,24 +124,41 @@ export function FamilyFlowApp() {
     <div className={`ff-app ${isParent ? "ff-theme-ouder" : "ff-theme-kind"}`}>
       {screen !== "maker" && !live && <DemoBar state={state} onSwitch={afterSwitch} />}
       {live && syncErr && <div className="ff-syncbar" role="status">Niet opgeslagen: {syncErr}. Ik probeer het zo opnieuw.</div>}
-      {coach !== null ? (
+      {coachNu !== null ? (
+        <CoachNu
+          key={coachNu || "kies"}
+          state={state}
+          me={me}
+          startId={coachNu || undefined}
+          onClose={() => setCoachNu(null)}
+          onToast={setToast}
+          onPractice={(id) => {
+            setCoachNu(null);
+            if (me.role === "ouder") {
+              const sc = scenarioById(id);
+              for (const k of state.members.filter((m) => m.role !== "ouder")) actions.addQuest({ member: k.id, title: `Oefen: ${sc?.title ?? id}`, scenario: id, skill: sc?.skill, from: "ouder" });
+              setToast("De oefening staat bij de kinderen als quest");
+            } else setCoach(id);
+          }}
+        />
+      ) : coach !== null ? (
         <CoachPlay key={coach} id={coach} state={state} me={me} onClose={() => setCoach(null)} onToast={setToast} />
       ) : ruzie !== null ? (
         <Ruzie key={ruzie || "nieuw"} state={state} me={me} conflictId={ruzie || undefined} onClose={() => setRuzie(null)} onToast={setToast} onAfter={() => setCheckIn(true)} />
       ) : (
         <>
       {view === "huis" && (
-        <Huiskamer state={state} me={me} onCheckIn={() => setCheckIn(true)} onOpenMember={setMember} onTalkTips={setTips} onWho={() => (live ? setScreen("ik") : setWho(true))} onGoTasks={() => setScreen("taken")} onRuzie={(id) => setRuzie(id ?? "")} onGoGezin={() => setScreen("gezin")} />
+        <Huiskamer state={state} me={me} onCheckIn={() => setCheckIn(true)} onOpenMember={setMember} onTalkTips={setTips} onWho={() => (live ? setScreen("ik") : setWho(true))} onGoTasks={() => setScreen("taken")} onRuzie={(id) => setRuzie(id ?? "")} onGoGezin={() => setScreen("gezin")} onCoachNu={() => setCoachNu("")} />
       )}
       {view === "taken" && <Taken state={state} me={me} onToast={setToast} onPlay={setCoach} />}
-      {view === "oefenen" && <Oefenen state={state} me={me} onToast={setToast} onCalm={() => setCalm(true)} onRuzie={() => setRuzie("")} onCoach={setCoach} />}
-      {view === "gezin" && isParent && <Gezin state={state} me={me} onToast={setToast} onOefenen={() => setScreen("oefenen")} />}
+      {view === "oefenen" && <Oefenen state={state} me={me} onToast={setToast} onCalm={() => setCalm(true)} onRuzie={() => setRuzie("")} onCoach={setCoach} onCoachNu={() => setCoachNu("")} />}
+      {view === "gezin" && isParent && <Gezin state={state} me={me} onToast={setToast} onOefenen={() => setScreen("oefenen")} onCoachNu={() => setCoachNu("")} />}
       {view === "ik" && <Ik state={state} me={me} onEditAvatar={() => setScreen("maker")} onCalm={() => setCalm(true)} onToast={setToast} />}
       {view === "maker" && <AvatarMaker key={me.id} member={me} onClose={() => setScreen("ik")} onSaved={setToast} />}
         </>
       )}
 
-      {screen !== "maker" && ruzie === null && coach === null && (
+      {screen !== "maker" && ruzie === null && coach === null && coachNu === null && (
         <nav className="ff-nav" aria-label="Hoofdmenu">
           {nav.map((n) => {
             const cur = screen === n.id || (n.id === "gezin" && screen === "oefenen" && isParent);

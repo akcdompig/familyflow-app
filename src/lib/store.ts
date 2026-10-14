@@ -348,6 +348,18 @@ export const actions = {
   removeQuest(id: string) {
     update((s) => ({ ...s, quests: (s.quests ?? []).filter((x) => x.id !== id) }));
   },
+  addAfspraak(text: string, by: string, scenario?: string) {
+    const a = { id: newId("a"), text: text.trim(), at: new Date().toISOString(), by, scenario };
+    if (!a.text) return;
+    update((s) => ((s.afspraken ?? []).some((x) => x.text === a.text) ? s : { ...s, afspraken: [...(s.afspraken ?? []), a].slice(-50) }));
+  },
+  removeAfspraak(id: string) {
+    update((s) => ({ ...s, afspraken: (s.afspraken ?? []).filter((x) => x.id !== id) }));
+  },
+  logCoach(by: string, scenario: string, licht: "rood" | "oranje" | "groen" | "veilig") {
+    const at = new Date().toISOString();
+    update((s) => ({ ...s, coachLog: [...(s.coachLog ?? []), { at, by, scenario, licht }].slice(-200) }));
+  },
   /** Alleen demo. */
   reset() {
     if (live) return;

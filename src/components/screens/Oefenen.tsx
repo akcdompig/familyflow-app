@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Flo } from "@/components/ui/Flo";
 import { Icon } from "@/components/ui/Icon";
 import { CoachList } from "@/components/screens/Coach";
+import { RustKeuze, StoplichtKiezer } from "@/components/ui/Stoplicht";
 import { SCENARIOS, type Scenario } from "@/lib/scenarios";
 import { actions } from "@/lib/store";
 import type { FamilyState, Member } from "@/lib/types";
@@ -32,7 +33,7 @@ function Listen({ text }: { text: string }) {
   );
 }
 
-export function Oefenen({ state, me, onToast, onCalm, onRuzie, onCoach }: { state: FamilyState; me: Member; onToast: (m: string) => void; onCalm: () => void; onRuzie: () => void; onCoach: (id: string) => void }) {
+export function Oefenen({ state, me, onToast, onCalm, onRuzie, onCoach, onCoachNu }: { state: FamilyState; me: Member; onToast: (m: string) => void; onCalm: () => void; onRuzie: () => void; onCoach: (id: string) => void; onCoachNu: () => void }) {
   const [play, setPlay] = useState<Scenario | null>(null);
   const played = state.played[me.id] ?? [];
   const isParent = me.role === "ouder";
@@ -61,6 +62,12 @@ export function Oefenen({ state, me, onToast, onCalm, onRuzie, onCoach }: { stat
         </button>
       )}
 
+      <button className="ff-coachnu-btn" onClick={onCoachNu}>
+        <Icon name="chat" size={22} />
+        <span className="ff-grow"><b>Nu een ruzie of gedoe?</b><br /><span className="ff-small">Stap voor stap hulp, voor nu meteen</span></span>
+        <span className="ff-chev"><Icon name="terug" size={18} /></span>
+      </button>
+
       <CoachList state={state} me={me} onPlay={onCoach} />
 
       <h2 className="ff-h2">Korte oefeningen</h2>
@@ -85,28 +92,9 @@ export function Oefenen({ state, me, onToast, onCalm, onRuzie, onCoach }: { stat
 
 function Play({ scenario: s, me, onClose, onToast }: { scenario: Scenario; me: Member; onClose: () => void; onToast: (m: string) => void }) {
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
-  const [emo, setEmo] = useState(0);
-  const [left, setLeft] = useState(30);
   const [pick, setPick] = useState<number | null>(null);
   const [answer, setAnswer] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (step !== 1) return;
-    if (left <= 0) {
-      setStep(2);
-      return;
-    }
-    const t = window.setTimeout(() => setLeft((n) => n - 1), 1000);
-    return () => window.clearTimeout(t);
-  }, [step, left]);
-
-  const chooseEmo = (v: number) => {
-    setEmo(v);
-    if (v >= 7) {
-      setLeft(30);
-      setStep(1);
-    } else setStep(2);
-  };
   const finish = () => {
     const first = actions.finishScenario(me.id, s.id);
     onToast(first && me.role !== "ouder" ? "Level klaar! +20 XP" : "Goed geoefend");
@@ -128,24 +116,12 @@ function Play({ scenario: s, me, onClose, onToast }: { scenario: Scenario; me: M
         <section className="ff-card ff-stack">
           <p className="ff-lead">{s.situation}</p>
           <Listen text={s.situation} />
-          <p className="ff-strong">Stel je voor dat dit jou overkomt. Hoe boos of gespannen zou je worden?</p>
-          <div className="ff-thermo" role="group" aria-label="Van 1, rustig, tot 10, ontploffen">
-            {Array.from({ length: 10 }, (_, i) => (
-              <button key={i} onClick={() => chooseEmo(i + 1)} aria-label={`${i + 1}`}>{i + 1}</button>
-            ))}
-          </div>
-          <div className="ff-row ff-small ff-muted" style={{ justifyContent: "space-between" }}><span>rustig</span><span>ontploffen</span></div>
+          <p className="ff-strong">Stel je voor dat dit jou overkomt. Hoe hoog zou je spanning worden?</p>
+          <StoplichtKiezer kort onPick={(l) => setStep(l === "rood" ? 1 : 2)} />
         </section>
       )}
 
-      {step === 1 && (
-        <section className="ff-card ff-stack ff-calm">
-          <h2 className="ff-h2">Eerst afkoelen</h2>
-          <p>Bij een {emo} denk je minder helder. Dat geldt voor iedereen. Adem mee: 4 tellen in, 4 tellen uit.</p>
-          <div className="ff-breath" aria-live="off"><span>{left}</span></div>
-          <button className="ff-btn ff-btn-ghost" onClick={() => setStep(2)}>Ik ben rustig, verder</button>
-        </section>
-      )}
+      {step === 1 && <RustKeuze onDone={() => setStep(2)} />}
 
       {step === 2 && (
         <section className="ff-stack">
