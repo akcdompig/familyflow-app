@@ -11,6 +11,7 @@ const PATHS = {
   schild: "M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z",
   dobbel: "M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z",
   wissel: "M4 8h14l-3-3M20 16H6l3 3",
+  oefenen: "M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z",
 } as const;
 
 export type IconName = keyof typeof PATHS;

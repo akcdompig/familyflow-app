@@ -1,16 +1,22 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Avatar } from "@/components/avatar/Avatar";
 import { AvatarMaker } from "@/components/screens/AvatarMaker";
+import { CalmSheet } from "@/components/screens/CalmSheet";
 import { CheckInSheet } from "@/components/screens/CheckInSheet";
 import { Huiskamer } from "@/components/screens/Huiskamer";
+import { Ik } from "@/components/screens/Ik";
+import { Oefenen } from "@/components/screens/Oefenen";
+import { Taken } from "@/components/screens/Taken";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { Sheet } from "@/components/ui/Sheet";
 import { expressionFor, moodLabel, timeLabel } from "@/lib/mood";
 import { actions, useFamily } from "@/lib/store";
+import { energyOf, isDone, tasksFor } from "@/lib/tasks";
+import type { FamilyState } from "@/lib/types";
 
-type Screen = "huis" | "maker";
+type Screen = "huis" | "taken" | "oefenen" | "ik" | "maker";
 
 const TOPIC_OPENERS: Record<string, string> = {
   School: "Hoe was het vandaag op school? Was er iets lastigs?",
@@ -21,15 +27,26 @@ const TOPIC_OPENERS: Record<string, string> = {
   Slaap: "Je slaapt slecht, hè? Wat houdt je wakker?",
 };
 
+const NAV: { id: Screen; label: string; icon: IconName }[] = [
+  { id: "huis", label: "Huiskamer", icon: "huis" },
+  { id: "taken", label: "Taken", icon: "taken" },
+  { id: "oefenen", label: "Oefenen", icon: "oefenen" },
+  { id: "ik", label: "Ik", icon: "ik" },
+];
+
 export function FamilyFlowApp() {
-  const state = useFamily();
+  const raw = useFamily();
   const [mounted, setMounted] = useState(false);
   const [screen, setScreen] = useState<Screen>("huis");
   const [checkIn, setCheckIn] = useState(false);
+  const [calm, setCalm] = useState(false);
   const [member, setMember] = useState<string | null>(null);
   const [tips, setTips] = useState<string | null>(null);
   const [who, setWho] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+
+  // Energie van elke avatar komt uit de taken van vandaag.
+  const state: FamilyState = useMemo(() => ({ ...raw, members: raw.members.map((m) => ({ ...m, energy: energyOf(raw, m) })) }), [raw]);
 
   useEffect(() => setMounted(true), []);
   useEffect(() => {
@@ -37,8 +54,12 @@ export function FamilyFlowApp() {
     const t = window.setTimeout(() => setToast(null), 2800);
     return () => window.clearTimeout(t);
   }, [toast]);
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [screen]);
 
   const closeCheckIn = useCallback(() => setCheckIn(false), []);
+  const closeCalm = useCallback(() => setCalm(false), []);
   const closeMember = useCallback(() => setMember(null), []);
   const closeTips = useCallback(() => setTips(null), []);
   const closeWho = useCallback(() => setWho(false), []);
@@ -51,48 +72,35 @@ export function FamilyFlowApp() {
   const sel = member ? state.members.find((m) => m.id === member) : undefined;
   const selCi = sel ? state.checkins[sel.id] : undefined;
   const canSeeDetails = !!sel && (sel.id === me.id || (me.role === "ouder" && sel.role !== "ouder"));
+  const selTasks = sel ? tasksFor(state, sel.id) : [];
   const tipKid = tips ? state.members.find((m) => m.id === tips) : undefined;
   const tipTopics = tipKid ? state.checkins[tipKid.id]?.topics ?? [] : [];
-
-  const nav: { id: string; label: string; icon: IconName; soon?: boolean }[] = [
-    { id: "huis", label: "Huiskamer", icon: "huis" },
-    { id: "taken", label: "Taken", icon: "taken", soon: true },
-    { id: "voortgang", label: "Voortgang", icon: "voortgang", soon: true },
-    { id: "maker", label: "Ik", icon: "ik" },
-  ];
+  const openLeft = tasksFor(state, me.id).filter((t) => !isDone(state, t.id)).length;
 
   return (
     <div className={`ff-app ${me.role === "ouder" ? "ff-theme-ouder" : "ff-theme-kind"}`}>
       {screen === "huis" && (
-        <Huiskamer
-          state={state}
-          me={me}
-          onCheckIn={() => setCheckIn(true)}
-          onOpenMember={setMember}
-          onTalkTips={setTips}
-          onWho={() => setWho(true)}
-        />
+        <Huiskamer state={state} me={me} onCheckIn={() => setCheckIn(true)} onOpenMember={setMember} onTalkTips={setTips} onWho={() => setWho(true)} onGoTasks={() => setScreen("taken")} />
       )}
-      {screen === "maker" && <AvatarMaker key={me.id} member={me} onClose={() => setScreen("huis")} onSaved={setToast} />}
+      {screen === "taken" && <Taken state={state} me={me} onToast={setToast} />}
+      {screen === "oefenen" && <Oefenen state={state} me={me} onToast={setToast} onCalm={() => setCalm(true)} />}
+      {screen === "ik" && <Ik state={state} me={me} onEditAvatar={() => setScreen("maker")} onCalm={() => setCalm(true)} onToast={setToast} />}
+      {screen === "maker" && <AvatarMaker key={me.id} member={me} onClose={() => setScreen("ik")} onSaved={setToast} />}
 
-      {screen === "huis" && (
+      {screen !== "maker" && (
         <nav className="ff-nav" aria-label="Hoofdmenu">
-          {nav.map((n) => (
-            <button
-              key={n.id}
-              className="ff-nav-item"
-              aria-current={screen === n.id ? "page" : undefined}
-              onClick={() => (n.soon ? setToast(`${n.label} komt in het volgende stukje`) : setScreen(n.id as Screen))}
-            >
+          {NAV.map((n) => (
+            <button key={n.id} className="ff-nav-item" aria-current={screen === n.id ? "page" : undefined} onClick={() => setScreen(n.id)}>
               <Icon name={n.icon} size={26} filled={screen === n.id} />
               <span>{n.label}</span>
-              {n.soon && <span className="ff-soon">binnenkort</span>}
+              {n.id === "taken" && openLeft > 0 && <span className="ff-nav-badge" aria-label={`${openLeft} open`}>{openLeft}</span>}
             </button>
           ))}
         </nav>
       )}
 
       <CheckInSheet open={checkIn} onClose={closeCheckIn} me={me} current={state.checkins[me.id]} talkTo={talkTo} onDone={setToast} />
+      <CalmSheet open={calm} onClose={closeCalm} me={me} plan={state.plans[me.id]} onDone={setToast} />
 
       <Sheet open={!!sel} onClose={closeMember} title={sel ? sel.name : "Gezinslid"}>
         {sel && (
@@ -108,10 +116,12 @@ export function FamilyFlowApp() {
               </div>
             )}
             {canSeeDetails && selCi?.wantsTalk && sel.id !== me.id && <p className="ff-strong">{sel.name} wil graag met je praten.</p>}
-            <div className="ff-energy" aria-label={`Energie ${Math.round(sel.energy * 100)} procent`}>
-              <span className="ff-eyebrow">Energie uit quests</span>
-              <span className="ff-bar"><i style={{ width: `${Math.round(sel.energy * 100)}%` }} /></span>
-            </div>
+            {selTasks.length > 0 && (
+              <div className="ff-energy">
+                <span className="ff-eyebrow">Taken vandaag: {selTasks.filter((t) => isDone(state, t.id)).length} van {selTasks.length}</span>
+                <span className="ff-bar"><i style={{ width: `${Math.round(sel.energy * 100)}%` }} /></span>
+              </div>
+            )}
             {me.role === "ouder" && sel.role !== "ouder" && (
               <button className="ff-btn ff-btn-dark ff-btn-wide" onClick={() => { closeMember(); setTips(sel.id); }}>
                 Hoe begin ik het gesprek?
@@ -132,7 +142,7 @@ export function FamilyFlowApp() {
             <h2 className="ff-h2">Praten met {tipKid.name}</h2>
             <div className="ff-script">
               <div className="ff-script-say"><b>Begin zo:</b> {tipTopics.map((t) => TOPIC_OPENERS[t]).find(Boolean) ?? "Ik zag dat je je niet zo lekker voelt. Wil je vertellen wat er is?"}</div>
-              <div><b>Doe:</b> naast elkaar in plaats van tegenover elkaar: in de auto, tijdens het koken, met de hond. Luister, vat samen wat je hoort.</div>
+              <div><b>Doe:</b> naast elkaar in plaats van tegenover elkaar: in de auto, tijdens het koken of een wandeling. Luister, en vat samen wat je hoort.</div>
               <div><b>Wil {tipKid.name} niet praten?</b> Zeg: &ldquo;Oké. Ik ben er als je wilt.&rdquo; En kom er later op terug.</div>
               <div className="ff-script-dont"><b>Liever niet:</b> meteen oplossen, preken of doorvragen als een verhoor.</div>
             </div>
@@ -153,7 +163,7 @@ export function FamilyFlowApp() {
               </button>
             ))}
           </div>
-          <button className="ff-link" onClick={() => { actions.reset(); closeWho(); setToast("Voorbeeldgezin teruggezet"); }}>
+          <button className="ff-link" onClick={() => { actions.reset(); closeWho(); setScreen("huis"); setToast("Voorbeeldgezin teruggezet"); }}>
             Demo opnieuw beginnen
           </button>
         </div>

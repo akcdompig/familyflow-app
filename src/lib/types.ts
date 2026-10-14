@@ -14,7 +14,7 @@ export interface AvatarConfig {
   outfitColor: string;
 }
 
-/** 1 = heel slecht … 5 = top. "rust" = wil even met rust gelaten worden. */
+/** 1 = heel slecht … 5 = top. */
 export type MoodLevel = 1 | 2 | 3 | 4 | 5;
 
 export interface CheckIn {
@@ -31,14 +31,49 @@ export interface Member {
   role: Role;
   age?: number;
   avatar: AvatarConfig;
-  /** 0–1, komt straks uit quests en routines. Zegt niets over gevoel. */
+  /** 0–1, berekend uit de taken van vandaag. Zegt niets over gevoel. */
   energy: number;
 }
 
+export type TaskIcon = "pen" | "boek" | "sport" | "huis" | "bord" | "afval" | "poot" | "bed" | "telefoon" | "zon" | "kar" | "post";
+
+/** Een lid-id, of "beurt": rouleert elke dag tussen de kinderen. */
+export type Assignee = string;
+
+export interface Task {
+  id: string;
+  title: string;
+  icon: TaskIcon;
+  assignee: Assignee;
+  repeat: "dagelijks" | "eenmalig";
+  /** Alleen bij eenmalig: de dag (YYYY-MM-DD). */
+  date?: string;
+  xp: number;
+  /** Alleen tonen als het gezin een huisdier heeft. */
+  pet?: boolean;
+  createdBy: string;
+}
+
+export interface CalmPlan {
+  signals: string[];
+  helps: string[];
+  needs: string[];
+  place: string;
+}
+
 export interface FamilyState {
-  version: 1;
+  version: 2;
   family: string;
   members: Member[];
   me: string;
   checkins: Record<string, CheckIn | undefined>;
+  tasks: Task[];
+  /** done[datum][taakId] = id van wie het deed */
+  done: Record<string, Record<string, string>>;
+  xp: Record<string, number>;
+  /** Geoefende oefenlevels per lid */
+  played: Record<string, number[]>;
+  plans: Record<string, CalmPlan>;
+  calm: { member: string; at: string }[];
+  pet: { has: boolean; name: string; kind: string };
 }

@@ -6,6 +6,7 @@ import { Icon } from "@/components/ui/Icon";
 import { MoodFace } from "@/components/ui/MoodFace";
 import { actions } from "@/lib/store";
 import { expressionFor, moodDot, moodLabel, timeLabel } from "@/lib/mood";
+import { isDone, tasksFor } from "@/lib/tasks";
 import type { FamilyState, Member } from "@/lib/types";
 
 interface Props {
@@ -15,6 +16,7 @@ interface Props {
   onOpenMember: (id: string) => void;
   onTalkTips: (id: string) => void;
   onWho: () => void;
+  onGoTasks: () => void;
 }
 
 function timeOfDay() {
@@ -24,7 +26,7 @@ function timeOfDay() {
   return "nacht";
 }
 
-export function Huiskamer({ state, me, onCheckIn, onOpenMember, onTalkTips, onWho }: Props) {
+export function Huiskamer({ state, me, onCheckIn, onOpenMember, onTalkTips, onWho, onGoTasks }: Props) {
   const back = state.members.filter((m) => m.role === "ouder");
   const front = state.members.filter((m) => m.role !== "ouder");
   const tod = timeOfDay();
@@ -56,7 +58,7 @@ export function Huiskamer({ state, me, onCheckIn, onOpenMember, onTalkTips, onWh
         <Row members={front} row="voor" state={state} me={me} onOpen={onOpenMember} />
       </section>
 
-      <Attention state={state} me={me} onTalkTips={onTalkTips} onCheckIn={onCheckIn} />
+      <Attention state={state} me={me} onTalkTips={onTalkTips} onCheckIn={onCheckIn} onGoTasks={onGoTasks} />
 
       <div className="ff-mybar">
         <MoodFace mood={mine ? (mine.rest ? "rust" : mine.mood) : 3} size={36} />
@@ -98,7 +100,7 @@ function Row({ members, row, state, me, onOpen }: { members: Member[]; row: "ach
   );
 }
 
-function Attention({ state, me, onTalkTips, onCheckIn }: { state: FamilyState; me: Member; onTalkTips: (id: string) => void; onCheckIn: () => void }) {
+function Attention({ state, me, onTalkTips, onCheckIn, onGoTasks }: { state: FamilyState; me: Member; onTalkTips: (id: string) => void; onCheckIn: () => void; onGoTasks: () => void }) {
   const kids = state.members.filter((m) => m.role !== "ouder");
   const parents = state.members.filter((m) => m.role === "ouder");
   const ci = (m: Member) => state.checkins[m.id];
@@ -164,6 +166,15 @@ function Attention({ state, me, onTalkTips, onCheckIn }: { state: FamilyState; m
       </Card>
     );
   }
+  const left = tasksFor(state, me.id).filter((t) => !isDone(state, t.id));
+  if (left.length) {
+    return (
+      <Card tone="zon" title={`Nog ${left.length} ${left.length === 1 ? "taak" : "taken"} voor vandaag`}>
+        <p>Volgende: {left[0].title.toLowerCase()}.</p>
+        <button className="ff-btn ff-btn-primary" onClick={onGoTasks}>Naar mijn taken</button>
+      </Card>
+    );
+  }
   const tired = parents.find((p) => (ci(p)?.mood ?? 5) <= 3);
   if (tired) {
     return (
@@ -174,7 +185,7 @@ function Attention({ state, me, onTalkTips, onCheckIn }: { state: FamilyState; m
   }
   return (
     <Card tone="munt" title="Goed bezig vandaag">
-      <p>Je hebt ingecheckt. Je quests komen hier straks bij.</p>
+      <p>Ingecheckt en je taken zijn af. Lekker!</p>
     </Card>
   );
 }

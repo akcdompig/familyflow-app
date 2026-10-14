@@ -17,13 +17,18 @@ Losse preview zonder Next.js (dezelfde componenten, één HTML-bestand):
 npm run preview:build   # maakt preview/dist/index.html
 ```
 
-## Wat er nu in zit (stukje 1)
+## Wat er nu in zit (stukje 1 en 2)
 
 - **Designsysteem "Zonsondergang"**: `src/styles/tokens.css`. Alle kleuren, letters, ruimtes, rondingen en bewegingen staan hier.
 - **Avatar-engine**: `src/components/avatar/`. Opgebouwd uit lagen (huid, haar, extra's, kleding) met uitdrukkingen per gevoel. Ze bewegen: ademen, knipperen en reageren als het gevoel verandert. Energie uit quests geeft glans, maar zegt niets over het gevoel.
 - **Huiskamer**: het startscherm. Het hele gezin in één kamer, met het licht van het moment van de dag (dag, avond, nacht). Maximaal één aandachtskaart tegelijk.
 - **Check-in**: kies een gezicht. Bij een slecht gevoel of "even rust" volgt één zachte vervolgvraag en de keuze om te praten.
 - **Avatar maken**: huid, haar (8 stijlen, waaronder een hoofddoek), extra's en kleding, plus "Verras me".
+- **Taken**: een simpele takenlijst per persoon, elke dag of alleen vandaag, of om de beurt tussen de kinderen. Ouders voegen taken toe. Kinderen krijgen XP, en hun avatar krijgt energie als hun taken af zijn.
+- **Huisdier is een keuze**: aan te zetten bij Ik › Gezin. Alleen dan verschijnen huisdiertaken.
+- **Oefenen**: 10 oefenlevels met keuzes, wat er met jou gebeurt en wat de ander voelt, eerst afkoelen bij een hoge score, voorlezen.
+- **Rustplan en "Ik word boos"**: eigen rustplan per gezinslid, ook voor ouders, en ademhalen met je eigen avatar.
+- **Ik**: avatar, level en XP, rustplan, gezinsinstellingen.
 
 Data staat nu nog lokaal (`src/lib/store.ts`). De schermen praten alleen met `useFamily()` en `actions`, zodat Supabase er later achter kan zonder dat de schermen veranderen.
 
@@ -38,8 +43,8 @@ Data staat nu nog lokaal (`src/lib/store.ts`). De schermen praten alleen met `us
 ## Volgende stukjes
 
 1. **Supabase**: tabellen `families`, `members`, `checkins` met Row Level Security, inloggen per gezinslid en Realtime, zodat een check-in direct bij de anderen verschijnt.
-2. **Taken en quests**: dagquests, ouderbevestiging, taakrooster met ruilen, XP en beloningen die nieuwe kleding vrijspelen.
-3. **Rustplan en ruzie oplossen**: de "Ik word boos"-knop en de ruzie-flow met allebei hun kant.
+2. **Beloningen**: nieuwe kleding en accessoires vrijspelen per level, ruilen van taken.
+3. **Ruzie oplossen**: de ruzie-flow met allebei hun kant.
 4. **Voortgang en gezinsoverleg**: doelen met een cijfer van 0 tot 10 per week.
 5. **Coachscherm** voor school en wijkteam, met opdrachten die thuis verschijnen.
 6. **Illustraties en animaties**: avatar-onderdelen laten tekenen (of via Higgsfield) en de bewegingen eventueel in Rive.
