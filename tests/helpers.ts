@@ -18,6 +18,7 @@ export function gezin(extra: Partial<FamilyState> = {}): FamilyState {
     werk: {},
     diensten: [],
     dag: {},
+    samen: [],
     feed: [],
     badges: [],
     vakanties: {},

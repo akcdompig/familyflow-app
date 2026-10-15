@@ -15,15 +15,17 @@ import { VoedingOverzicht } from "./Voeding";
 import { SamenTab } from "./Samen";
 import { SchermOverzicht } from "./Scherm";
 import { Vragen } from "@/components/screens/Verdeling";
+import { WeekV2 } from "./WeekV2";
+import { GroeiGezin } from "./GroeiGezin";
 
-type Tab = "nu" | "samen" | "eten" | "klussen" | "potje" | "plan";
+type Tab = "nu" | "week" | "samen" | "klussen" | "eten" | "groei";
 const TABS: { id: Tab; label: string }[] = [
   { id: "nu", label: "Nu" },
+  { id: "week", label: "Week" },
   { id: "samen", label: "Samen" },
-  { id: "eten", label: "Eten" },
   { id: "klussen", label: "Klussen" },
-  { id: "potje", label: "Potje" },
-  { id: "plan", label: "Plan" },
+  { id: "eten", label: "Eten" },
+  { id: "groei", label: "Groei" },
 ];
 
 const ROMMEL_PLEK = [
@@ -78,7 +80,7 @@ export function GezinV2({ state, me, onToast, onOuders, onOpenLid, onTips, onRuz
             <Row members={state.members.filter((m) => m.role === "ouder")} row="achter" state={state} me={me} onOpen={onOpenLid} />
             <Row members={state.members.filter((m) => m.role !== "ouder")} row="voor" state={state} me={me} onOpen={onOpenLid} />
           </section>
-          <Attention state={state} me={me} onTalkTips={onTips} onCheckIn={onCheckIn} onGoTasks={() => setTab("plan")} onRuzie={onRuzie} onGoGezin={onOuders} />
+          <Attention state={state} me={me} onTalkTips={onTips} onCheckIn={onCheckIn} onGoTasks={() => setTab("week")} onRuzie={onRuzie} onGoGezin={onOuders} />
           <Vragen state={state} me={me} onToast={onToast} />
           {isOuder && <SchermOverzicht state={state} onOpen={onOpenLid} />}
           {isOuder && <VoedingOverzicht state={state} onOpen={onOpenLid} />}
@@ -87,12 +89,21 @@ export function GezinV2({ state, me, onToast, onOuders, onOpenLid, onTips, onRuz
           <Klassement state={state} me={me} onOpen={onOpenLid} />
         </>
       )}
-      {tab === "samen" && <SamenTab state={state} me={me} onToast={onToast} />}
+      {tab === "samen" && (
+        <div className="ff-stack">
+          <SamenTab state={state} me={me} onToast={onToast} />
+          <b>🐷 Gezinspotje <span className="ff-small ff-muted">samen sparen voor iets leuks</span></b>
+          <Potje state={state} me={me} onToast={onToast} />
+        </div>
+      )}
       {tab === "eten" && <Eten state={state} me={me} onToast={onToast} />}
       {tab === "klussen" && <Klussen state={state} me={me} lijst={klussen} onToast={onToast} />}
-      {tab === "potje" && <Potje state={state} me={me} onToast={onToast} />}
-      {tab === "plan" && (
+      {tab === "groei" && <GroeiGezin state={state} me={me} />}
+      {tab === "week" && (
         <div className="ff-stack">
+          <WeekV2 state={state} me={me} onToast={onToast} onOpenLid={onOpenLid} />
+          <details className="v2-meer-details">
+            <summary><b>Taken en roosters</b> <span className="ff-small ff-muted">taken van vandaag, werk vrij wegklikken</span></summary>
           <div className="ff-row" style={{ justifyContent: "space-between" }}>
             <b>Taken vandaag</b>
             {isOuder && <button className="ff-btn ff-btn-primary ff-btn-sm" onClick={() => setAdding(true)}>+ Taak</button>}
@@ -117,6 +128,7 @@ export function GezinV2({ state, me, onToast, onOuders, onOpenLid, onTips, onRuz
           })}
           <b>Werk en school deze week</b>
           <Week state={state} me={me} />
+          </details>
           <AddTaskSheet open={adding} onClose={() => setAdding(false)} state={state} me={me} onAdded={onToast} />
         </div>
       )}

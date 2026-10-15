@@ -968,3 +968,60 @@ i.is-vak { background: var(--ff-munt-zacht); border: 1px solid var(--ff-munt-don
 .v2-scherm-invoer { display: grid; gap: 6px; font-size: var(--ff-t-s); font-weight: 700; }
 .v2-scherm-invoer label { display: flex; align-items: center; gap: 6px; }
 .v2-scherm-invoer .ff-input { width: 64px; text-align: center; }
+
+/* ---------- Week ---------- */
+.v2-week-strook { display: grid; grid-template-columns: 28px repeat(7, minmax(0, 1fr)) 28px; gap: 4px; align-items: stretch; }
+.v2-week-pijl { border: 0; background: none; font: inherit; font-size: 22px; font-weight: 800; color: var(--ff-tekst-zacht); cursor: pointer; }
+.v2-week-dag { display: grid; justify-items: center; gap: 1px; border: 2px solid transparent; background: var(--ff-vlak); border-radius: 14px; padding: 6px 0; font: inherit; color: var(--ff-tekst); cursor: pointer; min-height: var(--ff-tik); }
+.v2-week-dag.is-vandaag { border-color: var(--ff-zon); }
+.v2-week-dag[aria-selected="true"] { background: var(--ff-nacht); color: #fff; }
+.v2-week-stip { font-size: 11px; line-height: 1; min-height: 12px; }
+.v2-week-titel { margin: 0; }
+.v2-week-samen { background: var(--ff-koraal-zacht); }
+.v2-week-lid { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: var(--ff-wolk); border-radius: 14px; padding: 8px 10px; font: inherit; color: inherit; cursor: pointer; }
+.v2-week-rij { display: flex; align-items: flex-start; gap: 8px; padding: 4px 0; }
+.v2-stand { font-size: 12px; font-weight: 800; border-radius: 999px; padding: 2px 8px; background: var(--ff-wolk); color: var(--ff-tekst-zacht); }
+.v2-stand.is-af { background: var(--ff-munt-zacht); color: var(--ff-munt-donker); }
+.v2-stand.is-half { background: var(--ff-zon-zacht); color: var(--ff-tekst); }
+.v2-meer-details { background: var(--ff-vlak); border-radius: var(--ff-rond-l); padding: 12px 14px; }
+.v2-meer-details > summary { cursor: pointer; list-style: none; min-height: 32px; }
+.v2-meer-details[open] > summary { margin-bottom: 10px; }
+.v2-meer-details > * + * { margin-top: 10px; }
+
+/* ---------- Groei ---------- */
+.v2-boom { display: flex; align-items: center; gap: 14px; background: linear-gradient(135deg, var(--ff-munt-zacht), var(--ff-lucht-zacht)); border-radius: 24px; padding: 16px; }
+.v2-boom-plant { font-size: 56px; line-height: 1; transform-origin: bottom center; animation: v2-groei 1.1s cubic-bezier(.2,.9,.3,1.3) both; }
+.v2-boom-plant.fase-0 { font-size: 40px; } .v2-boom-plant.fase-1 { font-size: 48px; } .v2-boom-plant.fase-3 { font-size: 66px; }
+@keyframes v2-groei { from { transform: scale(.3) translateY(10px); opacity: 0; } to { transform: none; opacity: 1; } }
+.v2-boom-naam { font-size: var(--ff-t-l); }
+.v2-pijlers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.v2-pijler { display: grid; justify-items: center; gap: 2px; background: var(--ff-vlak); border-radius: 16px; padding: 10px 4px; }
+.v2-pijler b { font-size: var(--ff-t-l); }
+.v2-groeigrafiek { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 6px; align-items: end; }
+.v2-groeistaaf { display: grid; justify-items: center; gap: 2px; }
+.v2-groeiwaarde { font-weight: 800; min-height: 16px; }
+.v2-groeibalk { width: 100%; height: 90px; display: flex; align-items: flex-end; background: var(--ff-wolk); border-radius: 8px; overflow: hidden; }
+.v2-groeibalk i { display: block; width: 100%; background: var(--ff-lucht); border-radius: 6px 6px 0 0; animation: v2-staaf .8s ease-out both; transform-origin: bottom; }
+.v2-groeistaaf.is-nu .v2-groeibalk i { background: var(--ff-munt-donker); }
+@keyframes v2-staaf { from { transform: scaleY(0); } to { transform: none; } }
+.v2-weekgrid { display: grid; gap: 4px; align-items: center; }
+.v2-weekgrid-rij { display: contents; }
+.v2-weekgrid-kop { text-align: center; }
+.v2-weekgrid-naam { display: flex; align-items: center; gap: 4px; min-width: 0; overflow: hidden; white-space: nowrap; }
+.v2-vakje { aspect-ratio: 1; border-radius: 8px; border: 2px dashed var(--ff-lijn); display: grid; place-items: center; font-size: 12px; font-weight: 800; }
+.v2-vakje.is-af { background: var(--ff-munt-donker); border: 0; color: #fff; }
+.v2-vakje.is-af::after { content: "✓"; }
+.v2-vakje.is-half { background: var(--ff-zon); border: 0; }
+.v2-vakje.is-half::after { content: "½"; }
+.v2-vakje.is-niks { background: var(--ff-wolk); border: 0; }
+.v2-vakje.is-vandaag { outline: 2px solid var(--ff-nacht); outline-offset: 1px; }
+.v2-comp { border-top: 1px solid var(--ff-lijn); }
+.v2-comp:first-of-type { border-top: 0; }
+.v2-comp-kop { display: flex; align-items: center; gap: 8px; width: 100%; border: 0; background: none; padding: 8px 0; font: inherit; font-size: var(--ff-t-s); font-weight: 700; color: var(--ff-tekst); cursor: pointer; text-align: left; min-height: var(--ff-tik); }
+.v2-niveau { display: inline-flex; gap: 3px; }
+.v2-niveau i { width: 10px; height: 10px; border-radius: 50%; background: var(--ff-wolk); border: 1.5px solid var(--ff-lijn); }
+.v2-niveau i.is-aan { background: var(--ff-munt-donker); border-color: var(--ff-munt-donker); }
+.v2-trend { width: 20px; text-align: center; font-weight: 900; color: var(--ff-tekst-zacht); }
+.v2-trend.is-omhoog { color: var(--ff-munt-donker); }
+.v2-comp-open { display: grid; gap: 3px; padding: 0 0 10px 28px; }
+@media (prefers-reduced-motion: reduce) { .v2-boom-plant, .v2-groeibalk i { animation: none; } }

@@ -216,7 +216,7 @@ await scenario("v2: samen iets plannen, doen en terugkijken", v2, "16:00", async
   await wissel(p, "Papa");
   await gezinTab(p, /Samen/);
   await p.locator(".v2-idee", { hasText: "Samen koken" }).click();
-  await p.locator(".ff-chip", { hasText: "Lina" }).click();
+  await p.getByLabel("Samen iets plannen").getByRole("button", { name: "Lina" }).click();
   await p.getByRole("button", { name: /^Plannen$/ }).last().click();
   const gepland = p.getByRole("region", { name: "Gepland" });
   assert.match(await gepland.innerText(), /Samen koken/);
@@ -269,6 +269,37 @@ await scenario("v2: schermtijd — kind ziet 'eerst je dag', ouder vult in en zi
   assert.equal(await p.locator(".v2-scherm-staaf i.is-over").count(), 1, "boven de afspraak is rood");
   await p.keyboard.press("Escape");
   assert.match(await ov.innerText(), /Vandaag 4 u 36 m/);
+});
+
+// ---------- Week en groei ----------
+await scenario("v2: week — morgen samen trainen staat klaar, en zelf iets plannen voor overmorgen", v2, "18:00", async (p) => {
+  await wissel(p, "Papa");
+  await gezinTab(p, /^Week$/);
+  await p.getByRole("tab", { name: /^Vrijdag/ }).click();
+  assert.match(await p.getByRole("region", { name: "Samen op deze dag" }).innerText(), /Trainen met Lina en Noah/);
+  await p.getByRole("tab", { name: /^Zaterdag/ }).click();
+  await knop(p, /Iets samen plannen op deze dag/).click();
+  await p.getByPlaceholder("Wat gaan jullie doen?").fill("Naar de stad");
+  await p.getByLabel("Samen iets plannen").getByRole("button", { name: "Mama" }).click();
+  await p.getByRole("button", { name: /^Plannen$/ }).last().click();
+  assert.match(await p.getByRole("region", { name: "Samen op deze dag" }).innerText(), /Naar de stad/);
+  await p.getByRole("tab", { name: /^Dinsdag/ }).click();
+  assert.equal(await p.locator(".v2-week-lid").count(), 4, "ouder ziet hoe de dag ging voor iedereen");
+});
+
+await scenario("v2: groei — ouder ziet het hele gezin, kind alleen zichzelf", v2, "18:00", async (p) => {
+  await wissel(p, "Papa");
+  await gezinTab(p, /Groei/);
+  assert.match(await p.getByRole("region", { name: "Jullie gezin groeit" }).innerText(), /\/100/);
+  assert.equal(await p.locator(".v2-groeistaaf").count(), 8);
+  assert.equal(await p.locator(".v2-weekgrid-naam").count(), 4);
+  await p.locator(".v2-comp-kop", { hasText: "Zelfstandig" }).click();
+  assert.ok((await p.locator(".v2-comp-open").innerText()).length > 10);
+  await wissel(p, "Noah");
+  await gezinTab(p, /Groei/);
+  assert.equal(await p.locator(".v2-weekgrid-naam").count(), 1, "kind ziet alleen zijn eigen week");
+  assert.match(await p.getByRole("region", { name: "Competenties" }).innerText(), /Waar groei jij in/);
+  assert.equal(await p.getByRole("region", { name: "Competenties" }).locator(".ff-chip").count(), 0, "kind kan anderen niet bekijken");
 });
 
 await browser.close();

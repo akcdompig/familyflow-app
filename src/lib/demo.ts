@@ -38,9 +38,48 @@ function demoDone(d: string): FamilyState["done"] {
   return out;
 }
 
+/**
+  Zeven weken voorbeeldgeschiedenis, zodat je in Groei en Week ziet hoe een gezin groeit.
+  Elke week iets beter: vaker de ochtendroutine, vaker de vaatwasser, en steeds vaker samen iets.
+  Zo gekozen dat er bij het openen geen achievements meteen vallen (badgesStart is 4 dagen terug).
+*/
+function demoGeschiedenis() {
+  const dag: NonNullable<FamilyState["dag"]> = {};
+  const klusLog: FamilyState["klusLog"] = [];
+  const history: Record<string, { mood: 1 | 2 | 3 | 4 | 5; rest: boolean; at: string }[]> = { p1: [], p2: [], k1: [], k2: [] };
+  const rnd = (n: number, k: number) => ((Math.sin(n * 12.9898 + k * 78.233) * 43758.5453) % 1 + 1) % 1;
+  for (let n = 1; n <= 49; n++) {
+    const d = new Date(Date.now() - n * 864e5).toLocaleDateString("sv-SE");
+    const p = 0.9 - Math.floor(n / 7) * 0.1;
+    dag[d] = {};
+    ["k1", "k2", "p1", "p2"].forEach((id, i) => {
+      const goed = rnd(n, i) < p;
+      dag[d][id] = { routine: goed ? ["douchen", "tanden", "deo", "haar", "lotion"] : ["tanden"], kleding: "nieuw", water: goed ? 6 : 3, fruit: goed ? 2 : 1, eten: ["ontbijt", "lunch", "avondeten"] };
+      if (n % 2 === 0) history[id].push({ mood: (goed ? 4 : 3) as 3 | 4, rest: id.startsWith("k") && !goed && n % 4 === 0, at: daysAgo(n, 19) });
+    });
+    if (rnd(n, 5) < p) klusLog.push({ id: `h${n}a`, klus: "vaat-uit", by: n % 2 ? "k1" : "k2", at: daysAgo(n, 8) });
+    if (rnd(n, 6) < p) klusLog.push({ id: `h${n}b`, klus: "vaat-in", by: n % 2 ? "k2" : "k1", at: daysAgo(n, 20) });
+    if (rnd(n, 7) < p + 0.05) klusLog.push({ id: `h${n}c`, klus: "keuken", by: n % 3 === 0 ? "k1" : n % 2 ? "p1" : "p2", at: daysAgo(n, 20) });
+    if (n % 2 === 0) for (const k of ["k1", "k2"]) if (rnd(n, k === "k1" ? 8 : 9) < p) klusLog.push({ id: `h${n}${k}`, klus: `kamer:${k}`, by: k, at: daysAgo(n, 17) });
+    if (n % 3 === 0 && n >= 14 && rnd(n, 10) < p) klusLog.push({ id: `h${n}s`, klus: "stofzuigen", by: n % 2 ? "k2" : "k1", at: daysAgo(n, 15) });
+  }
+  const s = (id: string, n: number, soort: string, titel: string, wie: string[], vrienden?: string) => ({ id, soort, titel, wie, datum: new Date(Date.now() - n * 864e5).toLocaleDateString("sv-SE"), door: wie[0], at: daysAgo(n + 2, 12), gedaan: daysAgo(n, 16), reactie: Object.fromEntries(wie.map((w) => [w, "😍" as const])), ...(vrienden ? { vrienden } : {}) });
+  const samen: FamilyState["samen"] = [
+    s("s1", 40, "film", "Filmavond thuis", ["p1", "p2", "k1", "k2"]),
+    s("s2", 26, "koken", "Samen koken", ["p1", "k2"]),
+    s("s3", 19, "fietsen", "Fietstocht", ["p1", "k1"]),
+    s("s4", 12, "bordspel", "Bordspel", ["p2", "k1", "k2"]),
+    s("s5", 9, "koken", "Samen koken", ["p1", "k1"]),
+    s("s6", 6, "sporten", "Samen trainen", ["p1", "k1", "k2"]),
+    { id: "s7", soort: "sporten", titel: "Trainen met Lina en Noah", wie: ["p1", "k1", "k2"], datum: new Date(Date.now() + 864e5).toLocaleDateString("sv-SE"), tijd: "17:00", door: "p1", at: daysAgo(1, 20) },
+  ];
+  return { dag, klusLog, history, samen };
+}
+
 /** Voorbeeldgezin. Alle namen en gegevens zijn verzonnen. */
 export function demoFamily(): FamilyState {
   const d = today();
+  const g = demoGeschiedenis();
   return {
     version: 3,
     family: "Familie Jansen",
@@ -87,11 +126,13 @@ export function demoFamily(): FamilyState {
     calm: [],
     pet: { has: false, name: "", kind: "hond" },
     history: {
-      p1: [3, 4, 3, 2, 3, 4].map((m, i) => ({ mood: m, rest: false, at: daysAgo(6 - i) })),
-      p2: [4, 4, 5, 4, 3, 4].map((m, i) => ({ mood: m, rest: false, at: daysAgo(6 - i) })),
-      k1: [4, 3, 2, 3, 4, 4].map((m, i) => ({ mood: m, rest: false, at: daysAgo(6 - i) })),
-      k2: [3, 2, 3, 2, 3, 3].map((m, i) => ({ mood: m, rest: i === 3, at: daysAgo(6 - i) })),
+      p1: [...g.history.p1.reverse(), ...[3, 4, 3, 2, 3, 4].map((m, i) => ({ mood: m, rest: false, at: daysAgo(6 - i) }))],
+      p2: [...g.history.p2.reverse(), ...[4, 4, 5, 4, 3, 4].map((m, i) => ({ mood: m, rest: false, at: daysAgo(6 - i) }))],
+      k1: [...g.history.k1.reverse(), ...[4, 3, 2, 3, 4, 4].map((m, i) => ({ mood: m, rest: false, at: daysAgo(6 - i) }))],
+      k2: [...g.history.k2.reverse(), ...[3, 2, 3, 2, 3, 3].map((m, i) => ({ mood: m, rest: i === 3, at: daysAgo(6 - i) }))],
     },
+    dag: g.dag,
+    samen: g.samen,
     conflicts: [
       { id: "c1", at: daysAgo(11), from: "k2", with: "k1", topic: "Taken in huis", physical: false, sides: {}, status: "opgelost", solution: "Om de beurt" },
       { id: "c2", at: daysAgo(9), from: "k1", with: "k2", topic: "Spullen pakken of lenen", physical: false, sides: {}, status: "opgelost", solution: "We spreken een regel af" },
@@ -144,6 +185,7 @@ export function demoFamily(): FamilyState {
       k2: [{ id: "w4", naam: "ROC", soort: "vast", days: [1, 2, 4], van: "09:00", tot: "13:00", look: "school" }],
     },
     klusLog: [
+      ...g.klusLog!.reverse(),
       { id: "kl1", klus: "bedden", by: "p2", at: daysAgo(6, 10) },
       { id: "kl2", klus: "flessen", by: "k1", at: daysAgo(9, 16) },
       { id: "kl3", klus: "stofzuigen", by: "k2", at: daysAgo(3, 15) },

@@ -146,7 +146,7 @@ function Gepland({ x, state, me, onToast }: { x: SamenMoment; state: FamilyState
   );
 }
 
-function PlanSheet({ open, idee, met, state, me, onClose, onToast }: { open: boolean; idee?: Idee; met?: string; state: FamilyState; me: Member; onClose: () => void; onToast: (m: string) => void }) {
+export function PlanSheet({ open, idee, met, datum: startDatum, state, me, onClose, onToast }: { open: boolean; idee?: Idee; met?: string; datum?: string; state: FamilyState; me: Member; onClose: () => void; onToast: (m: string) => void }) {
   const vandaag = iso(new Date());
   const [titel, setTitel] = useState("");
   const [wie, setWie] = useState<string[]>([]);
@@ -154,13 +154,13 @@ function PlanSheet({ open, idee, met, state, me, onClose, onToast }: { open: boo
   const [datum, setDatum] = useState(vandaag);
   const [tijd, setTijd] = useState("");
   const [sleutel, setSleutel] = useState("");
-  const k = `${open}-${idee?.id ?? "x"}-${met ?? ""}`;
+  const k = `${open}-${idee?.id ?? "x"}-${met ?? ""}-${startDatum ?? ""}`;
   if (open && sleutel !== k) {
     setSleutel(k);
     setTitel(idee?.titel ?? "");
     setWie([me.id, ...(met ? [met] : [])]);
     setVrienden("");
-    setDatum(vandaag);
+    setDatum(startDatum && startDatum >= vandaag ? startDatum : vandaag);
     setTijd("");
   }
   const leden = state.members.filter((m) => m.joined !== false);
