@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Flo } from "@/components/ui/Flo";
 import { Icon } from "@/components/ui/Icon";
 import { CoachList } from "@/components/screens/Coach";
@@ -34,7 +34,7 @@ function Listen({ text }: { text: string }) {
   );
 }
 
-export function Oefenen({ state, me, onToast, onCalm, onRuzie, onCoach, onCoachNu }: { state: FamilyState; me: Member; onToast: (m: string) => void; onCalm: () => void; onRuzie: () => void; onCoach: (id: string) => void; onCoachNu: () => void }) {
+export function Oefenen({ state, me, onToast, onCalm, onRuzie, onCoach, onCoachNu, titel, onder }: { state: FamilyState; me: Member; onToast: (m: string) => void; onCalm: () => void; onRuzie: () => void; onCoach: (id: string) => void; onCoachNu: () => void; titel?: string; onder?: ReactNode }) {
   const [play, setPlay] = useState<Scenario | null>(null);
   const played = state.played[me.id] ?? [];
   const isParent = me.role === "ouder";
@@ -46,7 +46,7 @@ export function Oefenen({ state, me, onToast, onCalm, onRuzie, onCoach, onCoachN
       <header className="ff-top">
         <div>
           <div className="ff-eyebrow">{isParent ? "Zo oefenen de kinderen" : "Leren omgaan met boosheid en ruzie"}</div>
-          <h1 className="ff-h1">Oefenen</h1>
+          <h1 className="ff-h1">{titel ?? "Oefenen"}</h1>
         </div>
         <Flo size={52} />
       </header>
@@ -64,6 +64,7 @@ export function Oefenen({ state, me, onToast, onCalm, onRuzie, onCoach, onCoachN
         </button>
       </div>
 
+      {onder}
       <Aanrader state={state} me={me} onPlay={onCoach} />
 
       <details className="ff-card ff-details">

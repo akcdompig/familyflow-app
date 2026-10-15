@@ -19,7 +19,7 @@ const result = await build({
   jsx: "automatic",
   alias: { "@": resolve(root, "src") },
   nodePaths: [resolve(root, "node_modules"), ...(process.env.EXTRA_NODE_PATH ? [process.env.EXTRA_NODE_PATH] : [])],
-  define: { "process.env.NODE_ENV": '"production"' },
+  define: { "process.env.NODE_ENV": '"production"', "process.env.FF_UI": JSON.stringify(process.env.FF_UI ?? "v1") },
   logLevel: "warning",
   logOverride: { "unsupported-directive": "silent" },
 });
@@ -37,9 +37,14 @@ writeFileSync(
 // Inhoud voor een Claude-artifact (die zet zelf het html/head/body-kader eromheen).
 writeFileSync(
   resolve(out, "artifact.html"),
-  `<title>FamilyFlow</title>\n<meta name="claude:viewport-fit-sides" content="cover">\n${fonts}\n<style>${css}\n.ff-app{padding-top:12px}</style>\n<div id="root"></div>\n<script>${js}</script>\n`,
+  `<title>${process.env.FF_UI === "v2" ? "FamilyFlow Acceptatie" : "FamilyFlow"}</title>\n<meta name="claude:viewport-fit-sides" content="cover">\n${fonts}\n<style>${css}\n.ff-app{padding-top:12px}</style>\n<div id="root"></div>\n<script>${js}</script>\n`,
 );
 
+// Acceptatie (FF_UI=v2): alleen de preview bouwen, de echte app in dist/ blijft de pilot.
+if (process.env.FF_UI === "v2") {
+  console.log("Acceptatie gebouwd:", out, `(${Math.round(js.length / 1024)} kB JS). dist/ is niet aangeraakt.`);
+  process.exit(0);
+}
 // Echte app (release): dist/ met config.js, manifest, iconen en service worker. Vercel serveert deze map.
 const dist = resolve(root, "dist");
 mkdirSync(dist, { recursive: true });

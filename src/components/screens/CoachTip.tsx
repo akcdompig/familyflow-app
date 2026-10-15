@@ -7,13 +7,21 @@ import { actions } from "@/lib/store";
 import type { FamilyState, Member } from "@/lib/types";
 
 /** Kies waar je beter in wilt worden. */
-export function Interesses({ state, me, onToast }: { state: FamilyState; me: Member; onToast?: (m: string) => void }) {
+export function Interesses({ state, me, onToast, compact = false }: { state: FamilyState; me: Member; onToast?: (m: string) => void; compact?: boolean }) {
   const mijn = state.interesses?.[me.id] ?? [];
   const zet = (id: string) => {
     const nieuw = mijn.includes(id) ? mijn.filter((x) => x !== id) : [...mijn, id];
     actions.setInteresses(me.id, nieuw);
     if (!mijn.includes(id)) onToast?.("Je krijgt hier vanaf nu tips over");
   };
+  if (compact)
+    return (
+      <div className="ff-chips">
+        {ONDERWERPEN.map((o) => (
+          <button key={o.id} className="ff-chip ff-chip-l" aria-pressed={mijn.includes(o.id)} onClick={() => zet(o.id)}>{o.emoji} {o.label}</button>
+        ))}
+      </div>
+    );
   return (
     <div className="ff-coach-keuze">
       {ONDERWERPEN.map((o) => (

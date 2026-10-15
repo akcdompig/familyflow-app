@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FamilyFlowApp } from "@/components/FamilyFlowApp";
+import { FamilyFlowApp as AppV1 } from "@/components/FamilyFlowApp";
+import { AppV2 } from "@/v2/AppV2";
+
+/* Acceptatie (versie 2.0) wordt gebouwd met FF_UI=v2. De pilot blijft de huidige app. */
+const FamilyFlowApp = process.env.FF_UI === "v2" ? AppV2 : AppV1;
 import { CodeInvullen, GezinMaken, OuderAccount, Welkom } from "@/components/Onboarding";
 import { AvatarMaker } from "@/components/screens/AvatarMaker";
 import { Uitnodigen } from "@/components/screens/Uitnodigen";

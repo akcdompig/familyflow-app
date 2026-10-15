@@ -54,7 +54,7 @@ const Kop = ({ m, size = 30 }: { m: Member; size?: number }) => <Avatar config={
 
 /* ---------- Eten ---------- */
 
-function Eten({ state, me, onToast }: { state: FamilyState; me: Member; onToast: (m: string) => void }) {
+export function Eten({ state, me, onToast }: { state: FamilyState; me: Member; onToast: (m: string) => void }) {
   const [dag, setDag] = useState(iso(new Date()));
   const vandaag = iso(new Date());
   const p = kookplan(state, dag);
@@ -140,7 +140,7 @@ function Eten({ state, me, onToast }: { state: FamilyState; me: Member; onToast:
 
 /* ---------- Klussen ---------- */
 
-function Klussen({ state, me, lijst, onToast }: { state: FamilyState; me: Member; lijst: KlusStatus[]; onToast: (m: string) => void }) {
+export function Klussen({ state, me, lijst, onToast }: { state: FamilyState; me: Member; lijst: KlusStatus[]; onToast: (m: string) => void }) {
   const [open, setOpen] = useState<KlusStatus | null>(null);
   const isOuder = me.role === "ouder";
   // Eigen kamer: alleen die van jezelf tonen aan kinderen, ouders zien alles.
@@ -221,7 +221,7 @@ const dagenTekst = (n: number) => (n === 0 ? "vandaag" : n === 1 ? "gisteren" : 
 
 /* ---------- Week ---------- */
 
-function Week({ state, me }: { state: FamilyState; me: Member }) {
+export function Week({ state, me }: { state: FamilyState; me: Member }) {
   const [start, setStart] = useState(maandag());
   const vandaag = iso(new Date());
   const dagen = [0, 1, 2, 3, 4, 5, 6].map((i) => addDays(start, i));
@@ -281,7 +281,7 @@ function Week({ state, me }: { state: FamilyState; me: Member }) {
 
 /* ---------- Gezinspotje ---------- */
 
-function Potje({ state, me, onToast }: { state: FamilyState; me: Member; onToast: (m: string) => void }) {
+export function Potje({ state, me, onToast }: { state: FamilyState; me: Member; onToast: (m: string) => void }) {
   const isOuder = me.role === "ouder";
   const pot = state.pot;
   const stand = potStand(state);

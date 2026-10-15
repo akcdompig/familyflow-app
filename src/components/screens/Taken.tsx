@@ -164,7 +164,7 @@ function WerkVandaag({ state, me, who, onToast, compact = false }: { state: Fami
 const FROM_LABEL: Record<string, string> = { coach: "Van de coach", ouder: "Van je ouder", school: "Van school", zorg: "Van je coach" };
 
 /** Opdrachten voor het echte leven en oefeningen van school of zorg. Open quests, en wat deze week af is. */
-function Quests({ state, memberId, onToast, onPlay, compact = false }: { state: FamilyState; memberId: string; onToast: (m: string) => void; onPlay: (id: string) => void; compact?: boolean }) {
+export function Quests({ state, memberId, onToast, onPlay, compact = false }: { state: FamilyState; memberId: string; onToast: (m: string) => void; onPlay: (id: string) => void; compact?: boolean }) {
   const week = Date.now() - 7 * 864e5;
   const list = (state.quests ?? []).filter((q) => q.member === memberId && (!q.done || new Date(q.done).getTime() > week));
   if (!list.length) return null;
@@ -199,7 +199,7 @@ function Quests({ state, memberId, onToast, onPlay, compact = false }: { state: 
   );
 }
 
-function TaskRow({ task, state, who, canToggle, onToggle, onConfirm, showXp, onRemove }: { task: Task; state: FamilyState; who: string; canToggle: boolean; onToggle: () => void; onConfirm?: () => void; showXp: boolean; onRemove?: () => void }) {
+export function TaskRow({ task, state, who, canToggle, onToggle, onConfirm, showXp, onRemove }: { task: Task; state: FamilyState; who: string; canToggle: boolean; onToggle: () => void; onConfirm?: () => void; showXp: boolean; onRemove?: () => void }) {
   const wacht = wachtOpOuder(state, task);
   const bevestigd = !!task.study?.ouder && !!state.checked?.[new Date().toLocaleDateString("sv-SE")]?.[task.id];
   const done = isDone(state, task.id);
@@ -232,7 +232,7 @@ function TaskRow({ task, state, who, canToggle, onToggle, onConfirm, showXp, onR
   );
 }
 
-function AddTaskSheet({ open, onClose, state, me, onAdded }: { open: boolean; onClose: () => void; state: FamilyState; me: Member; onAdded: (m: string) => void }) {
+export function AddTaskSheet({ open, onClose, state, me, onAdded }: { open: boolean; onClose: () => void; state: FamilyState; me: Member; onAdded: (m: string) => void }) {
   const kids = state.members.filter((m) => m.role !== "ouder");
   const [title, setTitle] = useState("");
   const [icon, setIcon] = useState<Task["icon"]>("huis");

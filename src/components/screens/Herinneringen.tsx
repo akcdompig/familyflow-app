@@ -19,7 +19,7 @@ export function Herinneringen({ onToast, compact = false, onWeg }: { onToast: (m
   useEffect(() => {
     pushStatus().then(setStatus).catch(() => setStatus("kan-niet"));
   }, []);
-  if (!status || (compact && (status === "aan" || status === "demo" || status === "kan-niet"))) return null;
+  if (!status || status === "demo" || (compact && (status === "aan" || status === "kan-niet"))) return null;
 
   const doe = async (fn: () => Promise<PushStatus | unknown>, klaar: string) => {
     setBezig(true);

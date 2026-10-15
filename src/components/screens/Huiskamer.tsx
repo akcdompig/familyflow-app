@@ -134,7 +134,7 @@ export function Huiskamer({ state, me, onCheckIn, onOpenMember, onTalkTips, onWh
   );
 }
 
-function Row({ members, row, state, me, onOpen }: { members: Member[]; row: "achter" | "voor"; state: FamilyState; me: Member; onOpen: (id: string) => void }) {
+export function Row({ members, row, state, me, onOpen }: { members: Member[]; row: "achter" | "voor"; state: FamilyState; me: Member; onOpen: (id: string) => void }) {
   return (
     <>
       {members.map((m, i) => {
@@ -166,7 +166,7 @@ function Row({ members, row, state, me, onOpen }: { members: Member[]; row: "ach
   );
 }
 
-function Attention({ state, me, onTalkTips, onCheckIn, onGoTasks, onRuzie, onGoGezin }: { state: FamilyState; me: Member; onTalkTips: (id: string) => void; onCheckIn: () => void; onGoTasks: () => void; onRuzie: (id?: string) => void; onGoGezin: () => void }) {
+export function Attention({ state, me, onTalkTips, onCheckIn, onGoTasks, onRuzie, onGoGezin }: { state: FamilyState; me: Member; onTalkTips: (id: string) => void; onCheckIn: () => void; onGoTasks: () => void; onRuzie: (id?: string) => void; onGoGezin: () => void }) {
   const kids = state.members.filter((m) => m.role !== "ouder");
   const parents = state.members.filter((m) => m.role === "ouder");
   const ci = (m: Member) => state.checkins[m.id];
@@ -299,7 +299,7 @@ function Card({ tone, title, meta, children }: { tone: "koraal" | "lucht" | "zon
 }
 
 /** Berichten van school of zorg voor mij. */
-function Inbox({ state, me }: { state: FamilyState; me: Member }) {
+export function Inbox({ state, me }: { state: FamilyState; me: Member }) {
   const forMe = (to: string) => to === "gezin" || to === me.id || (to === "ouders" && me.role === "ouder");
   const unread = state.messages.filter((m) => !m.read && forMe(m.to));
   if (!unread.length) return null;
@@ -374,7 +374,7 @@ function JouwDag({ state, me, onOpen, onGoThuis }: { state: FamilyState; me: Mem
 }
 
 /** Klassement van vandaag: wie is het meest bezig? Competitief, maar gezellig. */
-function Klassement({ state, me, onOpen }: { state: FamilyState; me: Member; onOpen: (id: string) => void }) {
+export function Klassement({ state, me, onOpen }: { state: FamilyState; me: Member; onOpen: (id: string) => void }) {
   const leden = state.members.filter((m) => m.joined !== false);
   if (leden.length < 2) return null;
   const rij = leden
@@ -404,7 +404,7 @@ function Klassement({ state, me, onOpen }: { state: FamilyState; me: Member; onO
 }
 
 /** Net gedaan: wat iedereen vandaag heeft afgevinkt. Geen melding per actie, wel zichtbaar voor het hele gezin. */
-function NetGedaan({ state, me }: { state: FamilyState; me: Member }) {
+export function NetGedaan({ state, me }: { state: FamilyState; me: Member }) {
   const vandaag = new Date().toDateString();
   const lijst = (state.feed ?? []).filter((f) => new Date(f.at).toDateString() === vandaag).slice(-6).reverse();
   if (!lijst.length) return null;
@@ -428,7 +428,7 @@ function NetGedaan({ state, me }: { state: FamilyState; me: Member }) {
 }
 
 /** Balkje: hoe ver is het werk of de schooldag. */
-function BezigBalk({ b, klein = false }: { b: Bezigheid; klein?: boolean }) {
+export function BezigBalk({ b, klein = false }: { b: Bezigheid; klein?: boolean }) {
   return (
     <span className={`ff-bezig-balk${klein ? " is-klein" : ""}`} role="progressbar" aria-valuenow={Math.round(b.pct * 100)} aria-valuemin={0} aria-valuemax={100} aria-label={`${b.werk.naam} ${Math.round(b.pct * 100)}%`}>
       <i style={{ width: `${Math.round(b.pct * 100)}%` }} />

@@ -307,7 +307,7 @@ export function FamilyFlowApp() {
 }
 
 /** Gepord door een gezinslid: een popup, en de telefoon trilt waar dat kan. */
-function PorPopup({ state, me }: { state: FamilyState; me: Member }) {
+export function PorPopup({ state, me }: { state: FamilyState; me: Member }) {
   const por = (state.porren ?? []).find((p) => p.to === me.id && !p.gezien && Date.now() - new Date(p.at).getTime() < 12 * 3600e3);
   const van = por ? state.members.find((m) => m.id === por.from) : null;
   useEffect(() => {
