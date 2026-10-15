@@ -13,7 +13,8 @@ import { OngezondKnop } from "./Voeding";
 import { SchermKind } from "./Scherm";
 import { KlusSheet, antwoordTekst, vraagVan } from "@/components/screens/KlusSheet";
 import { klusStatus } from "@/lib/huis";
-import type { FamilyState, Member, MoodLevel } from "@/lib/types";
+import type { FamilyState, Member, MoodLevel, Oordeel } from "@/lib/types";
+import { OORDEEL, actief, teEvalueren } from "@/lib/afspraken";
 
 const MOODS: { m: MoodLevel; e: string; l: string }[] = [
   { m: 1, e: "😣", l: "Slecht" },
@@ -27,7 +28,8 @@ const MOODS: { m: MoodLevel; e: string; l: string }[] = [
   Vandaag: jouw dagprogramma. Bovenaan hoe ver je bent, je schatkist, water, fruit en hoe je je voelt.
   Dan "Nu doen": één ding tegelijk. Daaronder de hele dag, per dagdeel.
 */
-export function Vandaag({ state, me, onToast, onMeerGevoel, onWie }: { state: FamilyState; me: Member; onToast: (m: string) => void; onMeerGevoel: () => void; onWie: () => void }) {
+export function Vandaag({ state, me, onToast, onMeerGevoel, onWie, onSamenVerder, onPlanner }: { state: FamilyState; me: Member; onToast: (m: string) => void; onMeerGevoel: () => void; onWie: () => void; onSamenVerder?: () => void; onPlanner?: () => void }) {
+  const [tellers, setTellers] = useState(false);
   const [, tik] = useState(0);
   useEffect(() => {
     const t = window.setInterval(() => tik((n) => n + 1), 60_000);
@@ -134,19 +136,27 @@ export function Vandaag({ state, me, onToast, onMeerGevoel, onWie }: { state: Fa
           <b className="v2-groot">{v.klaar}<span className="ff-muted">/{v.totaal}</span></b>
           <span className="ff-small ff-muted">{pct >= 1 ? "Alles af! Topdag 🎉" : "klaar vandaag"}{r > 1 ? ` · 🔥 ${r} dagen` : ""}</span>
           <div className="v2-tellers">
-            <button className="v2-teller" onClick={() => { actions.updateDag(me.id, (l) => ({ ...l, water: l.water + 1 })); }} aria-label={`Water: ${log.water} van ${DOEL.water}. Tik voor een glas erbij`}>
-              💧 <b>{log.water}</b>/{DOEL.water}
+            {/* Water, fruit en snoep zitten achter één knop: minder prikkels boven "Nu doen". */}
+            <button className="v2-teller" aria-expanded={tellers} onClick={() => setTellers(!tellers)} aria-label={`Eten en drinken: water ${log.water} van ${DOEL.water}, fruit ${log.fruit} van ${DOEL.fruit}`}>
+              💧🍎 <b>{log.water + log.fruit}</b>/{DOEL.water + DOEL.fruit} {tellers ? "▴" : "▾"}
             </button>
-            <button className="v2-teller" onClick={() => { actions.updateDag(me.id, (l) => ({ ...l, fruit: l.fruit + 1 })); }} aria-label={`Fruit: ${log.fruit} van ${DOEL.fruit}. Tik voor een stuk erbij`}>
-              🍎 <b>{log.fruit}</b>/{DOEL.fruit}
-            </button>
-            <OngezondKnop state={state} me={me} onToast={onToast} />
             {kist > 0 && (
               <button className="v2-teller is-kist" onClick={() => { const van = geclaimd(state, me.id); const c = actions.claimPunten(me.id); if (c) setClaim({ van, n: c }); }}>
                 💎 <b>+{kist}</b> claim
               </button>
             )}
           </div>
+          {tellers && (
+            <div className="v2-tellers">
+              <button className="v2-teller" onClick={() => { actions.updateDag(me.id, (l) => ({ ...l, water: l.water + 1 })); }} aria-label={`Water: ${log.water} van ${DOEL.water}. Tik voor een glas erbij`}>
+                💧 <b>{log.water}</b>/{DOEL.water}
+              </button>
+              <button className="v2-teller" onClick={() => { actions.updateDag(me.id, (l) => ({ ...l, fruit: l.fruit + 1 })); }} aria-label={`Fruit: ${log.fruit} van ${DOEL.fruit}. Tik voor een stuk erbij`}>
+                🍎 <b>{log.fruit}</b>/{DOEL.fruit}
+              </button>
+              <OngezondKnop state={state} me={me} onToast={onToast} />
+            </div>
+          )}
         </div>
       </section>
 
@@ -180,6 +190,30 @@ export function Vandaag({ state, me, onToast, onMeerGevoel, onWie }: { state: Fa
           </div>
         </section>
       )}
+
+      {/* Onze afspraak: de actie uit de afsprakenlus. Na een week meteen "hielp het?". */}
+      {(() => {
+        const vraag = teEvalueren(state, me.id)[0];
+        const lopend = actief(state).slice(-1)[0];
+        if (vraag) {
+          return (
+            <section className="v2-afspraak-kaart" aria-label="Hielp de afspraak?">
+              <span className="ff-small"><b>🤝 Hielp jullie afspraak?</b> “{vraag.text}”</span>
+              <div className="v2-hielp-knoppen is-klein">
+                {(Object.keys(OORDEEL) as Oordeel[]).map((o) => (
+                  <button key={o} className="ff-chip" onClick={() => { actions.evalueerAfspraak(vraag.id, me.id, o); if (o === "nee") onSamenVerder?.(); else onToast("Dank je!"); }}>{OORDEEL[o].emoji} {OORDEEL[o].label}</button>
+                ))}
+              </div>
+            </section>
+          );
+        }
+        if (!lopend) return null;
+        return (
+          <button className="v2-afspraak-kaart" onClick={onSamenVerder}>
+            <span className="ff-small"><b>🤝 Onze afspraak:</b> {lopend.text}</span>
+          </button>
+        );
+      })()}
 
       {/* Hoe voel je je: één tik */}
       <section className="v2-gevoel" aria-label="Hoe voel je je?">
@@ -251,6 +285,10 @@ export function Vandaag({ state, me, onToast, onMeerGevoel, onWie }: { state: Fa
           );
         })}
       </div>
+
+      {me.role !== "ouder" && onPlanner && (
+        <button className="v2-menu-rij" onClick={onPlanner}><span aria-hidden="true">📚</span><b className="ff-grow">Huiswerk en toetsen plannen</b><span aria-hidden="true">›</span></button>
+      )}
 
       {claim && <ClaimViering me={me} van={claim.van} n={claim.n} onKlaar={() => setClaim(null)} />}
       <KlusSheet state={state} me={me} klus={klusOpen ? klusStatus(state).find((k) => k.key === klusOpen) ?? null : null} onClose={() => setKlusOpen(null)} onToast={onToast} />

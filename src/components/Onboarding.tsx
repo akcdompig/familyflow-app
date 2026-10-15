@@ -14,8 +14,13 @@ export function Welkom({ onParent, onCode }: { onParent: (mode: "nieuw" | "inlog
       <div className="ff-onb-hero">
         <Flo size={96} />
         <h1 className="ff-h1">Welkom bij FamilyFlow</h1>
-        <p className="ff-muted">Samen thuis: wie hoe voelt, wat er moet gebeuren en ruzies samen oplossen.</p>
+        <p className="ff-muted">Minder gedoe thuis. Eerlijk verdeelde klussen, een rustige dag voor de kinderen, en samen afspraken maken die echt werken.</p>
       </div>
+      <ul className="ff-onb-punten">
+        <li>🧹 Wie doet wat, eerlijk verdeeld naar ieders rooster</li>
+        <li>✅ Kinderen zien één ding tegelijk: wat nu</li>
+        <li>🤝 Bij ruzie: rust, praten, een afspraak, en na een week kijken of het helpt</li>
+      </ul>
       <button className="ff-onb-choice" onClick={onCode}>
         <span className="ff-onb-ic"><Icon name="ik" size={26} /></span>
         <span className="ff-grow"><b>Ik heb een code</b><br /><span className="ff-small ff-muted">Je hebt een uitnodiging gekregen</span></span>
@@ -24,8 +29,11 @@ export function Welkom({ onParent, onCode }: { onParent: (mode: "nieuw" | "inlog
         <span className="ff-onb-ic ff-onb-ic-2"><Icon name="gezin" size={26} /></span>
         <span className="ff-grow"><b>Nieuw gezin starten</b><br /><span className="ff-small ff-muted">Voor ouders</span></span>
       </button>
+      <a className="ff-onb-choice" href="#demo" onClick={() => window.setTimeout(() => window.location.reload(), 10)}>
+        <span className="ff-onb-ic ff-onb-ic-3"><Icon name="oefenen" size={26} /></span>
+        <span className="ff-grow"><b>Eerst rondkijken</b><br /><span className="ff-small ff-muted">Probeer de app met een voorbeeldgezin, zonder account</span></span>
+      </a>
       <button className="ff-link" onClick={() => onParent("inloggen")}>Ik ben ouder en heb al een account</button>
-      <a className="ff-link ff-small ff-center" href="#demo" onClick={() => window.setTimeout(() => window.location.reload(), 10)}>Eerst de demo bekijken</a>
     </div>
   );
 }

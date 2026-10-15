@@ -7,7 +7,7 @@
 export interface ConflictScenario {
   id: string;
   title: string;
-  category: "ouder-kind" | "broer-zus" | "online" | "buiten";
+  category: "ouder-kind" | "broer-zus" | "online" | "buiten" | "opvoedvraag";
   description: string;
   trigger: string;
   possible_factors: string[];
@@ -221,7 +221,55 @@ export const CONFLICTS: ConflictScenario[] = [
     professional_support: ["Er wordt vaker geduwd of geslagen", "Het kind raakt vrienden kwijt door ruzies"],
     practice: "voetbal",
   },
+  {
+    id: "huiswerk",
+    title: "Huiswerk wordt steeds uitgesteld",
+    category: "opvoedvraag",
+    description: "Het huiswerk blijft liggen. Er wordt uitgesteld, gemopperd of gezegd dat het al af is. Elke avond wordt het discussie.",
+    trigger: "Een ouder vraagt of het huiswerk af is, of zegt dat het nu tijd is.",
+    possible_factors: ["Niet weten waar je moet beginnen", "De opdracht voelt te groot of te moeilijk", "Moe na school of na sport", "Liever eerst iets leuks, en dan wordt het laat", "Faalangst of eerdere slechte cijfers", "Afspraken over wanneer en waar zijn niet duidelijk"],
+    early_signs: ["\"Zo meteen\" zonder te beginnen", "Steeds iets anders gaan doen", "Boos worden bij de vraag", "Zeggen dat er geen huiswerk is"],
+    safety_check: [],
+    parent_guidance: ["Vraag eerst naar de opdracht, niet naar het cijfer: wat moet er af en wat is het lastigste stuk?", "Maak het eerste stapje klein: 10 minuten, één opdracht.", "Spreek samen een vaste tijd en plek af, liefst na een korte pauze na school.", "Help bij het plannen, niet bij het maken. Het werk blijft van je kind.", "Prijs het beginnen, niet alleen het resultaat."],
+    child_guidance: ["Begin met het kleinste stukje. Tien minuten is genoeg om te starten.", "Zeg het als je niet weet hoe je moet beginnen. Dat is geen falen.", "Zet je toets of opdracht in de leerplanner. Dan wordt het kleine blokjes."],
+    calming_options: ["Eerst 10 minuten pauze met iets te eten", "Even naar buiten", "Muziek op, telefoon in een andere kamer"],
+    dialogue_examples: {
+      ouder: ["Ik zie dat het lastig is om te beginnen. Wat is het eerste kleine stukje dat je kunt doen?", "Wanneer wil je vandaag beginnen: om vier uur of om half vijf? Dan laat ik je verder met rust."],
+      kind: ["Ik weet niet waar ik moet beginnen. Kun je even met me meekijken?", "Ik doe het om half vijf. Daarvoor wil ik even pauze."],
+    },
+    coach_questions: ["Wat maakt beginnen moeilijk?", "Welk vak of welke opdracht kost de meeste moeite?", "Wat helpt jou om te beginnen: een vaste tijd, een plek, iemand in de buurt?", "Hoe wil je dat je ouder je herinnert, zonder dat het zeuren wordt?"],
+    repair_steps: ["Samen kijken wat er vanavond nog echt moet", "Zeggen wat je dwarszat, zonder te schelden", "Een vaste tijd afspreken voor morgen"],
+    prevention: ["Elke schooldag huiswerk op een vaste tijd, na een korte pauze", "Toetsen in de leerplanner, zodat het kleine blokjes worden", "Telefoon tijdens huiswerk in een andere kamer", "Eén keer per dag vragen, daarna laat de ouder het los"],
+    age_adaptations: { jong: "Zit in de buurt tijdens het huiswerk en maak het kort: 15 minuten, dan pauze.", tiener: "Laat de jongere zelf de tijd kiezen en houd je daar aan. Vraag één keer, niet steeds." },
+    adhd_add_considerations: ["Beginnen is vaak het moeilijkste stuk; het eerste stapje heel klein maken helpt.", "Korte blokken met pauzes werken beter dan één lange zit.", "Een vaste plek zonder telefoon en zonder drukte helpt om erbij te blijven."],
+    professional_support: ["Huiswerk loopt bijna elke dag uit op ruzie", "Je kind wil niet meer naar school of klaagt veel over buikpijn of hoofdpijn", "De cijfers zakken ondanks hulp, of je kind zegt dat het toch niks kan", "Bespreek het met de mentor; die ziet vaak wat er op school speelt"],
+  },
+  {
+    id: "schermregels",
+    title: "Samen schermregels afspreken",
+    category: "opvoedvraag",
+    description: "Er is steeds gedoe over telefoon, gamen of tv. Jullie willen samen duidelijke regels maken, in plaats van elke dag opnieuw te onderhandelen.",
+    trigger: "Er komt weer discussie over hoe lang, wanneer of welk scherm.",
+    possible_factors: ["Regels die per dag of per ouder verschillen", "Een kind dat zich niet gehoord voelt over de regels", "Apps en games die bedoeld zijn om lang door te gaan", "Vrienden die andere regels hebben", "Schermen als manier om tot rust te komen"],
+    early_signs: ["\"Iedereen mag het wel\"", "Onderhandelen over elke minuut", "Stiekem langer doorgaan", "Boos worden bij het inleveren"],
+    safety_check: ["Is er online iets gebeurd waar je kind van schrok, of iemand die dreigt?"],
+    parent_guidance: ["Plan een rustig moment, niet midden in een ruzie.", "Vraag eerst wat je kind belangrijk vindt aan schermen: vrienden, ontspannen, school.", "Spreek samen af wanneer, hoe lang en waar. Schrijf het op.", "Maak duidelijk wat er gebeurt als de afspraak niet lukt, en houd dat vol.", "Spreek af wanneer jullie de regels samen bekijken, bijvoorbeeld over twee weken."],
+    child_guidance: ["Vertel wat jij belangrijk vindt aan je telefoon of game.", "Doe zelf een voorstel. Een goed voorstel wordt eerder overgenomen.", "Afspraken gaan beter als je meebeslist. Doe dus mee."],
+    calming_options: ["Eerst rust, het gesprek op een ander moment", "Samen iets drinken aan tafel"],
+    dialogue_examples: {
+      ouder: ["Ik wil dat we het niet elke dag oneens zijn over je telefoon. Wat vind jij een eerlijke afspraak?", "Wat is voor jou het belangrijkste moment om op je telefoon te zitten?"],
+      kind: ["Ik wil na het eten graag met vrienden gamen. Kan dat als mijn huiswerk af is?", "Ik vind het oneerlijk als het elke dag anders is."],
+    },
+    coach_questions: ["Wat vind ieder van jullie belangrijk aan schermen?", "Waar ontstaat nu de meeste ruzie: de tijd, het moment of het inleveren?", "Wat is een eerlijke afspraak voor doordeweeks en voor het weekend?", "Wanneer kijken jullie samen of de afspraak werkt?"],
+    repair_steps: ["De oude ruzie laten rusten", "Samen een afspraak opschrijven", "Een datum kiezen om de afspraak te bekijken"],
+    prevention: ["Telefoon 's nachts buiten de slaapkamer", "Eerst de dag af, dan het scherm", "Doordeweeks een vaste eindtijd", "Over twee weken samen kijken of de afspraak werkt"],
+    age_adaptations: { jong: "Houd het simpel en zichtbaar: een vaste tijd en een timer. Ouders beslissen, het kind mag meedenken.", tiener: "Laat de jongere een voorstel doen en onderhandel daarover. Meer eigen verantwoordelijkheid werkt beter dan strenge controle." },
+    adhd_add_considerations: ["Stoppen met een scherm kost extra moeite; een seintje vooraf en een vaste volgende activiteit helpen.", "Korte, duidelijke regels werken beter dan veel uitzonderingen.", "Schermen kunnen helpen om tot rust te komen; spreek af wanneer dat wel kan."],
+    professional_support: ["Er is bijna elke dag heftige ruzie over schermen", "Schermgebruik gaat ten koste van slaap, school of vrienden", "Je kind trekt zich terug of wordt erg boos als het scherm weg moet", "Er speelt online pesten, chantage of contact met onbekenden"],
+  },
 ];
 
-export const CATEGORY_LABEL: Record<ConflictScenario["category"], string> = { "ouder-kind": "Ouder en kind", "broer-zus": "Broer en zus", online: "Online", buiten: "Buiten" };
+export const CATEGORY_LABEL: Record<ConflictScenario["category"], string> = { "ouder-kind": "Ouder en kind", "broer-zus": "Broer en zus", online: "Online", buiten: "Buiten", opvoedvraag: "Opvoedvraag" };
+/** Situaties die geen ruzie op het moment zelf zijn, maar een vraag van ouders over opvoeden. */
+export const OPVOEDVRAGEN = CONFLICTS.filter((c) => c.category === "opvoedvraag").map((c) => c.id);
 export const conflictById = (id: string) => CONFLICTS.find((c) => c.id === id);

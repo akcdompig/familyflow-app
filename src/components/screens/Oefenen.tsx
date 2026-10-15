@@ -45,7 +45,7 @@ export function Oefenen({ state, me, onToast, onCalm, onRuzie, onCoach, onCoachN
     <div className="ff-screen">
       <header className="ff-top">
         <div>
-          <div className="ff-eyebrow">{isParent ? "Zo oefenen de kinderen" : "Leren omgaan met boosheid en ruzie"}</div>
+          <div className="ff-eyebrow">{isParent ? "Rust, ruzie en opvoedvragen" : "Leren omgaan met boosheid en ruzie"}</div>
           <h1 className="ff-h1">{titel ?? "Oefenen"}</h1>
         </div>
         <Flo size={52} />

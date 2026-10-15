@@ -13,6 +13,18 @@ test("dagStand: routine en ingedeelde klussen bepalen of de dag af is", () => {
   const s = gezin({ dag: { [d]: { k1: { routine: ROUTINE, water: 6, fruit: 2 } } } });
   const st = dagStand(s, "k1", d);
   assert.ok(st.af >= 1);
+  // Dezelfde lijst die je in Gezin › Week openklapt: telling klopt met de items.
+  assert.equal(st.totaal, st.items.length);
+  assert.equal(st.af, st.items.filter((x) => x.klaar).length);
+  assert.ok(st.items.some((x) => x.soort === "routine" && x.klaar));
+  assert.ok(st.items.some((x) => x.soort === "eten"), "eten telt mee");
+});
+
+test("dagStand: extra gedane klus staat in de lijst", () => {
+  const d = "2026-10-13";
+  const s = gezin({ klusLog: [{ id: "x", klus: "ramen", by: "k1", at: at(d, "15:00").toISOString() }] });
+  const st = dagStand(s, "k1", d);
+  assert.ok(st.items.some((x) => x.soort === "klus" && x.klaar), "ook wat je extra deed");
 });
 
 test("bewijzen: zelfstandig, samenwerken, emotie, conflict en plannen worden herkend", () => {

@@ -13,7 +13,8 @@ import { WieDoetWat } from "@/components/screens/WieDoetWat";
 import { SKILLS, scenarioById, type SkillId } from "@/lib/coach";
 import { features } from "@/lib/unlock";
 import { levelOf, xpForLevel, XP_UITLEG, geclaimd, teClaimen } from "@/lib/xp";
-import type { FamilyState, Member, Meeting } from "@/lib/types";
+import type { FamilyState, Member, Meeting, Oordeel } from "@/lib/types";
+import { OORDEEL, actief } from "@/lib/afspraken";
 
 const GOAL_COLORS = ["#d9442f", "#3cc6a0", "#6c8cff"];
 
@@ -23,9 +24,11 @@ interface Props {
   onToast: (m: string) => void;
   onOefenen: () => void;
   onCoachNu: () => void;
+  /** Versie 3: overleg, doelen en afspraken staan bij Samen verder. Hier alleen het instellen van het gezin. */
+  instellen?: boolean;
 }
 
-export function Gezin({ state, me, onToast, onOefenen, onCoachNu }: Props) {
+export function Gezin({ state, me, onToast, onOefenen, onCoachNu, instellen = false }: Props) {
   const [meeting, setMeeting] = useState(false);
   const [wdw, setWdw] = useState(false);
   const [editGoals, setEditGoals] = useState(false);
@@ -49,7 +52,7 @@ export function Gezin({ state, me, onToast, onOefenen, onCoachNu }: Props) {
       <header className="ff-top">
         <div>
           <div className="ff-eyebrow">{state.family}</div>
-          <h1 className="ff-h1">Ons gezin</h1>
+          <h1 className="ff-h1">{instellen ? "Gezin instellen" : "Ons gezin"}</h1>
         </div>
       </header>
 
@@ -69,7 +72,7 @@ export function Gezin({ state, me, onToast, onOefenen, onCoachNu }: Props) {
         <span className="ff-grow"><b>Wie doet wat</b><br /><span className="ff-small ff-muted">Verdeling van taken en tijd in huis, per week en maand</span></span>
       </button>
 
-      {!feat.overleg && (
+      {!feat.overleg && !instellen && (
         <section className="ff-card ff-stack-s ff-teaser">
           <span className="ff-eyebrow">Week {feat.week} van de start</span>
           <b>Eerst wennen aan inchecken en taken.</b>
@@ -78,7 +81,7 @@ export function Gezin({ state, me, onToast, onOefenen, onCoachNu }: Props) {
         </section>
       )}
 
-      {feat.overleg && (
+      {feat.overleg && !instellen && (
       <section className="ff-card ff-meet-cta">
         <div>
           <b className="ff-h2">Gezinsoverleg</b>
@@ -113,7 +116,7 @@ export function Gezin({ state, me, onToast, onOefenen, onCoachNu }: Props) {
         </section>
       )}
 
-      {feat.overleg && (<>
+      {feat.overleg && !instellen && (<>
       <section className="ff-card ff-stack">
         <div className="ff-row" style={{ justifyContent: "space-between" }}>
           <h2 className="ff-h2">Zo gaan we vooruit</h2>
@@ -162,7 +165,7 @@ export function Gezin({ state, me, onToast, onOefenen, onCoachNu }: Props) {
       <Vaardigheden state={state} />
       </>)}
 
-      <section className="ff-card ff-stack-s">
+      {!instellen && <section className="ff-card ff-stack-s">
         <div className="ff-row" style={{ justifyContent: "space-between" }}>
           <h2 className="ff-h2">Onze afspraken</h2>
           <button className="ff-link" onClick={onCoachNu}>Conflictcoach</button>
@@ -178,7 +181,7 @@ export function Gezin({ state, me, onToast, onOefenen, onCoachNu }: Props) {
           <p className="ff-small ff-muted">Afspraken die jullie met de conflictcoach maken, komen hier te staan. Bespreek ze in het gezinsoverleg.</p>
         )}
         {(state.coachLog ?? []).length > 0 && <p className="ff-small ff-muted">Coach deze week {(state.coachLog ?? []).filter((l) => Date.now() - new Date(l.at).getTime() < 7 * 864e5).length} keer gebruikt.</p>}
-      </section>
+      </section>}
 
       {recent.length > 0 && (
         <section className="ff-card ff-stack-s">
@@ -256,17 +259,22 @@ export function Gezin({ state, me, onToast, onOefenen, onCoachNu }: Props) {
   );
 }
 
-const STEPS = ["Wat ging goed?", "Hoe gaat het thuis?", "Onze doelen", "Eén ding oplossen", "Iets leuks plannen"];
+const STEPS = ["Wat ging goed?", "Hoe gaat het thuis?", "Onze doelen", "Onze afspraken", "Eén ding oplossen", "Iets leuks plannen"];
 
-function Overleg({ state, onClose, onToast }: { state: FamilyState; onClose: () => void; onToast: (m: string) => void }) {
+export function Overleg({ state, onClose, onToast }: { state: FamilyState; onClose: () => void; onToast: (m: string) => void }) {
   const [step, setStep] = useState(0);
   const [m, setM] = useState<Omit<Meeting, "at">>({ therm: {}, goals: {}, good: "", problem: "", solution: "", fun: "" });
   const last = state.meetings[state.meetings.length - 1];
   const goals = state.goals.filter(Boolean);
-  const ok = [true, state.members.every((x) => m.therm[x.id]), goals.every((_, i) => m.goals[i] !== undefined), true, true][step];
+  const lopend = actief(state);
+  const [oordeel, setOordeel] = useState<Record<string, Oordeel>>({});
+  const ok = [true, state.members.every((x) => m.therm[x.id]), goals.every((_, i) => m.goals[i] !== undefined), true, true, true][step];
 
   const finish = () => {
     actions.saveMeeting(m);
+    // De afspraken die jullie samen beoordeelden, en een nieuwe afspraak uit "één ding oplossen".
+    for (const [id, o] of Object.entries(oordeel)) actions.evalueerAfspraak(id, "gezin", o);
+    if (m.solution.trim()) actions.addAfspraak(m.solution, state.me, "overleg");
     onToast("Gezinsoverleg opgeslagen. Goed gedaan, allemaal!");
     onClose();
   };
@@ -327,6 +335,21 @@ function Overleg({ state, onClose, onToast }: { state: FamilyState; onClose: () 
       )}
 
       {step === 3 && (
+        <section className="ff-stack">
+          <p>Helpen jullie afspraken? Kies samen. Werkt er een niet, dan zoeken jullie in de volgende stap een betere.</p>
+          {!lopend.length && <p className="ff-small ff-muted">Nog geen afspraken. Die maken jullie in de volgende stap, of met de coach bij Hulp.</p>}
+          {lopend.map((a) => (
+            <div key={a.id} className="ff-card ff-stack-s">
+              <b>{a.text}</b>
+              <div className="ff-chips">
+                {(Object.keys(OORDEEL) as Oordeel[]).map((o) => <button key={o} className="ff-chip" aria-pressed={oordeel[a.id] === o} onClick={() => setOordeel({ ...oordeel, [a.id]: o })}>{OORDEEL[o].emoji} {OORDEEL[o].label}</button>)}
+              </div>
+            </div>
+          ))}
+        </section>
+      )}
+
+      {step === 4 && (
         <section className="ff-card ff-stack">
           <p>Kies één ding dat lastig was. Niet meer. Iedereen mag een oplossing noemen, ook de kinderen.</p>
           <label className="ff-field">
@@ -340,7 +363,7 @@ function Overleg({ state, onClose, onToast }: { state: FamilyState; onClose: () 
         </section>
       )}
 
-      {step === 4 && (
+      {step === 5 && (
         <section className="ff-card ff-stack">
           <p>Sluit af met iets leuks voor deze week. Laat een kind kiezen.</p>
           <div className="ff-chips">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Attention, Inbox, Klassement, NetGedaan, Row } from "@/components/screens/Huiskamer";
+import { Attention, Inbox, NetGedaan, Row } from "@/components/screens/Huiskamer";
 import { Eten, Klussen, Potje, Week } from "@/components/screens/Thuis";
 import { AddTaskSheet, TaskRow } from "@/components/screens/Taken";
 import { Avatar } from "@/components/avatar/Avatar";
@@ -16,19 +16,19 @@ import { SamenTab } from "./Samen";
 import { SchermOverzicht } from "./Scherm";
 import { Vragen } from "@/components/screens/Verdeling";
 import { WeekV2 } from "./WeekV2";
-import { GroeiGezin } from "./GroeiGezin";
+import { dagStand } from "@/lib/groei";
+import { iso } from "@/lib/planner";
 
-type Tab = "nu" | "week" | "samen" | "klussen" | "eten" | "groei";
+type Tab = "nu" | "week" | "samen" | "klussen" | "eten";
 const TABS: { id: Tab; label: string }[] = [
   { id: "nu", label: "Nu" },
   { id: "week", label: "Week" },
   { id: "samen", label: "Samen" },
   { id: "klussen", label: "Klussen" },
   { id: "eten", label: "Eten" },
-  { id: "groei", label: "Groei" },
 ];
-// Kinderen (en zeker met ADHD) hebben baat bij minder keuzes: 4 tabbladen in plaats van 6.
-const KIND_TABS: Tab[] = ["nu", "klussen", "samen", "groei"];
+// Kinderen (en zeker met ADHD) hebben baat bij minder keuzes: 3 tabbladen. Groei staat sinds 3.0 bij Samen verder.
+const KIND_TABS: Tab[] = ["nu", "klussen", "samen"];
 
 const ROMMEL_PLEK = [
   { left: "8%", bottom: "6%" }, { right: "9%", bottom: "8%" }, { left: "30%", bottom: "2%" },
@@ -41,8 +41,8 @@ function tijdVanDag() {
 }
 
 /** Gezin: de huiskamer met iedereen, en alles van het huis (eten, klussen, potje, planning). */
-export function GezinV2({ state, me, onToast, onOuders, onOpenLid, onTips, onRuzie, onCheckIn }: { state: FamilyState; me: Member; onToast: (m: string) => void; onOuders: () => void; onOpenLid: (id: string) => void; onTips: (id: string) => void; onRuzie: (id?: string) => void; onCheckIn: () => void }) {
-  const [tab, setTab] = useState<Tab>("nu");
+export function GezinV2({ state, me, onToast, onOuders, onOpenLid, onTips, onRuzie, onCheckIn, startTab }: { startTab?: string; state: FamilyState; me: Member; onToast: (m: string) => void; onOuders: () => void; onOpenLid: (id: string) => void; onTips: (id: string) => void; onRuzie: (id?: string) => void; onCheckIn: () => void }) {
+  const [tab, setTab] = useState<Tab>(TABS.some((t) => t.id === startTab) ? (startTab as Tab) : "nu");
   const [adding, setAdding] = useState(false);
   const klussen = klusStatus(state);
   const teLaat = klussen.filter((k) => k.teLaat > 0).length;
@@ -88,7 +88,7 @@ export function GezinV2({ state, me, onToast, onOuders, onOpenLid, onTips, onRuz
           {isOuder && <VoedingOverzicht state={state} onOpen={onOpenLid} />}
           <Inbox state={state} me={me} />
           {isOuder && <NetGedaan state={state} me={me} />}
-          <Klassement state={state} me={me} onOpen={onOpenLid} />
+          <SamenVandaag state={state} me={me} onOpen={onOpenLid} />
         </>
       )}
       {tab === "samen" && (
@@ -100,7 +100,6 @@ export function GezinV2({ state, me, onToast, onOuders, onOpenLid, onTips, onRuz
       )}
       {tab === "eten" && <Eten state={state} me={me} onToast={onToast} />}
       {tab === "klussen" && <Klussen state={state} me={me} lijst={klussen} onToast={onToast} simpel={!isOuder} />}
-      {tab === "groei" && <GroeiGezin state={state} me={me} onToast={onToast} />}
       {tab === "week" && (
         <div className="ff-stack">
           <WeekV2 state={state} me={me} onToast={onToast} onOpenLid={onOpenLid} />
@@ -135,5 +134,34 @@ export function GezinV2({ state, me, onToast, onOuders, onOpenLid, onTips, onRuz
         </div>
       )}
     </div>
+  );
+}
+
+/** In plaats van een ranglijst: hoe ver zijn we samen vandaag? Geen volgorde, geen medailles. */
+function SamenVandaag({ state, me, onOpen }: { state: FamilyState; me: Member; onOpen: (id: string) => void }) {
+  const vandaag = iso(new Date());
+  const leden = state.members.filter((m) => m.joined !== false);
+  if (leden.length < 2) return null;
+  const st = leden.map((m) => ({ m, ...dagStand(state, m.id, vandaag) }));
+  const af = st.reduce((a, x) => a + x.af, 0);
+  const totaal = st.reduce((a, x) => a + x.totaal, 0);
+  const klaar = st.filter((x) => x.stand === "af").length;
+  return (
+    <section className="ff-card ff-stack-s" aria-label="Samen vandaag">
+      <div className="ff-row">
+        <b className="ff-grow">Samen vandaag</b>
+        <span className="ff-small ff-muted">{af} van {totaal} gedaan</span>
+      </div>
+      <span className="v2-samenbalk" aria-hidden="true"><i style={{ width: `${totaal ? Math.round((af / totaal) * 100) : 0}%` }} /></span>
+      <div className="v2-samen-koppen">
+        {st.map((x) => (
+          <button key={x.m.id} className={`v2-samen-kop${x.stand === "af" ? " is-af" : ""}`} onClick={() => onOpen(x.m.id)} aria-label={`${x.m.id === me.id ? "Jij" : x.m.name}${x.stand === "af" ? ": dag af" : ""}`}>
+            <Avatar config={x.m.avatar} expression={x.stand === "af" ? "blij" : "neutraal"} headOnly size={36} animate={false} label="" />
+            {x.stand === "af" && <span className="v2-samen-vink" aria-hidden="true">✓</span>}
+          </button>
+        ))}
+      </div>
+      <span className="ff-small ff-muted">{klaar === leden.length ? "Iedereen heeft zijn dag af. Gezinsdag! 🎉" : "Helpt iedereen een beetje mee, dan halen jullie het samen."}</span>
+    </section>
   );
 }

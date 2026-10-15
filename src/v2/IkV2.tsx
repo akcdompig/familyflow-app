@@ -10,7 +10,6 @@ import { expressionFor } from "@/lib/mood";
 import { actions } from "@/lib/store";
 import { geclaimd, levelProgress, teClaimen, xpForLevel } from "@/lib/xp";
 import type { FamilyState, Member } from "@/lib/types";
-import { Groei } from "./Groei";
 
 /** Ik: je level, schatkist, achievements en je instellingen. Alles wat over jou gaat op één plek. */
 export function IkV2({ state, me, onToast, onAvatar, onWerk, onMeer, onOuders, onPrivacy }: { state: FamilyState; me: Member; onToast: (m: string) => void; onAvatar: () => void; onWerk: () => void; onMeer: () => void; onOuders?: () => void; onPrivacy?: () => void }) {
@@ -70,8 +69,6 @@ export function IkV2({ state, me, onToast, onAvatar, onWerk, onMeer, onOuders, o
         {!alleBadges && <button className="ff-link ff-small" onClick={() => setAlleBadges(true)}>Alle achievements bekijken</button>}
       </section>
 
-      <Groei state={state} lid={me} me={me} onToast={onToast} />
-
       <section className="ff-card ff-stack-s">
         <b>🎯 Waar wil je tips over?</b>
         <Interesses state={state} me={me} onToast={onToast} compact />
@@ -84,7 +81,7 @@ export function IkV2({ state, me, onToast, onAvatar, onWerk, onMeer, onOuders, o
         <button className="v2-menu-rij" onClick={onWerk}><span aria-hidden="true">{isOuder ? "💼" : "🎒"}</span><b className="ff-grow">{isOuder ? "Werk en roosters" : "School en bijbaan"}</b><span aria-hidden="true">›</span></button>
         <button className="v2-menu-rij" onClick={onMeer}><span aria-hidden="true">🌿</span><b className="ff-grow">Mijn rustplan en meer</b><span aria-hidden="true">›</span></button>
         {onPrivacy && <button className="v2-menu-rij" onClick={onPrivacy}><span aria-hidden="true">🔒</span><b className="ff-grow">Privacy en gegevens</b><span aria-hidden="true">›</span></button>}
-        {isOuder && onOuders && <button className="v2-menu-rij" onClick={onOuders}><span aria-hidden="true">👨‍👩‍👧</span><b className="ff-grow">Ouders: overleg, beloningen, school en zorg</b><span aria-hidden="true">›</span></button>}
+        {isOuder && onOuders && <button className="v2-menu-rij" onClick={onOuders}><span aria-hidden="true">👨‍👩‍👧</span><b className="ff-grow">Gezin instellen: uitnodigen, beloningen, bedtijden</b><span aria-hidden="true">›</span></button>}
       </section>
 
       {claim && <ClaimViering me={me} van={claim.van} n={claim.n} onKlaar={() => setClaim(null)} />}

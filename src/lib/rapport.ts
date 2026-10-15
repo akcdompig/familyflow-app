@@ -117,7 +117,7 @@ export function weekRapport(s: FamilyState, me: Member, ma: string, nu = new Dat
     if (punten.length >= 2) break;
     if (!telling.get(x.c.id)) punten.push(`${x.lid.id === me.id ? "Jij" : x.lid.name}: ${x.c.naam.toLowerCase()}. ${oefentips(x.c, x.lid.age)[0]}.`);
   }
-  if (punten.length < 2 && kids.length && !verderOefenen.length) punten.push(isOuder ? "Kies met de kinderen een groeidoel (bij Ik › groeidoelen)." : "Kies een groeidoel bij Ik, samen met papa of mama.");
+  if (punten.length < 2 && kids.length && !verderOefenen.length) punten.push(isOuder ? "Kies met de kinderen een groeidoel (tik op je kind in de huiskamer)." : "Kies een groeidoel bij Samen verder, samen met papa of mama.");
   if (punten.length < 2 && !gedaan.length) punten.push("Plan één moment samen, al is het een half uurtje.");
   const eigenDoel = !isOuder ? (s.doelen?.[me.id]?.vaardigheden ?? []).map((v) => competentie(v)).find(Boolean) : undefined;
   return {

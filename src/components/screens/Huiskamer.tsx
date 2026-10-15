@@ -141,7 +141,8 @@ export function Row({ members, row, state, me, onOpen }: { members: Member[]; ro
         const c = state.checkins[m.id];
         const zzz = slaapt(state, m.id);
         const werk = zzz ? null : werktNu(state, m.id);
-        const stinkt = !zzz && m.joined !== false && walm(state, m.id);
+        // Douchen is iets van jezelf: alleen jij ziet je eigen herinnering, niemand anders wordt erop aangesproken.
+        const stinkt = m.id === me.id && !zzz && m.joined !== false && walm(state, m.id);
         const dorstig = !zzz && m.joined !== false && dorst(state, m.id);
         const hongerig = !zzz && !werk && m.joined !== false && honger(state, m.id);
         const spread = Math.min(46, 92 / members.length);
@@ -155,7 +156,7 @@ export function Row({ members, row, state, me, onOpen }: { members: Member[]; ro
                 <span className="ff-dot" style={{ background: moodDot(c) }} />
                 {m.id === me.id ? "Jij" : m.name}
               </span>
-              <span className={`ff-tag-mood${zzz ? " is-slaap" : werk ? " is-werk" : ""}`}>{m.joined === false ? "nog niet aangemeld" : zzz ? "slaapt" : werk ? `${werk.look === "school" ? "op school" : werk.werk.naam} · ${restTekst(werk.rest)}` : stinkt ? "pfoe, nog niet gedoucht?" : hongerig ? "heeft honger…" : moodLabel(c)}</span>
+              <span className={`ff-tag-mood${zzz ? " is-slaap" : werk ? " is-werk" : ""}`}>{m.joined === false ? "nog niet aangemeld" : zzz ? "slaapt" : werk ? `${werk.look === "school" ? "op school" : werk.werk.naam} · ${restTekst(werk.rest)}` : stinkt ? "nog even douchen?" : hongerig ? "heeft honger…" : moodLabel(c)}</span>
               {werk ? <BezigBalk b={werk} klein /> : m.joined !== false && !zzz && <Meters state={state} id={m.id} klein />}
             </span>
             {c?.wantsTalk && <span className="ff-bubble" aria-hidden="true"><Icon name="chat" size={16} /></span>}
@@ -176,6 +177,14 @@ export function Attention({ state, me, onTalkTips, onCheckIn, onGoTasks, onRuzie
   };
 
   const name = (id: string) => state.members.find((m) => m.id === id)?.name ?? "";
+  // Iemand wil een ruzie met jou uitpraten. Voor ouders telt dat net zo zwaar: het kind wil gehoord worden.
+  const invite = state.conflicts.find((c) => c.status === "wacht" && c.with === me.id);
+  const inviteKaart = invite ? (
+    <Card tone="lucht" title={`${name(invite.from)} wil een ruzie uitpraten`} meta={timeLabel(invite.at)}>
+      <p>Over: {invite.topic.toLowerCase()}. Lees wat {name(invite.from)} zegt en vertel jouw kant.{me.role === "ouder" ? " Kies samen een oplossing." : " Lukt het samen, dan krijgen jullie allebei XP."}</p>
+      <button className="ff-btn ff-btn-primary" onClick={() => onRuzie(invite.id)}>Bekijken</button>
+    </Card>
+  ) : null;
 
   if (me.role === "ouder") {
     const hot = state.conflicts.find((c) => c.status === "hulp" || (c.physical && c.status !== "opgelost"));
@@ -187,6 +196,7 @@ export function Attention({ state, me, onTalkTips, onCheckIn, onGoTasks, onRuzie
         </Card>
       );
     }
+    if (inviteKaart) return inviteKaart;
     const talk = kids.find((k) => ci(k)?.wantsTalk);
     if (talk) {
       const c = ci(talk)!;
@@ -244,15 +254,7 @@ export function Attention({ state, me, onTalkTips, onCheckIn, onGoTasks, onRuzie
     );
   }
 
-  const invite = state.conflicts.find((c) => c.status === "wacht" && c.with === me.id);
-  if (invite) {
-    return (
-      <Card tone="lucht" title={`${name(invite.from)} wil een ruzie uitpraten`} meta={timeLabel(invite.at)}>
-        <p>Over: {invite.topic.toLowerCase()}. Lees wat {name(invite.from)} zegt en vertel jouw kant. Lukt het samen, dan krijgen jullie allebei XP.</p>
-        <button className="ff-btn ff-btn-primary" onClick={() => onRuzie(invite.id)}>Bekijken</button>
-      </Card>
-    );
-  }
+  if (inviteKaart) return inviteKaart;
   if (!today(me)) {
     return (
       <Card tone="koraal" title={`Hoi ${me.name}, hoe gaat het?`}>

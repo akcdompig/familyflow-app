@@ -201,7 +201,7 @@ export interface FamilyState {
   /** coach[lid] = gespeelde coachscenario's */
   coach?: Record<string, CoachRun[]>;
   /** Gezinsafspraken uit de coach of het overleg. */
-  afspraken?: { id: string; text: string; at: string; by: string; scenario?: string }[];
+  afspraken?: Afspraak[];
   /** Gelezen minuten per lid. */
   reading?: Record<string, { at: string; min: number; book?: string; uit?: boolean }[]>;
   /** Korte feedback tijdens de pilot. */
@@ -270,8 +270,22 @@ export interface FamilyState {
   /** Schermtijd-afspraak per kind: hoeveel minuten per dag is het doel. */
   schermAfspraak?: Record<string, { doel: number }>;
   /** Groeidoelen per kind: welke vaardigheden, en de terugblik per week (maandag → vaardigheid → hoe ging het). */
-  doelen?: Record<string, { vaardigheden: string[]; terugblik?: Record<string, Record<string, "goed" | "beter" | "lastig">> }>;
+  doelen?: Record<string, { vaardigheden: string[]; terugblik?: Record<string, Record<string, "goed" | "beter" | "lastig">>; /** Wat zou thuis beter mogen, in eigen woorden. */ wens?: string }>;
 }
+
+/** Een gezinsafspraak (uit de coach, een ruzie of zelf gemaakt). Na een week vraagt de app: hielp het? */
+export interface Afspraak {
+  id: string;
+  text: string;
+  at: string;
+  by: string;
+  /** Waar hij vandaan komt: een coachsituatie, "ruzie:<onderwerp>" of leeg. */
+  scenario?: string;
+  evaluaties?: { at: string; by: string; oordeel: Oordeel }[];
+  /** Gestopt: het gezin heeft hem losgelaten of vervangen. */
+  gestopt?: string;
+}
+export type Oordeel = "ja" | "beetje" | "nee";
 
 export interface Afspraken {
   /** Wanneer en door wie vastgelegd. Leeg = nog een voorstel. */

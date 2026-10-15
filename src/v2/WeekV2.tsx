@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Avatar } from "@/components/avatar/Avatar";
 import { addDays, iso } from "@/lib/planner";
-import { dagStand } from "@/lib/groei";
+import { dagStand, type DagItem } from "@/lib/groei";
 import { KLUSSEN, kookplan, maandag, werkOp } from "@/lib/huis";
 import { IDEEEN } from "@/lib/samen";
 import { samenwerken } from "@/lib/samenwerken";
@@ -27,6 +27,7 @@ export function WeekV2({ state, me, onToast, onOpenLid }: { state: FamilyState; 
   const [start, setStart] = useState(maandag(vandaag));
   const [dag, setDag] = useState(vandaag);
   const [plan, setPlan] = useState(false);
+  const [openLid, setOpenLid] = useState<string | null>(null);
   const dagen = Array.from({ length: 7 }, (_, i) => addDays(start, i));
   const leden = state.members.filter((m) => m.joined !== false);
   const isOuder = me.role === "ouder";
@@ -85,20 +86,8 @@ export function WeekV2({ state, me, onToast, onOpenLid }: { state: FamilyState; 
       {!toekomst && (
         <section className="ff-card ff-stack-s" aria-label="Hoe ging deze dag">
           <b>{verleden ? "Hoe ging het?" : "Tot nu toe"}</b>
-          {zichtbaar.map((m) => {
-            const st = dagStand(state, m.id, dag);
-            const gedaan = (state.klusLog ?? []).filter((k) => k.by === m.id && iso(new Date(k.at)) === dag);
-            return (
-              <button key={m.id} className="v2-week-lid" onClick={() => onOpenLid(m.id)}>
-                <Kop m={m} size={28} />
-                <span className="ff-grow ff-stack-xs" style={{ textAlign: "left" }}>
-                  <b>{m.id === me.id ? "Jij" : m.name}</b>
-                  <span className="ff-small ff-muted">{st.af} van {st.totaal} gedaan{gedaan.length ? ` · ${gedaan.map((k) => KLUSSEN.find((x) => x.id === k.klus.split(":")[0])?.emoji ?? "✓").join(" ")}` : ""}</span>
-                </span>
-                <span className={`v2-stand ${STAND[st.stand].kleur}`}>{STAND[st.stand].tekst}</span>
-              </button>
-            );
-          })}
+          <span className="ff-small ff-muted">Telt: ochtendroutine, eten, taken en klussen. Tik op iemand om te zien wat er precies gedaan is.</span>
+          {zichtbaar.map((m) => <DagRij key={m.id} m={m} state={state} me={me} dag={dag} open={openLid === m.id} onToggle={() => setOpenLid(openLid === m.id ? null : m.id)} onOpenLid={onOpenLid} />)}
         </section>
       )}
 
@@ -132,6 +121,58 @@ export function WeekV2({ state, me, onToast, onOpenLid }: { state: FamilyState; 
       )}
 
       <PlanSheet open={plan} datum={dag} state={state} me={me} onClose={() => setPlan(false)} onToast={onToast} />
+    </div>
+  );
+}
+
+const GROEP: { soort: DagItem["soort"]; label: string; emoji: string }[] = [
+  { soort: "klus", label: "Klussen", emoji: "🧹" },
+  { soort: "taak", label: "Taken", emoji: "✅" },
+  { soort: "routine", label: "Routine", emoji: "🚿" },
+  { soort: "eten", label: "Eten", emoji: "🍽️" },
+];
+
+/** Eén persoon op een dag: kort wat er af is, en met één tik precies wat. */
+function DagRij({ m, state, me, dag, open, onToggle, onOpenLid }: { m: Member; state: FamilyState; me: Member; dag: string; open: boolean; onToggle: () => void; onOpenLid: (id: string) => void }) {
+  const st = dagStand(state, m.id, dag);
+  const kort = GROEP.map((g) => {
+    const l = st.items.filter((x) => x.soort === g.soort);
+    if (!l.length) return null;
+    const af = l.filter((x) => x.klaar).length;
+    return `${g.emoji} ${af}/${l.length}`;
+  }).filter(Boolean).join(" · ");
+  return (
+    <div className={`v2-dagrij${open ? " is-open" : ""}`}>
+      <button className="v2-week-lid" aria-expanded={open} onClick={onToggle}>
+        <Kop m={m} size={28} />
+        <span className="ff-grow ff-stack-xs" style={{ textAlign: "left" }}>
+          <b>{m.id === me.id ? "Jij" : m.name} <span className="ff-small ff-muted">{st.af} van {st.totaal}</span></b>
+          <span className="ff-small ff-muted" aria-label={GROEP.map((g) => { const l = st.items.filter((x) => x.soort === g.soort); return l.length ? `${g.label}: ${l.filter((x) => x.klaar).length} van ${l.length}` : ""; }).filter(Boolean).join(", ")}>{kort}</span>
+        </span>
+        <span className={`v2-stand ${STAND[st.stand].kleur}`}>{STAND[st.stand].tekst}</span>
+        <span className="v2-dagrij-pijl" aria-hidden="true">{open ? "▴" : "▾"}</span>
+      </button>
+      {open && (
+        <div className="v2-dagrij-lijst">
+          {GROEP.map((g) => {
+            const l = st.items.filter((x) => x.soort === g.soort);
+            if (!l.length) return null;
+            return (
+              <div key={g.soort} className="ff-stack-xs">
+                <span className="ff-eyebrow">{g.label}</span>
+                {l.map((x, i) => (
+                  <span key={i} className={`v2-dagitem${x.klaar ? " is-klaar" : ""}`}>
+                    <span className="v2-dagitem-vink" aria-hidden="true">{x.klaar ? "✓" : ""}</span>
+                    <span aria-hidden="true">{x.emoji}</span> {x.titel}
+                    <span className="ff-sr">{x.klaar ? ": gedaan" : ": nog niet"}</span>
+                  </span>
+                ))}
+              </div>
+            );
+          })}
+          <button className="ff-link ff-small" onClick={() => onOpenLid(m.id)}>Meer van {m.id === me.id ? "jezelf" : m.name}</button>
+        </div>
+      )}
     </div>
   );
 }

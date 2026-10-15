@@ -164,10 +164,12 @@ export function demoFamily(): FamilyState {
       { id: "q3", member: "k2", title: "Geef deze week één keer rustig een grens aan.", skill: "grens", from: "coach", at: daysAgo(4), done: daysAgo(1) },
     ],
     afspraken: [
-      { id: "a1", text: "Een seintje 10 minuten voordat de gametijd voorbij is", at: daysAgo(5), by: "p1", scenario: "gamen" },
+      { id: "a1", text: "Een seintje 10 minuten voordat de gametijd voorbij is", at: daysAgo(8), by: "p1", scenario: "gamen" },
       { id: "a2", text: "Kloppen voordat je bij een ander binnenkomt", at: daysAgo(3), by: "p2", scenario: "in-de-weg" },
     ],
     coachLog: [
+      { at: daysAgo(19), by: "p1", scenario: "gamen", licht: "oranje" },
+      { at: daysAgo(12), by: "p2", scenario: "gamen", licht: "rood" },
       { at: daysAgo(5), by: "p1", scenario: "gamen", licht: "oranje" },
       { at: daysAgo(3), by: "k2", scenario: "in-de-weg", licht: "rood" },
     ],
