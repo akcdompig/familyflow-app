@@ -71,8 +71,59 @@ Cijfers worden alleen verhoogd met bewijs, en verlaagd als nieuwe bevindingen da
 
 ---
 
+## Ronde 1 · 15 oktober 2026 · versie 2.1 (tak `kwaliteit`, daarna `main`)
+
+### Wat er is gedaan, met bewijs
+| Wat | Bewijs |
+|---|---|
+| **55 unit-tests** op alle rekenregels (dag, klussen, koken, werk/school, badges, dagprogramma, punten, store, meldingen, Somtoday-tokens) | `npm test`, groen in CI |
+| **42 database-tests** tegen een echte Postgres 16 met nagebootste Supabase-auth | `bash tests/sql/run.sh`, groen in CI (service-container) |
+| **10 end-to-end-scenario's** in Chromium op telefoonformaat, beide versies, incl. toegankelijkheidscontrole per tabblad | `npm run e2e`, groen in CI |
+| **CI op elke push**: typecheck met echte React-types, tests, database-tests, build, controle dat `dist/` klopt met de broncode, e2e | GitHub Actions "Controle", run 38719581958 groen |
+| **Rechten in de database**: kind kan zichzelf geen ouder maken, bedtijd/beloningen/bevestigingen/taken van anderen/punten van anderen niet wijzigen, hooguit 300 punten per opslag aan zichzelf geven | database-tests "kind kan …" |
+| **Privacy per gezinslid**: kind ziet geen school/zorg-notities, berichten aan ouders, onderwerpen of ruzies van anderen, e-mailadressen; de tabel is niet direct leesbaar | database-tests "kind ziet …" |
+| **Versiegeschiedenis** (300 versies) met terugzetten door ouders | database-tests + Privacy-scherm |
+| **AVG**: gegevens downloaden, gezin verwijderen (alles inclusief geschiedenis), concept-privacyverklaring | `PRIVACY.md`, database-test "ouder kan het hele gezin verwijderen" |
+| **Uitnodigingscodes**: 8 tekens uit een cryptografische bron, max. 10 foute pogingen per uur, gebruikte code werkt niet op een andere telefoon | database-tests |
+| **Somtoday-tokens versleuteld** (AES-GCM, met geheim `SOMTODAY_SLEUTEL`), oude tokens blijven werken | unit-test "versleuteld in de database" |
+| **Klok-taken alleen met geheime sleutel** (herinneringen, Somtoday-onderhoud) | code in beide Edge Functions + `beveiliging.sql` |
+| **Foutlog** (zonder inhoud, max. 50 per lid per dag, 30 dagen) en een vangnet bij schermfouten | `foutlog.ts`, `Root.tsx`, database-test |
+| **Eén bouwsysteem**: Next.js verwijderd (werd in productie niet gebruikt), versies vastgezet, `npm run dev` | `package.json` |
+| **Snellere herstart**: JS als los bestand met hash (1 jaar cache, ± 178 kB gzip), service worker cache-first voor app-bestanden | productiebuild geladen via HTTP: index, config en asset 200, geen fouten |
+| **Gevonden en opgelost door de tests**: herinnering "wie is al bezig" rekende met de echte klok; codeveld kapte af op 6 tekens; tikdoel van 30 px | commits in deze ronde |
+
+### Nieuwe scores
+| Onderdeel | Was | Nu | Onderbouwing |
+|---|---:|---:|---|
+| Functionaliteit en betrouwbaarheid | 6,5 | **8** | Kernlogica en beveiliging aantoonbaar getest, 3 fouten gevonden en opgelost. Niet 10: echte push, echte Somtoday en de gedeployde Edge Functions zijn nog niet in de echte omgeving geverifieerd. |
+| Codekwaliteit en architectuur | 5,5 | **7,5** | Eén bouwsysteem, typecheck afgedwongen, server bewaakt de regels. Niet 10: één JSON-blob als opslag (door de servermerge veilig, maar groot), `store.ts` is 620 regels, meldingenregels staan bewust dubbel (server rekent in NL-tijd). |
+| Beveiliging en privacy | 4 | **8,5** | Rechten en privacy in de database, 42 tests. Niet 10: pas veilig na het draaien van `beveiliging.sql`; spelregels voor eigen punten blijven grotendeels in de app (begrensd op 300 per opslag); geen externe pentest. |
+| UI/UX en visuele afwerking | 7 / 7,5 | **7 / 7,5** | Geen nieuw bewijs. Versie 2.0 moet eerst met de kinderen getest worden. |
+| Mobiel en toegankelijkheid | 7 | **8** | Automatische controle in CI: alle knoppen benoemd, alle tikdoelen ≥ 32 px, geen horizontaal scrollen, op elk tabblad van beide versies. Niet 10: geen schermlezer-test, veel betekenis in emoji. |
+| Prestaties en efficiëntie | 6,5 | **7,5** | JS langdurig gecachet, assets cache-first, peilen pauzeert op de achtergrond. Niet 10: hele stand per wijziging, geen code-splitting (± 178 kB gzip). |
+| Testbaarheid en onderhoudbaarheid | 3 | **9** | 55 unit + 42 database + 10 e2e, alles in CI, inclusief controle dat de gebouwde app klopt met de broncode. Niet 10: nog geen tests per scherm (componenttests). |
+| Productvisie en gebruikswaarde | 8 | **8,5** | Privacy per gezinslid en AVG maken het verkoopbaar richting school en zorg. |
+| Productierijpheid en toekomstbestendigheid | 4 | **7** | CI, herstelbare versies, foutlog, AVG-functies. Niet 10: `beveiliging.sql` en Edge Functions nog deployen, privacyverklaring juridisch laten checken, test op echte telefoons, en meldingen bij fouten (alerting). |
+| **Gemiddeld** | **5,7** | **7,9** | |
+
+### Wat nodig is voor een 10 (kan ik niet allemaal zelf)
+**Door jou (± 30 minuten):**
+1. Supabase: nieuwe Edge Functions `herinneringen` en `somtoday` deployen, `beveiliging.sql` draaien, geheim `SOMTODAY_SLEUTEL` zetten.
+2. Op elke telefoon: de app openen, herinneringen testen ("Stuur een test"), Kian opnieuw koppelen met Somtoday.
+3. Versie 2.0 een week laten testen door het gezin. Wat werkt, wat niet?
+4. De privacyverklaring laten nakijken (bijv. via een AVG-jurist of de KvK-check) en de [gemarkeerde] delen invullen.
+
+**Door mij (volgende ronde):**
+5. Versie 2.0 live na jullie test, met componenttests op het dagprogramma.
+6. Opslag opsplitsen (logboeken en punten los), zodat niet elke tik de hele stand verstuurt.
+7. Meldingen bij nieuwe fouten (dagelijks overzicht uit de foutlog).
+8. Code-splitting voor coach en leerplanner.
+
+---
+
 ## Voortgang
 
 | Datum | Functio. | Code | Beveil. | UI/UX | Mobiel/a11y | Prestaties | Tests | Product | Prod.rijp | Gem. |
 |---|---|---|---|---|---|---|---|---|---|---|
 | 15-10-2026 nulmeting | 6,5 | 5,5 | 4 | 7 | 7 | 6,5 | 3 | 8 | 4 | **5,7** |
+| 15-10-2026 ronde 1 | 8 | 7,5 | 8,5 | 7 | 8 | 7,5 | 9 | 8,5 | 7 | **7,9** |
