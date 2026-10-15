@@ -216,6 +216,8 @@ export interface FamilyState {
   somtoday?: Record<string, { at: string; seen: string[] }>;
   /** Schoolvakanties per kind (uit Somtoday). Dan geen schooltaken. */
   vakanties?: Record<string, { naam: string; van: string; tot: string }[]>;
+  /** Lesrooster uit Somtoday per kind: per dag het eerste en laatste uur. */
+  rooster?: Record<string, { date: string; van: string; tot: string; lessen: number }[]>;
   /** Werk per gezinslid, en losse diensten (security, heitoezicht, …). */
   werk?: Record<string, WerkItem[]>;
   diensten?: Dienst[];

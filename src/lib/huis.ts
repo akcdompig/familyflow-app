@@ -217,7 +217,11 @@ export function werkOp(s: FamilyState, member: string, d: string): { werk: WerkI
   const los = (s.diensten ?? [])
     .filter((x) => x.member === member && x.date === d)
     .map((x) => ({ werk: lijst.find((w) => w.id === x.werkId) ?? { id: x.werkId, naam: "Werk", soort: "wisselend" as const }, van: x.van, tot: x.tot, vrij: false, dienstId: x.id }));
-  return [...vast, ...los].sort((a, b) => a.van.localeCompare(b.van));
+  // Lesrooster uit Somtoday (alleen als er geen eigen schooltijden staan).
+  const heeftSchool = vast.some((v) => lookVoor(v.werk) === "school");
+  const les = !heeftSchool ? (s.rooster?.[member] ?? []).find((r) => r.date === d) : undefined;
+  const somLes = les ? [{ werk: { id: "somtoday", naam: `School (${les.lessen} ${les.lessen === 1 ? "les" : "lessen"})`, soort: "wisselend" as const, look: "school" as const }, van: les.van, tot: les.tot, vrij: vakantie, dienstId: "somtoday" }] : [];
+  return [...vast, ...los, ...somLes].sort((a, b) => a.van.localeCompare(b.van));
 }
 
 /** Leesbare naam van een klus in een lijst. */

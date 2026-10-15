@@ -198,6 +198,10 @@ function werkStand(st: State, id: string, nl: ReturnType<typeof nuNL>): { bezig:
   }
   // deno-lint-ignore no-explicit-any
   for (const d of st.diensten ?? []) if (d.member === id && d.date === nl.datum) blokken.push({ van: mins(d.van), tot: mins(d.tot), school: false });
+  // Lesrooster uit Somtoday.
+  // deno-lint-ignore no-explicit-any
+  const les = (st.rooster?.[id] ?? []).find((r: any) => r.date === nl.datum);
+  if (les && !inVakantie(st, id, nl.datum)) blokken.push({ van: mins(les.van), tot: mins(les.tot), school: true });
   let bezig = false;
   let school = false;
   let klaarOm: number | null = null;
@@ -231,7 +235,7 @@ function beslis(st: State, s: Sub, nu: Date): { titel: string; tekst: string; so
   if (nl.min < 7 * 60 || nl.min > bed - 30) return null;
   const werk = werkStand(st, m.id, nl);
   // Op school: geen meldingen. Staan er geen lestijden in de app, dan doordeweeks 8.15–15.00.
-  const heeftSchooltijden = (st.werk?.[m.id] ?? []).some((w: { look?: string; naam?: string }) => w.look === "school" || /school|roc|college/i.test(w.naam ?? ""));
+  const heeftSchooltijden = (st.rooster?.[m.id] ?? []).length > 0 || (st.werk?.[m.id] ?? []).some((w: { look?: string; naam?: string }) => w.look === "school" || /school|roc|college/i.test(w.naam ?? ""));
   const schooldag = kind && nl.wd >= 1 && nl.wd <= 5 && !inVakantie(st, m.id, nl.datum);
   if (werk.school || (schooldag && !heeftSchooltijden && nl.min >= 8 * 60 + 15 && nl.min < 15 * 60)) return null;
 

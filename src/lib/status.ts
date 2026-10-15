@@ -69,6 +69,13 @@ export function werktNu(state: FamilyState, id: string, nu = new Date()): Bezigh
     const vanGisteren = overNacht && w.days?.includes((wd + 6) % 7) && !vrij(gisteren) && nuMin < minuten(w.tot);
     if (vandaagActief || vanGisteren) return { werk: w, look: lookVoor(w), van: w.van, tot: w.tot, ...voortgang(nuMin, w.van, w.tot) };
   }
+  // Lesrooster uit Somtoday: vandaag tussen het eerste en laatste uur = op school.
+  const les = (state.rooster?.[id] ?? []).find((r) => r.date === vandaag);
+  const vakantieVandaag = (state.vakanties?.[id] ?? []).some((v) => vandaag >= v.van && vandaag <= v.tot);
+  if (les && !vakantieVandaag && binnen(nuMin, les.van, les.tot)) {
+    const w: WerkItem = { id: "somtoday", naam: "School", soort: "wisselend", look: "school" };
+    return { werk: w, look: "school", van: les.van, tot: les.tot, ...voortgang(nuMin, les.van, les.tot) };
+  }
   for (const d of state.diensten ?? []) {
     if (d.member !== id) continue;
     const overNacht = minuten(d.tot) < minuten(d.van);

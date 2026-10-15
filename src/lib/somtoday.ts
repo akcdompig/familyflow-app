@@ -88,7 +88,7 @@ export async function syncSomtoday(force = false): Promise<string | null> {
   }
   bezig = true;
   try {
-    const res = await fn<Record<string, { items?: SomItem[]; vakanties?: { naam: string; van: string; tot: string }[]; fout?: string }>>({ action: "ophalen" });
+    const res = await fn<Record<string, { items?: SomItem[]; vakanties?: { naam: string; van: string; tot: string }[]; rooster?: { date: string; van: string; tot: string; lessen: number }[]; fout?: string }>>({ action: "ophalen" });
     try {
       window.localStorage.setItem(LAATST, String(Date.now()));
     } catch {
@@ -105,6 +105,7 @@ export async function syncSomtoday(force = false): Promise<string | null> {
         continue;
       }
       if (r.vakanties) actions.setVakanties(who, r.vakanties);
+      if (r.rooster) actions.setRooster(who, r.rooster);
       const p = planSomtoday(snapshot(), who, r.items ?? [], state.me, iso(new Date()), r.vakanties ?? state.vakanties?.[who] ?? []);
       if (!p.sids.length) continue;
       actions.addSomtoday(who, p.taken, p.sids);

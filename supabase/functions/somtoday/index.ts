@@ -196,15 +196,110 @@ async function scholenLijst() {
 }
 
 // ---------- Somtoday-gegevens ----------
+/*
+  Waarom de koppeling vroeger "verliep":
+  Somtoday geeft bij elke vernieuwing een NIEUW refresh-token en het oude werkt daarna niet meer.
+  Openden twee telefoons tegelijk de app (papa en Kian), dan vernieuwden ze allebei met hetzelfde oude token.
+  De tweede kreeg "ongeldig", en Somtoday trekt dan soms de hele koppeling in.
+  Nu:
+  - Het access-token (± 1 uur geldig) wordt bewaard en hergebruikt, dus er wordt veel minder vaak vernieuwd.
+  - Vernieuwen gebeurt met een slot: maar één tegelijk. De rest wacht even en gebruikt het nieuwe token.
+  - Elke 6 uur vernieuwt de server zelf (pg_cron), zodat het token nooit te lang ongebruikt blijft.
+  - Een storing bij Somtoday is geen "verlopen": dan proberen we het later gewoon opnieuw.
+*/
+type Link = Record<string, any>;
+const VERLOPEN = "Somtoday-koppeling verlopen. Koppel opnieuw";
+const sleutelVan = (l: Link) => `family_id=eq.${l.family_id}&member_id=eq.${encodeURIComponent(l.member_id)}`;
+const slaap = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 async function vernieuw(link: Record<string, string>) {
-  const res = await fetch(`${AUTH}/oauth2/token`, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
-    body: new URLSearchParams({ grant_type: "refresh_token", refresh_token: link.refresh_token, client_id: link.client_id, scope: "openid" }),
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${AUTH}/oauth2/token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
+      body: new URLSearchParams({ grant_type: "refresh_token", refresh_token: link.refresh_token, client_id: link.client_id, scope: "openid" }),
+    });
+  } catch {
+    throw new Fout("Somtoday is even niet bereikbaar. Ik probeer het later opnieuw", 503);
+  }
   const data = await res.json().catch(() => ({}));
-  if (!res.ok || !data.access_token) throw new Fout("Somtoday-koppeling verlopen. Koppel opnieuw", 401);
-  return data as { access_token: string; refresh_token?: string; somtoday_api_url?: string };
+  if (res.ok && data.access_token) return data as { access_token: string; refresh_token?: string; somtoday_api_url?: string; expires_in?: number };
+  // Alleen een afgewezen token betekent echt verlopen. Al het andere is een storing.
+  const afgewezen = (res.status === 400 || res.status === 401) && /invalid_grant|invalid_token|expired|revoked/i.test(JSON.stringify(data));
+  if (afgewezen) throw new Fout(VERLOPEN, 401);
+  throw new Fout("Somtoday is even niet bereikbaar. Ik probeer het later opnieuw", 503);
+}
+
+async function leesLink(l: Link): Promise<Link> {
+  const rows = await db(`somtoday_links?${sleutelVan(l)}&select=*`);
+  if (!rows?.length) throw new Fout("Niet meer gekoppeld", 404);
+  return rows[0];
+}
+
+/** Een geldig access-token voor deze koppeling. Vernieuwt alleen als het moet, en nooit twee tegelijk. */
+async function geldigToken(link0: Link, forceer = false): Promise<{ at: string; api: string }> {
+  let link = link0;
+  const vers = (l: Link) => !!l.access_token && !!l.access_expires && new Date(l.access_expires).getTime() > Date.now() + 2 * 60e3;
+  if (!forceer && vers(link)) return { at: link.access_token, api: link.api_url };
+
+  // Slot pakken: alleen als niemand anders nu aan het vernieuwen is.
+  const nu = new Date().toISOString();
+  const tot = new Date(Date.now() + 40e3).toISOString();
+  const pak = await db(`somtoday_links?${sleutelVan(link)}&or=(refreshing_until.is.null,refreshing_until.lt.${encodeURIComponent(nu)})`, {
+    method: "PATCH",
+    body: JSON.stringify({ refreshing_until: tot }),
+  });
+  if (!pak?.length) {
+    // Een andere telefoon vernieuwt nu. Even wachten en dan zijn nieuwe token gebruiken.
+    for (let i = 0; i < 12; i++) {
+      await slaap(1500);
+      link = await leesLink(link);
+      if (vers(link)) return { at: link.access_token, api: link.api_url };
+      if (!link.refreshing_until || new Date(link.refreshing_until).getTime() < Date.now()) break;
+    }
+    if (vers(link)) return { at: link.access_token, api: link.api_url };
+    throw new Fout("Somtoday is even bezig. Probeer het zo nog eens", 503);
+  }
+  link = pak[0];
+  const klaar = (velden: Record<string, unknown>) => db(`somtoday_links?${sleutelVan(link)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ refreshing_until: null, ...velden }) });
+  try {
+    let t;
+    try {
+      t = await vernieuw(link);
+    } catch (e) {
+      // Was het token net door iemand anders vernieuwd (en staat er al een nieuwe)? Dan die proberen.
+      const nieuw = await leesLink(link);
+      if (e instanceof Fout && e.status === 401 && nieuw.refresh_token && nieuw.refresh_token !== link.refresh_token) t = await vernieuw(nieuw);
+      else throw e;
+    }
+    const api = t.somtoday_api_url ?? link.api_url;
+    const verloopt = new Date(Date.now() + Math.max(300, Math.min(3600, Number(t.expires_in ?? 3600)) - 120) * 1000).toISOString();
+    await klaar({ refresh_token: t.refresh_token ?? link.refresh_token, access_token: t.access_token, access_expires: verloopt, api_url: api, last_refresh: new Date().toISOString(), last_error: null });
+    return { at: t.access_token, api };
+  } catch (e) {
+    const fout = e instanceof Error ? e.message : String(e);
+    await klaar({ last_error: fout, ...(fout === VERLOPEN ? { access_token: null, access_expires: null } : {}) }).catch(() => undefined);
+    throw e;
+  }
+}
+
+/** Elke 6 uur (pg_cron): alle koppelingen even vernieuwen, zodat ze nooit verlopen door stilstand. */
+async function onderhoud() {
+  const links: Link[] = await db("somtoday_links?refresh_token=not.is.null&select=*");
+  let ok = 0;
+  const fouten: string[] = [];
+  for (const l of links) {
+    const oud = !l.last_refresh || Date.now() - new Date(l.last_refresh).getTime() > 6 * 3600e3;
+    if (!oud) continue;
+    try {
+      await geldigToken(l, true);
+      ok++;
+    } catch (e) {
+      fouten.push(`${l.member_id}: ${e instanceof Error ? e.message : e}`);
+    }
+  }
+  return { vernieuwd: ok, fouten };
 }
 
 async function alles(api: string, at: string, path: string, params: URLSearchParams) {
@@ -277,6 +372,39 @@ async function haalVakanties(api: string, at: string): Promise<Vakantie[]> {
   }
 }
 
+export interface RoosterDag {
+  date: string;
+  van: string;
+  tot: string;
+  lessen: number;
+}
+
+/** Lesrooster van vandaag tot 2 weken vooruit: per dag het eerste en laatste uur. */
+async function haalRooster(api: string, at: string): Promise<RoosterDag[]> {
+  try {
+    const nu = new Date();
+    const p = new URLSearchParams({ begindatum: ymd(nu), einddatum: ymd(new Date(nu.getTime() + 14 * 864e5)) });
+    const lijst = await alles(api, at, "/rest/v1/afspraken", p);
+    const per = new Map<string, RoosterDag>();
+    for (const a of lijst) {
+      const b = String(a.beginDatumTijd ?? "");
+      const e = String(a.eindDatumTijd ?? "");
+      if (b.length < 16 || e.length < 16) continue;
+      // Uitgevallen lessen tellen niet.
+      if (a.uitval === true || /uitval|vervallen/i.test(String(a.afspraakType?.naam ?? "") + String(a.omschrijving ?? ""))) continue;
+      const date = b.slice(0, 10);
+      const van = b.slice(11, 16);
+      const tot = e.slice(11, 16);
+      const d = per.get(date);
+      if (!d) per.set(date, { date, van, tot, lessen: 1 });
+      else per.set(date, { date, van: van < d.van ? van : d.van, tot: tot > d.tot ? tot : d.tot, lessen: d.lessen + 1 });
+    }
+    return [...per.values()].sort((x, y) => x.date.localeCompare(y.date));
+  } catch {
+    return [];
+  }
+}
+
 async function haalOp(api: string, at: string): Promise<SomItem[]> {
   const nu = new Date();
   const van = ymd(nu);
@@ -319,8 +447,9 @@ async function haalOp(api: string, at: string): Promise<SomItem[]> {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   try {
-    const wie = await wieBenIk(req);
     const body = await req.json().catch(() => ({}));
+    if (body.action === "onderhoud") return json(await onderhoud());
+    const wie = await wieBenIk(req);
     const fam = wie.family_id;
     const sleutel = (m: string) => `family_id=eq.${fam}&member_id=eq.${encodeURIComponent(m)}`;
 
@@ -345,7 +474,7 @@ Deno.serve(async (req) => {
         await db("somtoday_links", {
           method: "POST",
           headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
-          body: JSON.stringify({ family_id: fam, member_id: body.member_id, tenant_uuid: body.tenant_uuid, school: body.school ?? null, client_id: CLIENT_ID, refresh_token: t.refresh_token, api_url: t.somtoday_api_url ?? "https://api.somtoday.nl", last_error: null, pending_verifier: null }),
+          body: JSON.stringify({ family_id: fam, member_id: body.member_id, tenant_uuid: body.tenant_uuid, school: body.school ?? null, client_id: CLIENT_ID, refresh_token: t.refresh_token, api_url: t.somtoday_api_url ?? "https://api.somtoday.nl", last_error: null, pending_verifier: null, access_token: null, access_expires: null, refreshing_until: null, last_refresh: new Date().toISOString() }),
         });
         return json({ ok: true });
       }
@@ -396,7 +525,7 @@ Deno.serve(async (req) => {
         await db("somtoday_links", {
           method: "POST",
           headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
-          body: JSON.stringify({ family_id: fam, member_id: body.member_id, tenant_uuid: claims.tenant ?? "", school: body.school ?? null, client_id: gelukt.client, refresh_token: gelukt.t.refresh_token ?? rt, api_url: gelukt.t.somtoday_api_url ?? "https://api.somtoday.nl", last_error: null, pending_verifier: null }),
+          body: JSON.stringify({ family_id: fam, member_id: body.member_id, tenant_uuid: claims.tenant ?? "", school: body.school ?? null, client_id: gelukt.client, refresh_token: gelukt.t.refresh_token ?? rt, api_url: gelukt.t.somtoday_api_url ?? "https://api.somtoday.nl", last_error: null, pending_verifier: null, access_token: null, access_expires: null, refreshing_until: null, last_refresh: new Date().toISOString() }),
         });
         return json({ ok: true });
       }
@@ -414,7 +543,7 @@ Deno.serve(async (req) => {
         await db(`somtoday_links?${sleutel(body.member_id)}`, {
           method: "PATCH",
           headers: { Prefer: "return=minimal" },
-          body: JSON.stringify({ refresh_token: t.refresh_token, api_url: t.somtoday_api_url ?? link.api_url, pending_verifier: null, last_error: null }),
+          body: JSON.stringify({ refresh_token: t.refresh_token, api_url: t.somtoday_api_url ?? link.api_url, pending_verifier: null, last_error: null, access_token: null, access_expires: null, refreshing_until: null, last_refresh: new Date().toISOString() }),
         });
         return json({ ok: true });
       }
@@ -427,23 +556,17 @@ Deno.serve(async (req) => {
 
       case "ophalen": {
         const links = await db(`somtoday_links?family_id=eq.${fam}&refresh_token=not.is.null&select=*`);
-        const res: Record<string, { items?: SomItem[]; vakanties?: Vakantie[]; fout?: string }> = {};
-        // Na elkaar: elke vernieuwing levert een nieuw token op dat we meteen bewaren.
+        const res: Record<string, { items?: SomItem[]; vakanties?: Vakantie[]; rooster?: RoosterDag[]; fout?: string }> = {};
         for (const link of links) {
           try {
-            const t = await vernieuw(link);
-            const api = t.somtoday_api_url ?? link.api_url;
-            await db(`somtoday_links?${sleutel(link.member_id)}`, {
-              method: "PATCH",
-              headers: { Prefer: "return=minimal" },
-              body: JSON.stringify({ refresh_token: t.refresh_token ?? link.refresh_token, api_url: api }),
-            });
-            res[link.member_id] = { items: await haalOp(api, t.access_token), vakanties: await haalVakanties(api, t.access_token) };
+            const { at, api } = await geldigToken(link);
+            const [items, vakanties, rooster] = await Promise.all([haalOp(api, at), haalVakanties(api, at), haalRooster(api, at)]);
+            res[link.member_id] = { items, vakanties, rooster };
             await db(`somtoday_links?${sleutel(link.member_id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ last_sync: new Date().toISOString(), last_error: null }) });
           } catch (e) {
             const fout = e instanceof Error ? e.message : String(e);
-            res[link.member_id] = { fout };
-            await db(`somtoday_links?${sleutel(link.member_id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ last_error: fout }) });
+            // Een storing laten we stil voorbijgaan; alleen echt verlopen melden we.
+            res[link.member_id] = fout === VERLOPEN ? { fout } : {};
           }
         }
         return json(res);

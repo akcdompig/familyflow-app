@@ -64,6 +64,19 @@ Logt de school in via Microsoft, dan gaat het via een inloglink (het makkelijkst
 - "Nu ophalen" op de Somtoday-kaart doet het meteen.
 - De Somtoday-API is niet officieel. Werkt het opeens niet meer, dan zie je de fout op de kaart. Opnieuw koppelen helpt meestal.
 
+## Somtoday 2.0: koppeling blijft, plus lesrooster (versie 1.12)
+
+**Waarom de koppeling "verliep":** Somtoday geeft bij elke vernieuwing een nieuw token en het oude werkt daarna niet meer. Openden twee telefoons tegelijk de app, dan vernieuwden ze allebei met hetzelfde oude token; de tweede werd afgewezen en Somtoday trok de koppeling in.
+
+**Nu:** het token wordt bewaard en hergebruikt (± 1 uur), vernieuwen gebeurt met een slot (maar één tegelijk), de server vernieuwt zelf elke 6 uur, en een storing bij Somtoday telt niet meer als "verlopen".
+
+**Lesrooster:** per dag het eerste en laatste uur uit Somtoday (2 weken vooruit). Uitgevallen lessen tellen niet. Tijdens de les staat het kind "op school" met een voortgangsbalk, krijgt het geen meldingen en geen klussen voor nu.
+
+**Eenmalig in Supabase**
+1. **Edge Functions › somtoday**: plak de nieuwe `supabase/functions/somtoday/index.ts` en klik op **Deploy**.
+2. **SQL Editor**: plak `supabase/somtoday-v2.sql` en klik op **Run**.
+3. Koppel Kian **één keer opnieuw** (Taken › Leren › Somtoday). Het oude token is door de oude fout al ingetrokken. Daarna blijft hij gekoppeld.
+
 ## Herinneringen op je telefoon (versie 1.10)
 
 Ben je 2 uur stil in de app, dan krijg je een seintje met wat er nog open staat (ochtendroutine, water, lunch, fruit) en wie er al lekker bezig is. Kinderen krijgen in het weekend en de vakantie om 9 uur een wekmelding als ze nog niks deden, daarna elk uur. Op schooldagen niet onder schooltijd (8.15–15.00); na 15.30 een seintje als ze nog niet in de app zijn geweest. Nooit voor 7 uur, en niet vlak voor bedtijd of als iemand slaapt.

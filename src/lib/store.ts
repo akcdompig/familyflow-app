@@ -409,6 +409,11 @@ export const actions = {
       };
     });
   },
+  /** Lesrooster uit Somtoday bijwerken (alleen als er iets veranderd is). */
+  setRooster(memberId: string, list: { date: string; van: string; tot: string; lessen: number }[]) {
+    if (JSON.stringify(state.rooster?.[memberId] ?? []) === JSON.stringify(list)) return;
+    update((s) => ({ ...s, rooster: { ...(s.rooster ?? {}), [memberId]: list } }));
+  },
   addTask(t: Omit<Task, "id">) {
     const id = newId();
     update((s) => ({ ...s, tasks: [...s.tasks, { ...t, id }] }));
