@@ -13,6 +13,7 @@ import { isDone, tasksFor } from "@/lib/tasks";
 import type { FamilyState, Member } from "@/lib/types";
 import { VoedingOverzicht } from "./Voeding";
 import { SamenTab } from "./Samen";
+import { SchermOverzicht } from "./Scherm";
 import { Vragen } from "@/components/screens/Verdeling";
 
 type Tab = "nu" | "samen" | "eten" | "klussen" | "potje" | "plan";
@@ -79,6 +80,7 @@ export function GezinV2({ state, me, onToast, onOuders, onOpenLid, onTips, onRuz
           </section>
           <Attention state={state} me={me} onTalkTips={onTips} onCheckIn={onCheckIn} onGoTasks={() => setTab("plan")} onRuzie={onRuzie} onGoGezin={onOuders} />
           <Vragen state={state} me={me} onToast={onToast} />
+          {isOuder && <SchermOverzicht state={state} onOpen={onOpenLid} />}
           {isOuder && <VoedingOverzicht state={state} onOpen={onOpenLid} />}
           <Inbox state={state} me={me} />
           <NetGedaan state={state} me={me} />

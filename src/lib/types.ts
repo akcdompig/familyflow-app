@@ -265,6 +265,10 @@ export interface FamilyState {
   bezwaren?: Bezwaar[];
   /** Antwoord van een ouder op een vraag (los opgeslagen, zodat een kind het niet kan wijzigen). */
   bezwaarAntwoord?: Record<string, { keuze: "ok" | "ouder" | "samen" | "toch"; door: string; at: string; tekst?: string }>;
+  /** Schermtijd per lid per dag, overgenomen uit Schermtijd op de telefoon (door een ouder). Minuten. */
+  schermtijd?: Record<string, Record<string, { totaal: number; sociaal?: number; door: string; at: string }>>;
+  /** Schermtijd-afspraak per kind: hoeveel minuten per dag is het doel. */
+  schermAfspraak?: Record<string, { doel: number }>;
   /** Groeidoelen per kind: welke vaardigheden, en de terugblik per week (maandag → vaardigheid → hoe ging het). */
   doelen?: Record<string, { vaardigheden: string[]; terugblik?: Record<string, Record<string, "goed" | "beter" | "lastig">> }>;
 }

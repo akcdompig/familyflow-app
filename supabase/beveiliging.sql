@@ -157,7 +157,7 @@ language plpgsql immutable as $$
 declare
   uit jsonb := nieuw;
   k text;
-  ouder_velden text[] := array['family', 'rewards', 'pros', 'consent', 'proNotes', 'goals', 'allesAan', 'startedAt', 'meetings', 'pet', 'checked', 'badgesStart', 'version', 'klusAfspraken', 'vrijstelling', 'bezwaarAntwoord'];
+  ouder_velden text[] := array['family', 'rewards', 'pros', 'consent', 'proNotes', 'goals', 'allesAan', 'startedAt', 'meetings', 'pet', 'checked', 'badgesStart', 'version', 'klusAfspraken', 'vrijstelling', 'bezwaarAntwoord', 'schermtijd', 'schermAfspraak'];
   per_lid text[] := array['checkins', 'history', 'plans', 'coach', 'played', 'werk', 'somtoday', 'vakanties', 'rooster', 'interesses', 'reading', 'actief', 'sleep', 'doelen'];
 begin
   -- Ouder-instellingen: altijd de bestaande waarde.
@@ -220,6 +220,8 @@ language sql immutable as $$
       'bezwaarAntwoord', (select coalesce(jsonb_object_agg(e.key, e.value), '{}'::jsonb) from jsonb_each(coalesce(st -> 'bezwaarAntwoord', '{}')) e
                           where exists (select 1 from jsonb_array_elements(coalesce(st -> 'bezwaren', '[]')) c where c ->> 'id' = e.key and c ->> 'door' = me)),
       'doelen', public.ff_eigen('{}', coalesce(st -> 'doelen', '{}'), me),
+      'schermtijd', public.ff_eigen('{}', coalesce(st -> 'schermtijd', '{}'), me),
+      'schermAfspraak', public.ff_eigen('{}', coalesce(st -> 'schermAfspraak', '{}'), me),
       'proNotes', '{"school": "", "zorg": ""}'::jsonb
     )
 $$;

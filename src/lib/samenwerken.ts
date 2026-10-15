@@ -102,6 +102,21 @@ export const samenwerken = {
     wijzig((s) => ({ ...s, samen: (s.samen ?? []).filter((m) => m.id !== id) }));
   },
 
+  /* ---------- Schermtijd (ouders) ---------- */
+  setSchermtijd(id: string, d: string, totaal: number, sociaal: number | undefined, door: string) {
+    wijzig((s) => {
+      const lid = { ...(s.schermtijd?.[id] ?? {}) };
+      lid[d] = { totaal: Math.max(0, Math.round(totaal)), ...(sociaal !== undefined ? { sociaal: Math.max(0, Math.round(sociaal)) } : {}), door, at: new Date().toISOString() };
+      // Alleen de laatste 60 dagen bewaren.
+      const grens = new Date(Date.now() - 60 * 864e5).toLocaleDateString("sv-SE");
+      const bewaard = Object.fromEntries(Object.entries(lid).filter(([k]) => k >= grens));
+      return { ...s, schermtijd: { ...(s.schermtijd ?? {}), [id]: bewaard } };
+    });
+  },
+  setSchermDoel(id: string, doel: number) {
+    wijzig((s) => ({ ...s, schermAfspraak: { ...(s.schermAfspraak ?? {}), [id]: { doel: Math.max(15, Math.min(480, Math.round(doel))) } } }));
+  },
+
   /* ---------- Groeidoelen ---------- */
   setDoelen(id: string, vaardigheden: string[]) {
     wijzig((s) => ({ ...s, doelen: { ...(s.doelen ?? {}), [id]: { ...(s.doelen?.[id] ?? {}), vaardigheden: vaardigheden.slice(0, 2) } } }));

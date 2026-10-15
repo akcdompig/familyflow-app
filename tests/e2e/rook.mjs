@@ -128,7 +128,7 @@ await scenario("v2: kind geeft snoep aan, ouder ziet het in het overzicht", v2, 
   assert.match(await p.getByRole("button", { name: /Ongezond vandaag/ }).innerText(), /2/);
   await wissel(p, "Papa");
   await tab(p, /Gezin/).click();
-  const rij = p.locator(".v2-voeding-kind", { hasText: "Lina" });
+  const rij = p.getByRole("region", { name: "Eten en drinken van de kinderen" }).locator(".v2-voeding-kind", { hasText: "Lina" });
   assert.match(await rij.innerText(), /2× ongezond/);
   await rij.click();
   assert.match(await p.locator(".v2-voeding").innerText(), /Zoet drinken/);
@@ -239,6 +239,23 @@ await scenario("v2: groeidoelen kiezen en terugblikken", v2, "18:00", async (p) 
   assert.match(await groei.innerText(), /Samenwerken/);
   await groei.getByRole("button", { name: /Nog lastig/ }).first().click();
   assert.equal(await groei.getByRole("button", { name: /Nog lastig/ }).first().getAttribute("aria-pressed"), "true");
+});
+
+await scenario("v2: schermtijd — kind ziet 'eerst je dag', ouder vult in en ziet de week", v2, "16:00", async (p) => {
+  await wissel(p, "Lina");
+  assert.match(await p.getByRole("region", { name: "Schermtijd" }).innerText(), /Eerst je dag|Je dag is af/);
+  await wissel(p, "Papa");
+  await tab(p, /Gezin/).click();
+  const ov = p.getByRole("region", { name: "Schermtijd van de kinderen" });
+  assert.match(await ov.innerText(), /nog niet ingevuld/);
+  await ov.locator(".v2-voeding-kind", { hasText: "Lina" }).click();
+  await p.getByLabel("Totaal uren").fill("4");
+  await p.getByLabel("Totaal minuten").fill("36");
+  await p.getByLabel("Sociaal in minuten").fill("233");
+  await knop(p, /^Opslaan$/).click();
+  assert.equal(await p.locator(".v2-scherm-staaf i.is-over").count(), 1, "boven de afspraak is rood");
+  await p.keyboard.press("Escape");
+  assert.match(await ov.innerText(), /Vandaag 4 u 36 m/);
 });
 
 await browser.close();
