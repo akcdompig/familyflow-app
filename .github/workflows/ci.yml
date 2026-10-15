@@ -1,0 +1,27 @@
+name: Controle
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  controle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Pakketten installeren
+        run: npm install --no-audit --no-fund
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Tests
+        run: npm test
+      - name: Bouwen (pilot)
+        run: npm run build
+      - name: Gebouwde app klopt met de broncode
+        run: git diff --stat --exit-code dist/index.html || (echo "dist/index.html is niet opnieuw gebouwd. Draai npm run build en commit." && exit 1)
+      - name: Bouwen (acceptatie)
+        run: npm run build:acceptatie

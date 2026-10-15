@@ -41,7 +41,7 @@ writeFileSync(
 );
 
 // Acceptatie (FF_UI=v2): alleen de preview bouwen, de echte app in dist/ blijft de pilot.
-if (process.env.FF_UI === "v2") {
+if (process.env.FF_UI === "v2" || process.env.FF_DEV) {
   console.log("Acceptatie gebouwd:", out, `(${Math.round(js.length / 1024)} kB JS). dist/ is niet aangeraakt.`);
   process.exit(0);
 }

@@ -1,25 +1,26 @@
 {
   "name": "familyflow-app",
-  "version": "1.2.0",
+  "version": "2.0.0",
   "private": true,
-  "description": "FamilyFlow: één app voor het hele gezin. Huiskamer met levende avatars, check-ins, rustplan en coaching.",
+  "type": "module",
+  "description": "FamilyFlow: één app voor het hele gezin. Dagprogramma, huiskamer met levende avatars, klussen, coaching en hulp bij ruzie.",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
-    "preview:build": "node preview/build.mjs"
+    "dev": "node preview/dev.mjs",
+    "build": "node preview/build.mjs",
+    "build:acceptatie": "FF_UI=v2 node preview/build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "node tests/run.mjs",
+    "check": "npm run typecheck && npm test"
   },
   "dependencies": {
-    "next": "15.5.18",
-    "react": "19.1.7",
-    "react-dom": "19.1.7"
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
   },
   "devDependencies": {
     "@types/node": "22.18.6",
-    "@types/react": "19.1.13",
-    "@types/react-dom": "19.1.9",
-    "esbuild": "0.25.10",
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.2.1",
+    "esbuild": "0.28.2",
     "typescript": "5.9.2"
   }
 }

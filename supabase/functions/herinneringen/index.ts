@@ -349,3 +349,4 @@ Deno.serve(async (req) => {
     return json({ error: f.message }, f.status);
   }
 });
+export { beslis, nuNL, werkStand };
