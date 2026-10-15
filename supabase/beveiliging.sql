@@ -374,3 +374,23 @@ begin
   end if;
 end
 $cron$;
+
+-- ---------- 7. Aanscherpen (Supabase-adviseur) ----------
+-- Zonder login mag niemand de gezinsfuncties aanroepen.
+revoke execute on function public.create_family(jsonb, text), public.delete_family(), public.family_history(), public.family_rev(),
+  public.i_am_parent(), public.join_family(text), public.load_family(), public.log_error(text, text, text, text), public.make_invite(text),
+  public.my_family(), public.my_member(), public.restore_family(bigint), public.save_family(jsonb, integer), public.whoami() from public, anon;
+grant execute on function public.create_family(jsonb, text), public.delete_family(), public.family_history(), public.family_rev(),
+  public.i_am_parent(), public.join_family(text), public.load_family(), public.log_error(text, text, text, text), public.make_invite(text),
+  public.my_family(), public.my_member(), public.restore_family(bigint), public.save_family(jsonb, integer), public.whoami() to authenticated;
+revoke execute on function public.ff_bewaar_vorige() from public, anon, authenticated;
+do $sp$
+declare f text;
+begin
+  foreach f in array array['ff_eigen(jsonb,jsonb,text)', 'ff_punten(jsonb,jsonb,text)', 'ff_per_dag(jsonb,jsonb,text)', 'ff_done(jsonb,jsonb,text)',
+    'ff_lijst(jsonb,jsonb,text,text)', 'ff_conflicten(jsonb,jsonb,text)', 'ff_taken(jsonb,jsonb,text)', 'ff_berichten(jsonb,jsonb,text)',
+    'ff_badges(jsonb,jsonb)', 'ff_kind_merge(jsonb,jsonb,text)', 'ff_voor_kind(jsonb,text)', 'ff_code()'] loop
+    execute format('alter function public.%s set search_path = public', f);
+  end loop;
+end
+$sp$;
