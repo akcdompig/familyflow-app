@@ -22,7 +22,14 @@ self.addEventListener("fetch", (e) => {
   }
   // App-bestanden met een hash veranderen nooit: uit de cache als ze er zijn.
   if (url.pathname.startsWith("/assets/")) {
-    e.respondWith(caches.match(e.request).then((hit) => hit || fetch(e.request).then((res) => { if (res.ok) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(e.request, copy)); } return res; })));
+    e.respondWith(caches.match(e.request).then((hit) => hit || fetch(e.request).then((res) => {
+      if (res.ok) {
+        const copy = res.clone();
+        // Nieuwe versie binnen: oude app-bestanden uit de cache halen, zodat die niet blijft groeien.
+        caches.open(CACHE).then((c) => c.put(e.request, copy).then(() => c.keys()).then((keys) => Promise.all(keys.filter((k) => new URL(k.url).pathname.startsWith("/assets/app-") && k.url !== e.request.url).map((k) => c.delete(k)))));
+      }
+      return res;
+    })));
     return;
   }
   // Eerst het netwerk (altijd de nieuwste versie), anders uit de cache.

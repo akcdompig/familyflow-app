@@ -121,6 +121,26 @@ Cijfers worden alleen verhoogd met bewijs, en verlaagd als nieuwe bevindingen da
 
 ---
 
+## Audit 2 · 15 oktober 2026 (na versie 2.1)
+
+**Vastgesteld en direct opgelost**
+- Synchronisatie: na opslaan door een kind kon de telefoon een andere stand tonen dan de database (de database voegt samen volgens kind-rechten). Nu haalt de telefoon van een kind na opslaan de echte stand op.
+- Service worker: oude app-bestanden bleven in de cache staan na elke update. Nu worden ze opgeruimd.
+
+**Vastgesteld, nog open**
+1. Beveiliging is pas actief na `beveiliging.sql` + nieuwe Edge Functions (niet uitgerold).
+2. Twee volledige gebruikersinterfaces (1.x en 2.0) worden naast elkaar onderhouden en zitten allebei in de productiebundel.
+3. Opslag als één JSON-blob: elke tik verstuurt de hele stand (geschat 50–250 kB bij een actief gezin na een paar weken).
+4. `store.ts` combineert synchronisatie en ± 50 acties in 650 regels.
+5. School/zorg-accounts bestaan alleen in de demo; er is nog geen echte koppeling voor professionals.
+
+**Mogelijke risico's (niet vastgesteld als fout)**
+- Tijdzone: de app rekent in de tijd van de telefoon, de server in Nederlandse tijd. Op vakantie in een andere tijdzone kunnen dagen verspringen.
+- De Somtoday-API is onofficieel en kan zonder aankondiging veranderen.
+- Herinneringen-ronde laadt elke 15 minuten de stand van alle gezinnen met meldingen: prima voor tientallen gezinnen, niet voor duizenden.
+
+---
+
 ## Voortgang
 
 | Datum | Functio. | Code | Beveil. | UI/UX | Mobiel/a11y | Prestaties | Tests | Product | Prod.rijp | Gem. |

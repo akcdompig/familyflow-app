@@ -116,6 +116,8 @@ function update(fn0: Fn) {
   }
 }
 
+const isOuder = (s: FamilyState) => s.members.find((m) => m.id === me)?.role === "ouder";
+
 async function flush() {
   if (saving || !queue.length) return;
   saving = true;
@@ -125,6 +127,15 @@ async function flush() {
     if (n >= 0) {
       rev = n;
       queue = queue.slice(sending);
+      // Bij een kind voegt de database de wijziging samen volgens de rechten van een kind (zie beveiliging.sql).
+      // Dan kan de opgeslagen stand iets anders zijn dan wat de telefoon dacht: meteen de echte stand ophalen.
+      if (!isOuder(state) && !queue.length) {
+        const fresh = await cloud.loadFamily();
+        if (fresh && !queue.length && fresh.rev === rev) {
+          state = fresh.state;
+          emit();
+        }
+      }
     } else {
       // Iemand anders was ons voor: nieuwste stand ophalen en onze wijzigingen opnieuw toepassen.
       const fresh = await cloud.loadFamily();
