@@ -39,6 +39,7 @@ export const KLUSSEN: Klus[] = [
   { id: "bedden", label: "Bedden verschonen", emoji: "🛌", elke: 7, xp: 15, rommel: "🛏️", iedereen: true },
   { id: "afval", label: "Afval buiten zetten", emoji: "🗑️", elke: 3, xp: 5, rommel: "🗑️" },
   { id: "koelkast", label: "Restjes in de koelkast", emoji: "🧊", elke: 1, xp: 5, rommel: "🍲", iedereen: true, naKoken: true },
+  { id: "ramen", label: "Ramen lappen", emoji: "🪟", elke: 14, xp: 20, rommel: "🫧", iedereen: true },
   { id: "flessen", label: "Flessen wegbrengen (statiegeld)", emoji: "🍾", elke: 7, xp: 10, rommel: "🍾" },
 ];
 
@@ -226,3 +227,36 @@ export function werkOp(s: FamilyState, member: string, d: string): { werk: WerkI
 
 /** Leesbare naam van een klus in een lijst. */
 export const naamKlus = (k: KlusStatus, me: string) => (k.klus.perKind && k.kind ? (k.kind.id === me ? "Je kamer netjes" : `Kamer van ${k.kind.name}`) : k.klus.label);
+
+export type WerkTaak = { key: string; naam: string; van: string; tot: string; status: "vrij" | "gepland" | "bezig" | "gedaan"; pct: number; werkId: string; dienstId?: string; school: boolean };
+
+/**
+  Werk en school als vaste taken van vandaag. Staat er vanzelf in (vast werk, diensten, lesrooster).
+  Na de eindtijd telt het als gedaan, je hoeft niks af te vinken. Vrij genomen? Klik het weg.
+*/
+export function werkTaken(s: FamilyState, member: string, nu = new Date()): WerkTaak[] {
+  const d = iso(nu);
+  const nuMin = nu.getHours() * 60 + nu.getMinutes();
+  const m = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+  // Nachtdienst van gisteren die nog loopt (bv. security 20.00–02.00).
+  const nacht = werkOp(s, member, addDays(d, -1))
+    .filter((w) => !w.vrij && m(w.tot) <= m(w.van) && nuMin < m(w.tot))
+    .map((w): WerkTaak => ({ key: `gisteren:${w.werk.id}:${w.dienstId ?? w.van}`, naam: w.werk.naam, van: w.van, tot: w.tot, status: "bezig", pct: (nuMin + 1440 - m(w.van)) / (m(w.tot) + 1440 - m(w.van)), werkId: w.werk.id, dienstId: w.dienstId, school: false }));
+  return [...nacht, ...werkOp(s, member, d).map((w) => {
+    const a = m(w.van);
+    let b = m(w.tot);
+    if (b <= a) b += 1440;
+    const status: WerkTaak["status"] = w.vrij ? "vrij" : nuMin >= b ? "gedaan" : nuMin >= a ? "bezig" : "gepland";
+    return {
+      key: `${w.werk.id}:${w.dienstId ?? w.van}`,
+      naam: w.werk.naam,
+      van: w.van,
+      tot: w.tot,
+      status,
+      pct: status === "gedaan" ? 1 : status === "bezig" ? (nuMin - a) / (b - a) : 0,
+      werkId: w.werk.id,
+      dienstId: w.dienstId,
+      school: lookVoor(w.werk) === "school",
+    };
+  })];
+}

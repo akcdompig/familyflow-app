@@ -1,4 +1,5 @@
 import type { FamilyState, Member, Task } from "./types";
+import { werkTaken } from "./huis";
 
 export const todayKey = (d = new Date()) => d.toLocaleDateString("sv-SE");
 
@@ -35,11 +36,18 @@ export const wachtOpOuder = (state: FamilyState, t: Task, date = todayKey()) => 
 
 export const isDone = (state: FamilyState, taskId: string, date = todayKey()) => !!state.done[date]?.[taskId];
 
-/** Energie van 0 tot 1: hoeveel van je taken van vandaag af zijn. */
+/** Energie van 0 tot 1: hoeveel van je taken van vandaag af zijn. Werk en school tellen mee als ze klaar zijn. */
 export function energyOf(state: FamilyState, m: Member): number {
-  const mine = tasksFor(state, m.id);
-  if (!mine.length) return 0.5;
-  return mine.filter((t) => isDone(state, t.id)).length / mine.length;
+  return takenPct(state, m.id) ?? 0.5;
+}
+
+/** Deel van de taken van vandaag dat af is, inclusief werk en school (die tellen na de eindtijd vanzelf). */
+export function takenPct(state: FamilyState, id: string): number | null {
+  const mine = tasksFor(state, id).filter((t) => !(t.cat === "werk" && /^werkdag$/i.test(t.title)));
+  const werk = werkTaken(state, id).filter((w) => w.status !== "vrij");
+  const totaal = mine.length + werk.length;
+  if (!totaal) return null;
+  return (mine.filter((t) => isDone(state, t.id)).length + werk.filter((w) => w.status === "gedaan").length) / totaal;
 }
 
 export { levelOf } from "./xp";

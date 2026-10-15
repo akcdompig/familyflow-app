@@ -7,11 +7,15 @@ import { DAGDELEN, DOEL, ETEN, ROUTINE, begroeting, dagdeel, dagLog, dagscore, d
 import { honger, isGeregeld, klusStatus, kookplan, naamKlus, rommel } from "@/lib/huis";
 import { Meters } from "@/components/screens/MijnDag";
 import { Herinneringen } from "@/components/screens/Herinneringen";
+import { ClaimViering } from "@/components/screens/Viering";
+import { CoachTip } from "@/components/screens/CoachTip";
+import { bijna } from "@/lib/badges";
+import { geclaimd, teClaimen } from "@/lib/xp";
 import { Icon } from "@/components/ui/Icon";
 import { MoodFace } from "@/components/ui/MoodFace";
 import { actions } from "@/lib/store";
 import { expressionFor, moodDot, moodLabel, timeLabel } from "@/lib/mood";
-import { isDone, tasksFor } from "@/lib/tasks";
+import { isDone, takenPct, tasksFor } from "@/lib/tasks";
 import type { FamilyState, Member } from "@/lib/types";
 
 interface Props {
@@ -94,7 +98,9 @@ export function Huiskamer({ state, me, onCheckIn, onOpenMember, onTalkTips, onWh
 
       {!pushWeg && <Herinneringen compact onToast={onToast} onWeg={() => { setPushWeg(true); try { localStorage.setItem("familyflow:push-later", String(Date.now())); } catch { /* */ } }} />}
       {!ikSlaap && <JouwDag state={state} me={me} onOpen={onMijnDag} onGoThuis={onGoThuis} />}
+      {!ikSlaap && <Schatkist state={state} me={me} />}
       {!ikSlaap && <KlussenVandaag state={state} me={me} onGoThuis={onGoThuis} />}
+      {!ikSlaap && <CoachTip state={state} me={me} onToast={onToast} />}
       <Klassement state={state} me={me} onOpen={onOpenMember} />
       <NetGedaan state={state} me={me} />
 
@@ -373,9 +379,7 @@ function Klassement({ state, me, onOpen }: { state: FamilyState; me: Member; onO
   if (leden.length < 2) return null;
   const rij = leden
     .map((m) => {
-      const t = tasksFor(state, m.id);
-      const pct = t.length ? t.filter((x) => isDone(state, x.id)).length / t.length : 0;
-      return { m, score: dagscore(state, m.id, pct) };
+      return { m, score: dagscore(state, m.id, takenPct(state, m.id) ?? 0) };
     })
     .sort((a, b) => b.score - a.score);
   const medaille = ["🥇", "🥈", "🥉"];
@@ -471,6 +475,42 @@ function KlussenVandaag({ state, me, onGoThuis }: { state: FamilyState; me: Memb
           ))}
         </div>
       )}
+    </section>
+  );
+}
+
+/**
+  Schatkist: je punten sparen zich op en jij claimt ze zelf. Hoe langer je wacht, hoe groter de bol.
+  Daaronder: welk achievement je bijna hebt.
+*/
+function Schatkist({ state, me }: { state: FamilyState; me: Member }) {
+  const n = teClaimen(state, me.id);
+  const [viering, setViering] = useState<{ van: number; n: number } | null>(null);
+  const volgende = bijna(state, me.id).slice(0, 2);
+  if (!n && !volgende.length && !viering) return null;
+  return (
+    <section className="ff-card ff-stack-s">
+      {n > 0 && (
+        <div className="ff-schatkist">
+          <div className="ff-schatkist-bol" aria-hidden="true">💎<b>+{n}</b></div>
+          <div className="ff-grow">
+            <b>Je schatkist</b>
+            <span className="ff-small ff-muted ff-block">{n} punten gespaard. Claim ze als je wilt, of spaar door.</span>
+          </div>
+          <button className="ff-btn ff-btn-primary" onClick={() => { const van = geclaimd(state, me.id); const c = actions.claimPunten(me.id); if (c) setViering({ van, n: c }); }}>Claim</button>
+        </div>
+      )}
+      {volgende.map((v) => (
+        <div key={v.def.id} className="ff-bijna">
+          <span aria-hidden="true" style={{ fontSize: 20 }}>{v.def.emoji}</span>
+          <span>
+            <b>{v.def.naam}</b> <span className="ff-muted">· {v.def.uitleg.toLowerCase()}</span>
+            <span className="ff-bezig-balk" style={{ marginTop: 4 }}><i style={{ width: `${Math.round((v.n / v.doel) * 100)}%` }} /></span>
+          </span>
+          <span className="ff-small ff-muted">{v.n}/{v.doel}</span>
+        </div>
+      ))}
+      {viering && <ClaimViering me={me} van={viering.van} n={viering.n} onKlaar={() => setViering(null)} />}
     </section>
   );
 }

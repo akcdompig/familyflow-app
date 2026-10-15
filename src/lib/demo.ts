@@ -135,6 +135,8 @@ export function demoFamily(): FamilyState {
       k2: [{ id: "iemand-doet-vals", at: daysAgo(4), path: ["opkomen"], outcome: "opgelost" }],
     },
     proNotes: { school: "", zorg: "Gezin is gemotiveerd. Ochtenden gaan beter. Let op ruzies bij spelletjes." },
+    badgesStart: daysAgo(4),
+    claim: { p1: 0, p2: 0, k1: 0, k2: 0 },
     werk: {
       p1: [{ id: "w1", naam: "Kantoor", soort: "vast", days: [1, 2, 4, 5], van: "08:00", tot: "17:00", inkomen: true }],
       p2: [{ id: "w2", naam: "Gemeente", soort: "vast", days: [1, 2, 3, 4], van: "08:30", tot: "17:00", inkomen: true }],

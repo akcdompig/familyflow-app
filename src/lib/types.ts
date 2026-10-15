@@ -229,6 +229,14 @@ export interface FamilyState {
   klusLog?: KlusDone[];
   /** Het gezinspotje: sparen voor iets leuks samen. Geen bank, alleen bijhouden. */
   pot?: { doel: string; cents: number; items: PotItem[] };
+  /** Punten die al geclaimd zijn (stand van xp bij de laatste claim). Het verschil wacht in je schatkist. */
+  claim?: Record<string, number>;
+  /** Gehaalde achievements. gezien = wie de viering al heeft gezien. */
+  badges?: { id: string; who: string; badge: string; at: string; gezien: string[] }[];
+  /** Vanaf wanneer achievements tellen (oude data telt niet mee). */
+  badgesStart?: string;
+  /** Waar wil je tips over? Per lid: koken, sport, gezond, leren, hoofd, geld. */
+  interesses?: Record<string, string[]>;
   /** Laatst actief in de app, per lid (ISO-tijd). Daarop rekenen de herinneringen. */
   actief?: Record<string, string>;
   /** "Net gedaan": wat iedereen vandaag heeft afgevinkt. Geen melding, alleen zichtbaar in de huiskamer. */

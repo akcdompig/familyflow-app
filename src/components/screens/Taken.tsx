@@ -8,7 +8,8 @@ import { Sheet } from "@/components/ui/Sheet";
 import { TaskIcon } from "@/components/ui/TaskIcon";
 import { expressionFor } from "@/lib/mood";
 import { actions } from "@/lib/store";
-import { wachtOpOuder, isDone, tasksFor } from "@/lib/tasks";
+import { wachtOpOuder, isDone, tasksFor as alleTaken } from "@/lib/tasks";
+import { werkTaken } from "@/lib/huis";
 import { CATALOGUS, CATS } from "@/lib/catalog";
 import { dayLabel } from "@/lib/planner";
 import type { FamilyState, Member, TaakCat, Task } from "@/lib/types";
@@ -21,12 +22,17 @@ interface Props {
   onPlanner: () => void;
 }
 
+/** Taken zonder de oude losse "Werkdag"-taak: werk staat er nu vanzelf in. */
+const tasksFor = (s: FamilyState, id: string) => alleTaken(s, id).filter((t) => !(t.cat === "werk" && /^werkdag$/i.test(t.title)));
+
 export function Taken({ state, me, onToast, onPlay, onPlanner }: Props) {
   const isParent = me.role === "ouder";
   const [view, setView] = useState<"mijn" | "iedereen">(isParent ? "iedereen" : "mijn");
   const [adding, setAdding] = useState(false);
   const mine = tasksFor(state, me.id);
-  const doneCount = mine.filter((t) => isDone(state, t.id)).length;
+  const mijnWerk = werkTaken(state, me.id).filter((w) => w.status !== "vrij");
+  const doneCount = mine.filter((t) => isDone(state, t.id)).length + mijnWerk.filter((w) => w.status === "gedaan").length;
+  const totaal = mine.length + mijnWerk.length;
   const date = new Date().toLocaleDateString("nl-NL", { weekday: "long", day: "numeric", month: "long" });
 
   const toggle = (t: Task, who: string) => {
@@ -53,15 +59,16 @@ export function Taken({ state, me, onToast, onPlay, onPlanner }: Props) {
       </header>
 
       <div className="ff-seg" role="tablist" aria-label="Welke taken">
-        <button role="tab" aria-selected={view === "mijn"} onClick={() => setView("mijn")}>Mijn taken · {doneCount}/{mine.length}</button>
+        <button role="tab" aria-selected={view === "mijn"} onClick={() => setView("mijn")}>Mijn taken · {doneCount}/{totaal}</button>
         <button role="tab" aria-selected={view === "iedereen"} onClick={() => setView("iedereen")}>Iedereen</button>
       </div>
 
       {view === "mijn" && (
         <>
+          <WerkVandaag state={state} me={me} who={me.id} onToast={onToast} />
           <Quests state={state} memberId={me.id} onToast={onToast} onPlay={onPlay} />
           {!isParent && <Lezen state={state} me={me} onToast={onToast} />}
-          {mine.length > 0 && doneCount === mine.length ? (
+          {totaal > 0 && doneCount === totaal ? (
             <div className="ff-card ff-done-card">
               <Flo size={56} />
               <div><b>Alles af voor vandaag!</b><p className="ff-small ff-muted">Lekker bezig. Je avatar straalt ervan.</p></div>
@@ -72,22 +79,24 @@ export function Taken({ state, me, onToast, onPlay, onPlanner }: Props) {
               <TaskRow key={t.id} task={t} state={state} who={me.id} canToggle onToggle={() => toggle(t, me.id)} showXp={!isParent} />
             ))}
           </ul>
-          {!mine.length && <p className="ff-muted ff-center">Je hebt vandaag geen taken.</p>}
+          {!totaal && <p className="ff-muted ff-center">Je hebt vandaag geen taken.</p>}
         </>
       )}
 
       {view === "iedereen" &&
         state.members.map((m) => {
           const list = tasksFor(state, m.id);
-          if (!list.length) return null;
-          const n = list.filter((t) => isDone(state, t.id)).length;
+          const werk = werkTaken(state, m.id).filter((w) => w.status !== "vrij");
+          if (!list.length && !werk.length) return null;
+          const n = list.filter((t) => isDone(state, t.id)).length + werk.filter((w) => w.status === "gedaan").length;
           return (
             <section key={m.id} className="ff-taskgroup" aria-label={`Taken van ${m.name}`}>
               <div className="ff-taskgroup-head">
                 <Avatar config={m.avatar} expression={expressionFor(state.checkins[m.id])} headOnly size={36} animate={false} label={m.name} />
                 <b>{m.id === me.id ? "Jij" : m.name}</b>
-                <span className="ff-small ff-muted ff-push">{n} van {list.length}</span>
+                <span className="ff-small ff-muted ff-push">{n} van {list.length + werk.length}</span>
               </div>
+              <WerkVandaag state={state} me={me} who={m.id} onToast={onToast} compact />
               <Quests state={state} memberId={m.id} onToast={onToast} onPlay={onPlay} compact />
               <ul className="ff-tasklist">
                 {list.map((t) => (
@@ -114,6 +123,41 @@ export function Taken({ state, me, onToast, onPlay, onPlanner }: Props) {
 
       <AddTaskSheet open={adding} onClose={() => setAdding(false)} state={state} me={me} onAdded={onToast} />
     </div>
+  );
+}
+
+/**
+  Werk, diensten en school van vandaag. Staan er vanzelf in en tellen na de eindtijd als gedaan.
+  Vrij genomen of dienst ging niet door? Dan klik je hem weg.
+*/
+function WerkVandaag({ state, me, who, onToast, compact = false }: { state: FamilyState; me: Member; who: string; onToast: (m: string) => void; compact?: boolean }) {
+  const lijst = werkTaken(state, who);
+  if (!lijst.length) return null;
+  const mag = who === me.id || me.role === "ouder";
+  const vandaag = new Date().toLocaleDateString("sv-SE");
+  const tijd = (t: string) => t.replace(":", ".");
+  return (
+    <ul className="ff-tasklist">
+      {lijst.map((w) => (
+        <li key={w.key} className={`ff-werktaak is-${w.status}`}>
+          <span className="ff-werktaak-icoon" aria-hidden="true">{w.status === "gedaan" ? "✓" : w.school ? "🎒" : "💼"}</span>
+          <span className="ff-grow">
+            <b>{w.naam}</b>
+            <span className="ff-small ff-muted ff-block">
+              {tijd(w.van)}–{tijd(w.tot)} · {w.status === "vrij" ? (w.dienstId ? "ging niet door" : "vrij genomen") : w.status === "gedaan" ? (w.school ? "school is uit" : "gewerkt, staat erin") : w.status === "bezig" ? (w.school ? "nu op school" : "nu aan het werk") : "staat gepland"}
+            </span>
+            {w.status === "bezig" && <span className="ff-bezig-balk" style={{ marginTop: 6 }}><i style={{ width: `${Math.round(w.pct * 100)}%` }} /></span>}
+          </span>
+          {mag && !compact && w.werkId !== "somtoday" && (
+            w.dienstId ? (
+              <button className="ff-link ff-small" onClick={() => { actions.removeDienst(w.dienstId!); onToast("Dienst weggehaald"); }}>Ging niet door</button>
+            ) : (
+              <button className="ff-link ff-small" onClick={() => { actions.toggleVrij(vandaag, who, w.werkId); onToast(w.status === "vrij" ? "Staat er weer in" : "Vrij genomen 🌴"); }}>{w.status === "vrij" ? "Toch werken" : "Vrij"}</button>
+            )
+          )}
+        </li>
+      ))}
+    </ul>
   );
 }
 

@@ -19,6 +19,7 @@ import { features } from "@/lib/unlock";
 import { Oefenen } from "@/components/screens/Oefenen";
 import { Taken } from "@/components/screens/Taken";
 import { Thuis } from "@/components/screens/Thuis";
+import { BadgeViering } from "@/components/screens/Viering";
 import { honger } from "@/lib/huis";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { Sheet } from "@/components/ui/Sheet";
@@ -207,6 +208,7 @@ export function FamilyFlowApp() {
       <CheckInSheet open={checkIn} onClose={closeCheckIn} me={me} current={state.checkins[me.id]} talkTo={talkTo} onDone={setToast} />
       <MijnDag open={mijnDag} onClose={() => setMijnDag(false)} state={state} me={me} onToast={setToast} />
       <PorPopup state={state} me={me} />
+      <BadgeViering state={state} me={me} />
       <CalmSheet open={calm} onClose={closeCalm} me={me} plan={state.plans[me.id]} onDone={setToast} />
 
       <Sheet open={!!sel} onClose={closeMember} title={sel ? sel.name : "Gezinslid"}>

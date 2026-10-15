@@ -2,12 +2,13 @@
 
 import { MijnWerk } from "@/components/screens/MijnWerk";
 import { Herinneringen } from "@/components/screens/Herinneringen";
+import { Interesses } from "@/components/screens/CoachTip";
 import { Avatar } from "@/components/avatar/Avatar";
 import { expressionFor } from "@/lib/mood";
 import { PLAN_OPTIONS } from "@/lib/scenarios";
 import * as cloud from "@/lib/cloud";
 import { actions, isLive, stopLive } from "@/lib/store";
-import { levelProgress, xpForLevel } from "@/lib/xp";
+import { geclaimd, levelProgress, xpForLevel } from "@/lib/xp";
 import { features } from "@/lib/unlock";
 import { VERSION, VERSION_NAME } from "@/lib/version";
 import { useState } from "react";
@@ -17,7 +18,7 @@ const EMPTY: CalmPlan = { signals: [], helps: [], needs: [], place: "" };
 
 export function Ik({ state, me, onEditAvatar, onCalm, onToast }: { state: FamilyState; me: Member; onEditAvatar: () => void; onCalm: () => void; onToast: (m: string) => void }) {
   const isParent = me.role === "ouder";
-  const xp = state.xp[me.id] ?? 0;
+  const xp = geclaimd(state, me.id);
   const lp = levelProgress(xp);
   const level = lp.level;
   const plan = state.plans[me.id] ?? EMPTY;
@@ -45,6 +46,12 @@ export function Ik({ state, me, onEditAvatar, onCalm, onToast }: { state: Family
       </section>
 
       <Herinneringen onToast={onToast} />
+
+      <section className="ff-card ff-stack-s">
+        <b>🎯 Mijn coach</b>
+        <p className="ff-small ff-muted">Waar wil je beter in worden? Je krijgt elke dag een tip in de huiskamer.</p>
+        <Interesses state={state} me={me} onToast={onToast} />
+      </section>
 
       {(
         <button className="ff-level" onClick={() => setWerk(true)}>

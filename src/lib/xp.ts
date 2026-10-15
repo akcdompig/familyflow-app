@@ -23,6 +23,13 @@ export const XP = {
   rustig: 3, // max één keer per dag
 } as const;
 
+import type { FamilyState } from "./types";
+
+/** Punten die je al geclaimd hebt. Daarop telt je level. */
+export const geclaimd = (s: FamilyState, id: string) => s.claim?.[id] ?? s.xp[id] ?? 0;
+/** Punten die in je schatkist wachten om geclaimd te worden. */
+export const teClaimen = (s: FamilyState, id: string) => Math.max(0, (s.xp[id] ?? 0) - geclaimd(s, id));
+
 /** XP die nodig is om een level te bereiken. Level 1 = 0, level 2 = 100, 3 = 250, 4 = 450, 5 = 700, 6 = 1000 … */
 export const xpForLevel = (level: number) => (level <= 1 ? 0 : 100 * (level - 1) + 25 * (level - 1) * (level - 2));
 

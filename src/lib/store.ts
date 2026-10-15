@@ -6,6 +6,7 @@ import { demoFamily } from "./demo";
 import { phoneTaskTitle, todayKey } from "./tasks";
 import { XP } from "./xp";
 import { DOEL, ROUTINE, basisXp, type DagLog } from "./dag";
+import { nieuweBadges } from "./badges";
 const routineAf = (l: DagLog) => ROUTINE.filter((r) => r.gewicht > 0).every((r) => l.routine.includes(r.id));
 import type { Kookplan, PotItem, Dienst, WerkItem, CoachRun, Quest, AvatarConfig, CalmPlan, CheckIn, Conflict, ConflictSide, FamilyState, Meeting, ProKind, Task } from "./types";
 
@@ -82,9 +83,29 @@ const stempel: Fn = (s) => {
   return { ...s, actief: { ...(s.actief ?? {}), [id]: new Date().toISOString() } };
 };
 
+/** Iedereen een startpunt voor de schatkist: wat er al stond telt als geclaimd. */
+const basis: Fn = (s0) => {
+  const s = s0.badgesStart ? s0 : { ...s0, badgesStart: new Date().toISOString() };
+  const mist = s.members.filter((m) => s.claim?.[m.id] === undefined);
+  if (!mist.length) return s;
+  return { ...s, claim: { ...(s.claim ?? {}), ...Object.fromEntries(mist.map((m) => [m.id, s.xp[m.id] ?? 0])) } };
+};
+/** Nieuwe achievements? Dan erbij zetten, met bonuspunten in de schatkist en een regel in "Net gedaan". */
+const badgeCheck: Fn = (s) => {
+  const nieuw = nieuweBadges(s);
+  if (!nieuw.length) return s;
+  let uit = s;
+  for (const { who, def } of nieuw) {
+    const at = new Date().toISOString();
+    uit = { ...uit, badges: [...(uit.badges ?? []), { id: newId("b"), who, badge: def.id, at, gezien: [] }].slice(-200), xp: addXp(uit, who, def.punten) };
+    uit = metFeed(uit, who, `heeft ${def.emoji} ${def.naam} gehaald!`, def.punten);
+  }
+  return uit;
+};
+
 /** Alle wijzigingen gaan hierdoorheen. */
 function update(fn0: Fn) {
-  const fn: Fn = (s) => stempel(fn0(s));
+  const fn: Fn = (s) => stempel(badgeCheck(fn0(basis(s))));
   state = fn(state);
   persistLocal();
   emit();
@@ -259,6 +280,20 @@ export const actions = {
       if (oud.fruit < DOEL.fruit && nieuw.fruit >= DOEL.fruit) uit = metFeed(uit, memberId, "heeft 2 stuks fruit gegeten 🍎", 5);
       return uit;
     });
+  },
+  /** Punten uit de schatkist claimen. Geeft terug hoeveel. */
+  claimPunten(memberId: string): number {
+    const n = Math.max(0, (state.xp[memberId] ?? 0) - (state.claim?.[memberId] ?? state.xp[memberId] ?? 0));
+    if (!n) return 0;
+    update((s) => metFeed({ ...s, claim: { ...(s.claim ?? {}), [memberId]: s.xp[memberId] ?? 0 } }, memberId, `claimde ${n} punten 💎`));
+    return n;
+  },
+  /** Viering van een achievement gezien. */
+  badgeGezien(id: string, viewer: string) {
+    update((s) => ({ ...s, badges: (s.badges ?? []).map((b) => (b.id === id && !b.gezien.includes(viewer) ? { ...b, gezien: [...b.gezien, viewer] } : b)) }));
+  },
+  setInteresses(memberId: string, lijst: string[]) {
+    update((s) => ({ ...s, interesses: { ...(s.interesses ?? {}), [memberId]: lijst } }));
   },
   /** Eetmoment afvinken (ontbijt, lunch, tussendoor, avondeten). */
   toggleEten(memberId: string, id: string) {

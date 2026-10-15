@@ -1,2 +1,2 @@
-export const VERSION = "1.12";
-export const VERSION_NAME = "Somtoday blijft gekoppeld";
+export const VERSION = "1.13";
+export const VERSION_NAME = "Achievements en coach";
