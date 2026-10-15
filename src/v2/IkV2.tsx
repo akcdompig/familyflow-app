@@ -10,6 +10,7 @@ import { expressionFor } from "@/lib/mood";
 import { actions } from "@/lib/store";
 import { geclaimd, levelProgress, teClaimen, xpForLevel } from "@/lib/xp";
 import type { FamilyState, Member } from "@/lib/types";
+import { Groei } from "./Groei";
 
 /** Ik: je level, schatkist, achievements en je instellingen. Alles wat over jou gaat op één plek. */
 export function IkV2({ state, me, onToast, onAvatar, onWerk, onMeer, onOuders, onPrivacy }: { state: FamilyState; me: Member; onToast: (m: string) => void; onAvatar: () => void; onWerk: () => void; onMeer: () => void; onOuders?: () => void; onPrivacy?: () => void }) {
@@ -67,8 +68,10 @@ export function IkV2({ state, me, onToast, onAvatar, onWerk, onMeer, onOuders, o
         </div>
       </section>
 
+      <Groei state={state} lid={me} me={me} onToast={onToast} />
+
       <section className="ff-card ff-stack-s">
-        <b>🎯 Waar wil je beter in worden?</b>
+        <b>🎯 Waar wil je tips over?</b>
         <Interesses state={state} me={me} onToast={onToast} compact />
       </section>
 

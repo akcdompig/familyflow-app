@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { verdeling, verwachting, eerlijk, pech, heeftJoker, genoegPech, winnaar } from "@/lib/verdeling";
+import { verdeling, verwachting, eerlijk, pech, heeftVoorsprong, genoegPech, winnaar, scheef, beurtTussen, lotKans, volgende, magDoen } from "@/lib/verdeling";
+import { KLUSSEN } from "@/lib/huis";
 import { klusStatus } from "@/lib/huis";
 import { dagprogramma } from "@/lib/dagprogramma";
 import { gezin, at } from "./helpers";
@@ -20,13 +21,13 @@ test("verwachting: vrij terwijl ouders werken = meer, schooldag = minder, werken
   const d = "2026-10-15"; // donderdag: papa en mama werken
   const k1 = verwachting(s, lid(s, "k1"), d);
   assert.equal(k1.soort, "vakantie");
-  assert.equal(k1.doel, 25);
+  assert.equal(k1.doel, 35);
   assert.match(k1.reden, /werken/);
   assert.equal(verwachting(s, lid(s, "k2"), d).soort, "school");
   assert.ok(verwachting(s, lid(s, "k2"), d).doel < k1.doel);
   assert.equal(verwachting(s, lid(s, "p1"), d).doel, 5);
   // Woensdag: papa thuis (roostervrij)
-  assert.equal(verwachting(s, lid(s, "p1"), "2026-10-14").doel, 15);
+  assert.equal(verwachting(s, lid(s, "p1"), "2026-10-14").doel, 30);
 });
 
 test("verdeling: niet steeds dezelfde de vaatwasser", () => {
@@ -50,10 +51,18 @@ test("verdeling: zwaarte eerlijk over de kinderen, ook over meerdere dagen", () 
     s = { ...s, klusLog: [...(s.klusLog ?? []), ...nieuw] };
   }
   const e = eerlijk(s, at("2026-10-14"));
-  const p = (id: string) => e.find((x) => x.id === id)!.punten;
+  const p = (id: string) => e.find((x) => x.id === id)!.minuten;
   assert.ok(p("k1") > 0 && p("k2") > 0);
-  // k2 heeft minder schooldagen en krijgt dus meer, maar niemand doet alles.
-  assert.ok(Math.max(p("k1"), p("k2")) / Math.min(p("k1"), p("k2")) < 2.5, `k1 ${p("k1")} k2 ${p("k2")}`);
+  // Naar wat je mocht verwachten (schooldagen tellen minder): niemand meer dan 1,5× de ander.
+  const verw = (id: string) => {
+    let t = 0;
+    for (let i = 0; i < 14; i++) t += verwachting(s, lid(s, id), new Date(Date.UTC(2026, 9, 1 + i, 12)).toISOString().slice(0, 10)).doel;
+    return t;
+  };
+  const r1 = p("k1") / verw("k1");
+  const r2 = p("k2") / verw("k2");
+  assert.ok(Math.max(r1, r2) / Math.min(r1, r2) < 1.5, `k1 ${p("k1")}/${verw("k1")} k2 ${p("k2")}/${verw("k2")}`);
+  assert.equal(scheef(s, at("2026-10-14")), null, "geen signaal als de app zelf verdeelt");
   // Niemand doet meer dan de helft van alle vaatwasser-beurten.
   const vaat = (s.klusLog ?? []).filter((k) => k.klus.startsWith("vaat"));
   for (const id of ["k1", "k2"]) assert.ok(vaat.filter((k) => k.by === id).length < vaat.length * 0.7);
@@ -101,8 +110,87 @@ test("steen-papier-schaar en pech-bescherming", () => {
   const u = (i: number, verliezer: string) => ({ id: `u${i}`, at: at("2026-10-15", `1${i}:00`).toISOString(), klus: "vaat-in", spelers: ["k1", "k2"] as [string, string], verliezer });
   const s = gezin({ uitdagingen: [u(1, "k2"), u(2, "k1"), u(3, "k1")] });
   assert.equal(pech(s, "k1", nu), 2);
-  assert.ok(heeftJoker(s, "k1", nu));
-  assert.ok(!heeftJoker(s, "k2", nu));
+  assert.ok(heeftVoorsprong(s, "k1", nu));
+  assert.ok(!heeftVoorsprong(s, "k2", nu));
   assert.ok(!genoegPech(s, "k1", nu));
   assert.ok(genoegPech(gezin({ uitdagingen: [u(1, "k1"), u(2, "k1"), u(3, "k1")] }), "k1", nu));
+});
+
+test("afspraken: klus uit, niet voor dit kind, leeftijd, en vrijstelling", () => {
+  const vaat = KLUSSEN.find((k) => k.id === "vaat-uit")!;
+  const ramen = KLUSSEN.find((k) => k.id === "ramen")!;
+  const s0 = gezin();
+  const jong = { ...lid(s0, "k1"), age: 8 };
+  assert.ok(!magDoen(s0, jong, ramen), "ramen pas vanaf 12 (voorstel)");
+  assert.ok(magDoen(s0, jong, vaat));
+  // Uit: niemand krijgt hem.
+  const uit = gezin({ afspraken: { klussen: { "vaat-uit": { aan: false } } } });
+  assert.equal(verdeling(uit, "2026-10-15").wie["vaat-uit"], undefined);
+  // Niet voor k1: dan k2.
+  const niet = gezin({ afspraken: { klussen: { "vaat-uit": { niet: ["k1"] } } } });
+  assert.equal(verdeling(niet, "2026-10-15").wie["vaat-uit"], "k2");
+  // Vrijstelling: vandaag niks, ook geen eigen kamer.
+  const vrij = gezin({ vrijstelling: { "2026-10-15": { k1: "ziek" } } });
+  const v = verdeling(vrij, "2026-10-15");
+  assert.ok(!Object.values(v.wie).includes("k1"));
+  assert.equal(v.verwachting.k1.soort, "vrijstelling");
+});
+
+test("afspraken: eigen verwachting per kind telt", () => {
+  const school = gezin({ werk: WERK, afspraken: { verwachting: { k1: { school: 5, vrij: 40 } } } });
+  assert.equal(verwachting(school, lid(school, "k1"), "2026-10-15").doel, 5);
+  const vrij = gezin({ afspraken: { verwachting: { k1: { school: 5, vrij: 40 } } } });
+  assert.equal(verwachting(vrij, lid(vrij, "k1"), "2026-10-15").doel, 40);
+  assert.equal(verwachting(vrij, lid(vrij, "k1"), "2026-10-17").doel, 30, "weekend: 80% van vrij");
+});
+
+test("vrije dag: hooguit één klus extra, en nooit boven de verwachting", () => {
+  const s = gezin({ werk: WERK, vakanties: { k1: [{ naam: "Herfst", van: "2026-10-12", tot: "2026-10-18" }], k2: [{ naam: "Herfst", van: "2026-10-12", tot: "2026-10-18" }] } });
+  const v = verdeling(s, "2026-10-15");
+  for (const id of ["k1", "k2"]) {
+    assert.ok([...v.extra].filter((k) => v.wie[k] === id).length <= 1);
+    assert.ok(v.vandaag[id] <= v.verwachting[id].doel + 15, `${id}: ${v.vandaag[id]} van ${v.verwachting[id].doel}`);
+  }
+});
+
+test("samen doen: allebei de helft van de minuten", () => {
+  const s = gezin();
+  const v = verdeling(s, "2026-10-15");
+  const eig = v.wie["vaat-uit"];
+  const ander = eig === "k1" ? "k2" : "k1";
+  const v2 = verdeling(gezin({ samenDoen: { "2026-10-15": { "vaat-uit": ander } } }), "2026-10-15");
+  assert.equal(v2.mee["vaat-uit"], ander);
+  assert.equal(v2.vandaag[eig], v.vandaag[eig] - 5);
+  assert.equal(v2.vandaag[ander], v.vandaag[ander] + 5);
+});
+
+test("lukt me niet: volgende kandidaat is iemand anders", () => {
+  const s = gezin();
+  const eig = verdeling(s, "2026-10-15").wie["vaat-uit"];
+  const v = volgende(s, "2026-10-15", "vaat-uit", eig);
+  assert.ok(v && v !== eig);
+});
+
+test("om de beurt en loting zijn eerlijk", () => {
+  const log = [
+    { id: "a", klus: "vaat-in", by: "k1", at: at("2026-10-14", "20:00").toISOString() },
+    { id: "b", klus: "vaat-in", by: "k2", at: at("2026-10-10", "20:00").toISOString() },
+    { id: "c", klus: "was", by: "k1", at: at("2026-10-13", "20:00").toISOString() },
+    { id: "d", klus: "bedden", by: "k1", at: at("2026-10-12", "20:00").toISOString() },
+  ];
+  const s = gezin({ klusLog: log });
+  assert.equal(beurtTussen(s, "vaat-in", "k1", "k2", "2026-10-15"), "k2", "wie het langst niet deed");
+  const p = lotKans(s, "k1", "k2", at("2026-10-15"));
+  assert.ok(p < 0.5, `k1 deed veel meer, dus minder kans: ${p}`);
+  assert.ok(p >= 0.15);
+});
+
+test("signaal voor ouders als het scheef groeit", () => {
+  const log: KlusDone[] = [];
+  for (let i = 1; i <= 10; i++) log.push({ id: `w${i}`, klus: "was", by: "k1", at: at(`2026-10-${String(15 - i).padStart(2, "0")}`, "18:00").toISOString() });
+  const s = gezin({ klusLog: log });
+  const sig = scheef(s, at("2026-10-15"));
+  assert.equal(sig?.veel, "k1");
+  assert.match(sig!.tekst, /minuten/);
+  assert.equal(scheef(gezin(), at("2026-10-15")), null);
 });

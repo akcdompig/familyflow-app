@@ -249,12 +249,44 @@ export interface FamilyState {
   sleep?: Record<string, string>;
   /** Bevestigd door een ouder: checked[datum][taakId] = id van de ouder. */
   checked?: Record<string, Record<string, string>>;
-  /** Klus van eigenaar gewisseld (uitdaging of door een ouder): ruil[datum][klusKey] = lidId. */
+  /** Klus van eigenaar gewisseld (samen beslist of door een ouder): ruil[datum][klusKey] = lidId. */
   ruil?: Record<string, Record<string, string>>;
-  /** Uitdagingen (steen-papier-schaar): wie tegen wie, en wie de klus doet. Nieuwste achteraan. */
+  /** Klus samen doen: samenDoen[datum][klusKey] = de partner (de eigenaar staat in de verdeling of in ruil). */
+  samenDoen?: Record<string, Record<string, string>>;
+  /** Samen beslist wie een klus doet (spel, loting, om de beurt, samen). Nieuwste achteraan. */
   uitdagingen?: Uitdaging[];
   /** Samen dingen doen: koken, boodschappen, film, stad, buiten. Bouwt de band op. */
   samen?: SamenMoment[];
+  /** Afspraken over klussen, door ouders vastgelegd. Zonder afspraken geldt het voorstel van de app. */
+  afspraken?: Afspraken;
+  /** Vandaag geen klussen (ziek, toets, toernooi): vrijstelling[datum][lidId] = reden. */
+  vrijstelling?: Record<string, Record<string, string>>;
+  /** "Dit lukt me vandaag niet" of "ik wil hulp": een vraag aan de ouders. */
+  bezwaren?: Bezwaar[];
+  /** Antwoord van een ouder op een vraag (los opgeslagen, zodat een kind het niet kan wijzigen). */
+  bezwaarAntwoord?: Record<string, { keuze: "ok" | "ouder" | "samen" | "toch"; door: string; at: string; tekst?: string }>;
+  /** Groeidoelen per kind: welke vaardigheden, en de terugblik per week (maandag → vaardigheid → hoe ging het). */
+  doelen?: Record<string, { vaardigheden: string[]; terugblik?: Record<string, Record<string, "goed" | "beter" | "lastig">> }>;
+}
+
+export interface Afspraken {
+  /** Wanneer en door wie vastgelegd. Leeg = nog een voorstel. */
+  vastgelegd?: string;
+  door?: string;
+  /** Per klus: aan/uit, minuten, en wie hem niet doet. */
+  klussen?: Record<string, { aan?: boolean; minuten?: number; niet?: string[]; wel?: string[] }>;
+  /** Per lid: verwachte minuten op een schooldag en op een vrije dag. */
+  verwachting?: Record<string, { school?: number; vrij?: number }>;
+}
+
+export interface Bezwaar {
+  id: string;
+  at: string;
+  datum: string;
+  klus: string;
+  door: string;
+  soort: "lukt-niet" | "hulp";
+  reden: string;
 }
 
 export interface Uitdaging {
@@ -262,8 +294,13 @@ export interface Uitdaging {
   at: string;
   klus: string;
   spelers: [string, string];
+  /** Wie de klus doet. */
   verliezer: string;
-  /** Joker gebruikt door (na 2 keer op rij verloren). */
+  /** Hoe besloten: steen-papier-schaar, eerlijke loting, om de beurt, of samen doen. */
+  manier?: "spel" | "loting" | "beurt" | "samen";
+  /** Bij samen doen: de ander. */
+  partner?: string;
+  /** Voorsprong gekregen (na 2 keer op rij pech). */
   joker?: string;
 }
 
@@ -281,6 +318,8 @@ export interface SamenMoment {
   at: string;
   /** Wanneer het gedaan is (ISO). Leeg = nog gepland. */
   gedaan?: string;
+  /** Hoe was het? Per lid. */
+  reactie?: Record<string, "😐" | "🙂" | "😍">;
 }
 
 export interface Kookplan {
@@ -298,6 +337,8 @@ export interface KlusDone {
   klus: string;
   by: string;
   at: string;
+  /** Samen gedaan: ieder de helft van de tijd en de punten. Zelfde `samen`-id bij beide regels. */
+  samen?: string;
 }
 
 export interface PotItem {

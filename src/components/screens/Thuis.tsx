@@ -11,6 +11,8 @@ import {
   BELONINGEN, KLUSSEN, bijdragen, dagKort, eters, euro, isGeregeld, klusStatus, kookplan, naamKlus, magRestjes, maandag, parseEuro, potStand, werkOp, werktTijdensEten, type KlusStatus,
 } from "@/lib/huis";
 import type { FamilyState, Member } from "@/lib/types";
+import { KlusSheet } from "./KlusSheet";
+import { AfsprakenBanner, AfsprakenSheet, Eerlijkheid, VerdelingVandaag, Vragen } from "./Verdeling";
 
 type Tab = "eten" | "klussen" | "week" | "pot";
 const TABS: { id: Tab; label: string; emoji: string }[] = [
@@ -141,40 +143,40 @@ export function Eten({ state, me, onToast }: { state: FamilyState; me: Member; o
 /* ---------- Klussen ---------- */
 
 export function Klussen({ state, me, lijst, onToast }: { state: FamilyState; me: Member; lijst: KlusStatus[]; onToast: (m: string) => void }) {
-  const [open, setOpen] = useState<KlusStatus | null>(null);
+  const [openKey, setOpenKey] = useState<string | null>(null);
+  const [afspraken, setAfspraken] = useState(false);
+  const open = lijst.find((k) => k.key === openKey) ?? null;
   const isOuder = me.role === "ouder";
   // Eigen kamer: alleen die van jezelf tonen aan kinderen, ouders zien alles.
   const zicht = lijst.filter((k) => !k.klus.perKind || isOuder || k.kind?.id === me.id);
-  const volgorde = [...zicht].sort((a, b) => Number(a.vandaagGedaan) - Number(b.vandaagGedaan) || b.teLaat - a.teLaat || Number(b.nodig) - Number(a.nodig));
-  const recent = [...(state.klusLog ?? [])].reverse().slice(0, 12);
-
-  const gedaan = (k: KlusStatus, by: string) => {
-    const id = actions.klusGedaan(k.key, by, k.klus.xp, naamKlus(k, by));
-    setOpen(null);
-    onToast(`${k.klus.label} ✓ +${k.klus.xp} punten`);
-    return id;
-  };
+  const volgorde = [...zicht].sort((a, b) => Number(a.vandaagGedaan) - Number(b.vandaagGedaan) || Number(!!b.ingedeeld) - Number(!!a.ingedeeld) || b.teLaat - a.teLaat || Number(b.nodig) - Number(a.nodig));
+  const recent = [...(state.klusLog ?? [])].reverse().filter((r, i, all) => !r.samen || all.findIndex((x) => x.samen === r.samen) === i).slice(0, 12);
 
   return (
     <div className="ff-stack">
-      <p className="ff-small ff-muted">Blijft er iets liggen, dan wordt de huiskamer rommelig. Afvinken = weer netjes.</p>
+      <AfsprakenBanner state={state} me={me} onOpen={() => setAfspraken(true)} />
+      <Vragen state={state} me={me} onToast={onToast} />
+      <VerdelingVandaag state={state} me={me} lijst={lijst} onOpen={(k) => setOpenKey(k.key)} />
+      <p className="ff-small ff-muted">Eerlijk verdeeld in tijd, niet in aantal. Blijft er iets liggen, dan wordt de huiskamer rommelig.</p>
       <div className="ff-klussen">
         {volgorde.map((k) => (
-          <button key={k.key} className={`ff-klus${k.vandaagGedaan ? " is-klaar" : k.teLaat > 0 ? " is-laat" : ""}`} onClick={() => setOpen(k)}>
+          <button key={k.key} className={`ff-klus${k.vandaagGedaan ? " is-klaar" : k.teLaat > 0 ? " is-laat" : ""}`} onClick={() => setOpenKey(k.key)}>
             <span className="ff-klus-emoji" aria-hidden="true">{k.klus.emoji}</span>
             <span className="ff-grow">
               <b>{k.klus.perKind && k.kind ? `Kamer ${k.kind.id === me.id ? "van jou" : k.kind.name}` : k.klus.label}</b>
               <span className="ff-small ff-muted ff-block">
-                {k.laatst ? `Laatst: ${k.laatst.by === me.id ? "jij" : naam(state, k.laatst.by)}, ${dagenTekst(k.dagenGeleden!)}` : "Nog niet bijgehouden"}
-                {k.klus.naKoken ? " · na het eten, als er gekookt is" : k.klus.elke > 1 ? ` · elke ${k.klus.elke} dagen` : " · elke dag"}{!k.vandaagGedaan && k.teLaat > 0 ? ` · ${k.teLaat} ${k.teLaat === 1 ? "dag" : "dagen"} te laat` : ""}
+                {k.minuten} min · {k.laatst ? `laatst: ${k.laatst.by === me.id ? "jij" : naam(state, k.laatst.by)}, ${dagenTekst(k.dagenGeleden!)}` : "nog niet bijgehouden"}
+                {k.klus.naKoken ? " · na het eten" : k.klus.elke > 1 ? ` · elke ${k.klus.elke} dagen` : " · elke dag"}{!k.vandaagGedaan && k.teLaat > 0 ? ` · ${k.teLaat} ${k.teLaat === 1 ? "dag" : "dagen"} te laat` : ""}{k.extra && !k.vandaagGedaan ? " · mag alvast" : ""}
               </span>
             </span>
             <span className="ff-klus-status">
-              {k.vandaagGedaan ? "✓" : k.beurt ? <><Kop m={k.beurt} size={26} /><span className="ff-small">{k.beurt.id === me.id ? "jij" : k.beurt.name}</span></> : null}
+              {k.vandaagGedaan ? "✓" : k.beurt && (k.ingedeeld || k.klus.naKoken || k.nodig) ? <><Kop m={k.beurt} size={26} />{k.mee && <Kop m={k.mee} size={26} />}<span className="ff-small">{k.beurt.id === me.id ? "jij" : k.beurt.name}{k.mee ? ` + ${k.mee.id === me.id ? "jij" : k.mee.name}` : ""}</span></> : <span className="ff-small ff-muted">later</span>}
             </span>
           </button>
         ))}
       </div>
+
+      <Eerlijkheid state={state} me={me} />
 
       {recent.length > 0 && (
         <section className="ff-card ff-stack-s">
@@ -182,10 +184,11 @@ export function Klussen({ state, me, lijst, onToast }: { state: FamilyState; me:
           {recent.map((r) => {
             const base = KLUSSEN.find((k) => k.id === r.klus.split(":")[0]);
             const magWeg = isOuder || r.by === me.id;
+            const ander = r.samen ? (state.klusLog ?? []).find((x) => x.samen === r.samen && x.id !== r.id) : undefined;
             return (
               <div key={r.id} className="ff-row ff-log-rij">
                 <span aria-hidden="true">{base?.emoji ?? "✓"}</span>
-                <span className="ff-grow ff-small"><b>{r.by === me.id ? "Jij" : naam(state, r.by)}</b> · {base?.perKind ? `kamer ${naam(state, r.klus.split(":")[1])}` : base?.label.toLowerCase()} · {timeLabel(r.at)}</span>
+                <span className="ff-grow ff-small"><b>{r.by === me.id ? "Jij" : naam(state, r.by)}{ander ? ` en ${ander.by === me.id ? "jij" : naam(state, ander.by)}` : ""}</b> · {base?.perKind ? `kamer ${naam(state, r.klus.split(":")[1])}` : base?.label.toLowerCase()} · {timeLabel(r.at)}</span>
                 {magWeg && <button className="ff-link ff-small" onClick={() => { actions.klusWeg(r.id, base?.xp ?? 0); onToast("Weggehaald"); }}>Weg</button>}
               </div>
             );
@@ -193,26 +196,8 @@ export function Klussen({ state, me, lijst, onToast }: { state: FamilyState; me:
         </section>
       )}
 
-      <Sheet open={!!open} onClose={() => setOpen(null)} title={open?.klus.label ?? "Klus"}>
-        {open && (
-          <div className="ff-stack">
-            <h2 className="ff-h2">{open.klus.emoji} {open.klus.perKind && open.kind ? `Kamer van ${open.kind.name}` : open.klus.label}</h2>
-            <p className="ff-muted">{open.laatst ? `Laatst gedaan door ${naam(state, open.laatst.by)}, ${dagenTekst(open.dagenGeleden!)}.` : "Nog niet bijgehouden."} {open.beurt && !open.vandaagGedaan ? `Aan de beurt: ${open.beurt.id === me.id ? "jij" : open.beurt.name}.` : ""}</p>
-            <button className="ff-btn ff-btn-primary ff-btn-wide" onClick={() => gedaan(open, me.id)}>Ik heb het gedaan</button>
-            {isOuder && (
-              <>
-                <span className="ff-eyebrow">Of gedaan door</span>
-                <div className="ff-chips">
-                  {state.members.filter((m) => m.id !== me.id && m.joined !== false).map((m) => (
-                    <button key={m.id} className="ff-chip ff-chip-l" onClick={() => gedaan(open, m.id)}>{m.name}</button>
-                  ))}
-                </div>
-              </>
-            )}
-            {open.klus.id === "flessen" && <p className="ff-small ff-muted">Statiegeld opgehaald? Zet het bedrag in het gezinspotje.</p>}
-          </div>
-        )}
-      </Sheet>
+      <KlusSheet state={state} me={me} klus={open} onClose={() => setOpenKey(null)} onToast={onToast} />
+      <AfsprakenSheet open={afspraken} onClose={() => setAfspraken(false)} state={state} me={me} onToast={onToast} />
     </div>
   );
 }

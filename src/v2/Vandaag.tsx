@@ -10,6 +10,8 @@ import { expressionFor } from "@/lib/mood";
 import { actions } from "@/lib/store";
 import { geclaimd, teClaimen } from "@/lib/xp";
 import { OngezondKnop } from "./Voeding";
+import { KlusSheet, antwoordTekst, vraagVan } from "@/components/screens/KlusSheet";
+import { klusStatus } from "@/lib/huis";
 import type { FamilyState, Member, MoodLevel } from "@/lib/types";
 
 const MOODS: { m: MoodLevel; e: string; l: string }[] = [
@@ -34,6 +36,7 @@ export function Vandaag({ state, me, onToast, onMeerGevoel, onWie }: { state: Fa
   const [open, setOpen] = useState<Dagdeel>(nuDeel);
   const [pop, setPop] = useState<{ id: string; n: number } | null>(null);
   const [claim, setClaim] = useState<{ van: number; n: number } | null>(null);
+  const [klusOpen, setKlusOpen] = useState<string | null>(null);
   const [pushLater, setPushLater] = useState(() => {
     try {
       return Date.now() - Number(localStorage.getItem("familyflow:push-later") ?? 0) < 3 * 864e5;
@@ -213,6 +216,15 @@ export function Vandaag({ state, me, onToast, onMeerGevoel, onWie }: { state: Fa
                         <span><span aria-hidden="true">{st.vanzelf ? "" : `${st.emoji} `}</span><b>{st.titel}</b></span>
                         {st.tijd && st.soort !== "slapen" && <span className="ff-small ff-muted"> {st.tijd.replace(":", ".")}</span>}
                         {st.later && <span className="ff-small ff-muted ff-block">na je werk of school</span>}
+                        {st.soort === "klus" && !st.klaar && (() => {
+                          const vr = vraagVan(state, st.klusKey!, me.id);
+                          return (
+                            <span className="ff-small ff-muted ff-block">
+                              {st.minuten} min{st.samenMet ? ` · samen met ${st.samenMet} 🤝` : ""}
+                              {vr ? ` · ${vr.antwoord ? antwoordTekst(state, vr.antwoord) : "vraag gestuurd"}` : ""}
+                            </span>
+                          );
+                        })()}
                         {st.bezig !== undefined && <span className="ff-bezig-balk" style={{ marginTop: 6 }}><i style={{ width: `${Math.round(st.bezig * 100)}%` }} /></span>}
                         {st.sub && !st.klaar && (
                           <span className="v2-sub">
@@ -226,6 +238,7 @@ export function Vandaag({ state, me, onToast, onMeerGevoel, onWie }: { state: Fa
                         )}
                       </span>
                       {!!st.punten && !st.klaar && !st.vanzelf && <span className="v2-punten">+{st.punten}</span>}
+                      {st.soort === "klus" && !st.klaar && <button className="v2-meer" onClick={() => setKlusOpen(st.klusKey!)} aria-label={`${st.titel}: ruilen, samen beslissen of lukt niet`}>⋯</button>}
                     </li>
                   ))}
                 </ul>
@@ -236,6 +249,7 @@ export function Vandaag({ state, me, onToast, onMeerGevoel, onWie }: { state: Fa
       </div>
 
       {claim && <ClaimViering me={me} van={claim.van} n={claim.n} onKlaar={() => setClaim(null)} />}
+      <KlusSheet state={state} me={me} klus={klusOpen ? klusStatus(state).find((k) => k.key === klusOpen) ?? null : null} onClose={() => setKlusOpen(null)} onToast={onToast} />
     </div>
   );
 }

@@ -71,6 +71,10 @@ export const BADGES: BadgeDef[] = [
     stand: (s, id, sinds, nu) => ({ n: dagenTerug(nu, 7).filter((d) => naSinds(d, sinds) && (s.dag?.[d]?.[id]?.fruit ?? 0) >= DOEL.fruit).length, doel: 5 }),
   },
   {
+    id: "samen-sterk", naam: "Samen sterk", emoji: "💞", uitleg: "3 keer iets samen gedaan in twee weken", herhaal: 14, punten: 25,
+    stand: (s, id, sinds, nu) => ({ n: (s.samen ?? []).filter((x) => x.gedaan && x.wie.includes(id) && new Date(x.gedaan).getTime() > Math.max(sinds, nu.getTime() - 14 * DAG)).length, doel: 3 }),
+  },
+  {
     id: "spaarder", naam: "Spaarkampioen", emoji: "🐷", uitleg: "€ 5 bijgedragen aan het gezinspotje", herhaal: 30, punten: 25,
     stand: (s, id, sinds) => ({
       n: Math.floor((s.pot?.items ?? []).filter((x) => x.soort !== "uitgave" && (x.voor ?? x.by) === id && new Date(x.at).getTime() > sinds).reduce((a, x) => a + x.cents, 0) / 100),

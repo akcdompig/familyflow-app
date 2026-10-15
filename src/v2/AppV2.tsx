@@ -35,6 +35,7 @@ import { GezinV2 } from "./GezinV2";
 import { IkV2 } from "./IkV2";
 import { Vandaag } from "./Vandaag";
 import { VoedingKaart } from "./Voeding";
+import { Groei } from "./Groei";
 
 type Tab = "vandaag" | "gezin" | "hulp" | "ik";
 type Pagina = null | "avatar" | "werk" | "meer" | "ouders" | "planner" | "privacy";
@@ -200,6 +201,7 @@ export function AppV2() {
               <p className="ff-muted">{zzz ? "Slaapt" : werk ? `${werk.look === "school" ? "Op school" : werk.werk.naam} · ${restTekst(werk.rest)}` : ci ? `${moodLabel(ci)} · ${timeLabel(ci.at)}` : "Nog niet ingecheckt"}</p>
               {sel.joined !== false && <div style={{ width: "100%" }}><Meters state={state} id={sel.id} /></div>}
               {sel.joined !== false && (isOuder || sel.id === me.id) && <div style={{ width: "100%" }}><VoedingKaart state={state} id={sel.id} kanAanpassen={isOuder || sel.id === me.id} /></div>}
+              {sel.joined !== false && sel.role !== "ouder" && (isOuder || sel.id === me.id) && <div className="v2-voeding" style={{ width: "100%" }}><Groei state={state} lid={sel} me={me} onToast={setToast} compact /></div>}
               {sel.id !== me.id && !zzz && (
                 <div className="ff-chips ff-center-row">
                   {["Ochtendroutine doen! 🚿", "Drink water 💧", "Pak fruit 🍎", "Kom helpen 🙌", "Goed bezig! 💪"].map((t) => (

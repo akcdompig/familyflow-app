@@ -947,4 +947,81 @@ i.is-vak { background: var(--ff-munt-zacht); border: 1px solid var(--ff-munt-don
 .v2-ongezond-keuze { display: flex; align-items: center; gap: 10px; background: var(--ff-wolk); border-radius: 16px; padding: 10px 12px; }
 .v2-ongezond-emoji { font-size: 28px; }
 .v2-ongezond-n { min-width: 22px; text-align: center; font-size: 18px; }
-</style></head><body><div id="root"></div><script src="/config.js"></script><script src="/assets/app-e1ab4c694b93.js"></script><script>if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("/sw.js");</script></body></html>
+
+/* ---------- Eerlijk verdelen, samen beslissen ---------- */
+.ff-center-col { display: grid; justify-items: center; text-align: center; gap: 8px; }
+.ff-klus-info { display: grid; gap: 4px; font-size: var(--ff-t-s); }
+.ff-vraag-status { margin: 0; background: var(--ff-zon-zacht); border-radius: 14px; padding: 10px 12px; font-size: var(--ff-t-s); }
+.ff-vraag-status.is-antwoord { background: var(--ff-munt-zacht); }
+.ff-keuze-rij { display: flex; align-items: center; gap: 10px; width: 100%; border: 2px solid var(--ff-lijn); background: var(--ff-vlak); border-radius: 16px; padding: 10px 12px; font: inherit; color: var(--ff-tekst); cursor: pointer; min-height: var(--ff-tik); }
+.ff-manieren { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.ff-manier { display: grid; gap: 4px; justify-items: center; text-align: center; border: 2px solid var(--ff-lijn); background: var(--ff-vlak); border-radius: 18px; padding: 12px 8px; font: inherit; color: var(--ff-tekst); cursor: pointer; }
+.ff-manier:disabled { opacity: .4; cursor: default; }
+.ff-manier-emoji { font-size: 24px; }
+.ff-spel { display: grid; gap: 12px; }
+.ff-spel-score { display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: var(--ff-t-m); }
+.ff-spel-score > span { display: inline-flex; align-items: center; gap: 6px; }
+.ff-spel-onthul { display: flex; align-items: center; justify-content: space-between; background: var(--ff-wolk); border-radius: 16px; padding: 8px 12px; text-align: center; }
+.ff-spel-hand { font-size: 40px; animation: ff-hand .35s ease-out; }
+@keyframes ff-hand { from { transform: scale(.4) rotate(-20deg); opacity: 0; } to { transform: none; opacity: 1; } }
+.ff-spel-knoppen { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.ff-spel-knop { display: grid; justify-items: center; gap: 2px; border: 2px solid var(--ff-lijn); background: var(--ff-vlak); border-radius: 18px; padding: 12px 4px; font: inherit; color: var(--ff-tekst); cursor: pointer; font-size: 34px; }
+.ff-spel-knop:active { transform: scale(.94); }
+.ff-lot { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ff-lot-vak { display: grid; justify-items: center; gap: 4px; border: 3px solid var(--ff-lijn); border-radius: 18px; padding: 12px; background: var(--ff-vlak); transition: background .12s, border-color .12s; }
+.ff-lot-vak.is-aan { border-color: var(--ff-zon); background: var(--ff-zon-zacht); }
+.ff-lot-vak.is-gekozen { border-color: var(--ff-koraal-knop); background: var(--ff-koraal-zacht); }
+.ff-uitslag .ff-h2 { margin: 0; }
+.ff-afspraak-banner { display: flex; align-items: center; gap: 10px; width: 100%; border: 2px dashed var(--ff-zon); background: var(--ff-zon-zacht); border-radius: 16px; padding: 10px 12px; font: inherit; color: var(--ff-tekst); text-align: left; cursor: pointer; }
+.ff-afspraak-banner.is-vast { border-style: solid; border-color: transparent; background: var(--ff-munt-zacht); }
+.ff-verdeling-rij { display: flex; align-items: flex-start; gap: 10px; padding: 4px 0; }
+.ff-verdeling-klussen { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+.ff-mini-klus { border: 1.5px solid var(--ff-lijn); background: var(--ff-wolk); border-radius: 999px; padding: 4px 9px; min-height: 32px; font: inherit; font-size: 12.5px; font-weight: 700; color: var(--ff-tekst); cursor: pointer; }
+.ff-mini-klus.is-klaar { background: var(--ff-munt-zacht); border-color: transparent; color: var(--ff-munt-donker); }
+.ff-verdeling-tel { font-size: var(--ff-t-s); font-weight: 800; color: var(--ff-tekst-zacht); }
+.ff-verdeling-tel.is-af { color: var(--ff-munt-donker); }
+.ff-vraag { display: grid; gap: 6px; padding: 8px 0; border-top: 1px solid var(--ff-lijn); }
+.ff-vraag:first-of-type { border-top: 0; }
+.ff-eerlijk-rij { display: grid; grid-template-columns: auto 70px 1fr auto; align-items: center; gap: 8px; }
+.ff-eerlijk-naam { font-size: var(--ff-t-s); font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ff-eerlijk-balk { height: 10px; border-radius: 999px; background: var(--ff-wolk); overflow: hidden; }
+.ff-eerlijk-balk i { display: block; height: 100%; background: var(--ff-lucht); border-radius: 999px; }
+.ff-eerlijk-min { font-weight: 700; min-width: 54px; text-align: right; }
+.ff-eerlijk-vaak { grid-column: 2 / -1; margin-top: -4px; }
+.ff-afspraak-kind { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ff-stepper { display: inline-flex; align-items: center; gap: 6px; }
+.ff-afspraak-klus { display: grid; gap: 6px; padding: 8px 0; border-top: 1px solid var(--ff-lijn); }
+.ff-afspraak-klus.is-uit { opacity: .55; }
+.ff-schakel { width: 48px; height: 28px; border-radius: 999px; border: 0; background: var(--ff-lijn); position: relative; cursor: pointer; flex: none; }
+.ff-schakel i { position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; transition: left .15s; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+.ff-schakel[aria-checked="true"] { background: var(--ff-munt-donker); }
+.ff-schakel[aria-checked="true"] i { left: 23px; }
+.v2-meer { width: 36px; height: 36px; border-radius: 50%; border: 0; background: var(--ff-wolk); font: inherit; font-size: 18px; font-weight: 800; color: var(--ff-tekst-zacht); cursor: pointer; flex: none; }
+
+/* ---------- Samen ---------- */
+.v2-samen-kop { display: flex; align-items: center; gap: 12px; }
+.v2-samen-getal { font-size: 32px; }
+.v2-samen-idee { display: grid; gap: 10px; background: var(--ff-koraal-zacht); }
+.v2-samen-emoji { font-size: 26px; line-height: 1; }
+.v2-ideeen { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.v2-idee { display: grid; gap: 2px; align-content: start; text-align: left; border: 2px solid var(--ff-lijn); background: var(--ff-vlak); border-radius: 16px; padding: 10px; font: inherit; color: var(--ff-tekst); cursor: pointer; }
+.v2-idee b { font-size: var(--ff-t-s); line-height: 1.25; }
+.v2-idee.is-anders { border-style: dashed; }
+.v2-hartjes { letter-spacing: 1px; font-size: 14px; }
+.v2-gepland { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 6px 0; border-top: 1px solid var(--ff-lijn); }
+.v2-gepland:first-of-type { border-top: 0; }
+.v2-gepland-koppen { display: inline-flex; }
+.v2-gepland-koppen > * + * { margin-left: -8px; }
+
+/* ---------- Groeidoelen ---------- */
+.v2-groei-keuze { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.v2-groei-tegel { display: flex; align-items: center; gap: 8px; text-align: left; border: 2px solid var(--ff-lijn); background: var(--ff-vlak); border-radius: 16px; padding: 10px; min-height: var(--ff-tik); font: inherit; color: var(--ff-tekst); cursor: pointer; }
+.v2-groei-tegel b { font-size: var(--ff-t-s); }
+.v2-groei-tegel[aria-pressed="true"] { border-color: var(--ff-munt-donker); background: var(--ff-munt-zacht); }
+.v2-groei-tegel:disabled { opacity: .45; cursor: default; }
+.v2-groei { display: grid; gap: 6px; padding: 8px 0; border-top: 1px solid var(--ff-lijn); }
+.v2-groei:first-of-type { border-top: 0; }
+.v2-groei-tips { margin: 0; padding-left: 18px; font-size: var(--ff-t-s); }
+.v2-groei-hoe { display: flex; flex-wrap: wrap; gap: 6px; }
+@media (prefers-reduced-motion: reduce) { .ff-spel-hand { animation: none; } .ff-schakel i { transition: none; } }
+</style></head><body><div id="root"></div><script src="/config.js"></script><script src="/assets/app-d7eeacc12da4.js"></script><script>if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("/sw.js");</script></body></html>
