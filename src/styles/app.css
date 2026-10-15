@@ -1090,3 +1090,16 @@ a.ff-onb-choice { text-decoration: none; color: inherit; }
 .v2-samen-kop { position: relative; border: 0; background: var(--ff-wolk); border-radius: 50%; padding: 4px; cursor: pointer; min-width: 44px; min-height: 44px; }
 .v2-samen-kop.is-af { box-shadow: 0 0 0 2px var(--ff-munt-donker); }
 .v2-samen-vink { position: absolute; right: -2px; bottom: -2px; width: 18px; height: 18px; border-radius: 50%; background: var(--ff-munt-donker); color: #fff; font-size: 11px; display: grid; place-items: center; }
+
+/* ---------- 3.1 Verdeel de taken ---------- */
+.v2-verdeel-knop { font-size: 17px; padding-block: 14px; }
+.v2-verdeel-min { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 10px; }
+.v2-verdeel-lid { display: flex; align-items: center; gap: 6px; line-height: 1.25; }
+.v2-verdeel-rij { display: grid; gap: 8px; }
+.v2-verdeel-taak { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: var(--ff-wolk); border-radius: 14px; padding: 10px 12px; font: inherit; color: inherit; cursor: pointer; text-align: left; }
+.v2-verdeel-taak[aria-expanded="true"] { box-shadow: inset 0 0 0 2px var(--ff-munt-donker); }
+.v2-verdeel-wie { flex: none; font-weight: 700; font-size: 14px; padding: 4px 10px; border-radius: 999px; background: var(--ff-wit, #fff); white-space: nowrap; }
+.v2-mijnweek-rij { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.v2-mijnweek-dag { flex: none; width: 56px; font-weight: 700; color: var(--ff-tekst-zacht); font-size: 13px; }
+.ff-klus-uitleg { background: var(--ff-munt-zacht); border-radius: 14px; padding: 10px 12px; }
+.ff-klus-uitleg p { margin: 4px 0 0; }

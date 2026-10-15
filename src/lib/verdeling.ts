@@ -14,7 +14,8 @@
 */
 
 import { addDays, iso } from "./planner";
-import { KLUSSEN, klusKey, werkOp, type Klus } from "./huis";
+import { alleKlussen, klusAan, klusById, klusKey, werkOp, type Klus } from "./huis";
+export { klusAan };
 import { lookVoor } from "./status";
 import type { FamilyState, Member } from "./types";
 
@@ -48,7 +49,7 @@ const isKind = (m: Member) => m.role !== "ouder";
 const dagenTussen = (a: string, b: string) => Math.round((new Date(b + "T12:00:00").getTime() - new Date(a + "T12:00:00").getTime()) / 864e5);
 const mins = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
 const basisVan = (key: string) => key.split(":")[0];
-const klusVan = (key: string) => KLUSSEN.find((k) => k.id === basisVan(key));
+const klusVan = (s: FamilyState, key: string) => klusById(s, basisVan(key));
 
 /** Klein, vast getal uit een tekst: zelfde dag = zelfde uitkomst bij gelijke stand. */
 export function hash(t: string) {
@@ -60,10 +61,9 @@ export function hash(t: string) {
 /* ---------- Afspraken (of het voorstel) ---------- */
 
 export const isVastgelegd = (s: FamilyState) => !!s.klusAfspraken?.vastgelegd;
-export const klusAan = (s: FamilyState, k: Klus) => s.klusAfspraken?.klussen?.[k.id]?.aan ?? true;
 export const minutenVan = (s: FamilyState, k: Klus) => s.klusAfspraken?.klussen?.[k.id]?.minuten ?? k.minuten;
 export const minutenKey = (s: FamilyState, key: string) => {
-  const k = klusVan(key);
+  const k = klusVan(s, key);
   return k ? minutenVan(s, k) : 10;
 };
 /** Mag dit lid deze klus doen? Afspraak gaat voor; anders: ouders altijd, kinderen vanaf de voorgestelde leeftijd. */
@@ -72,6 +72,8 @@ export function magDoen(s: FamilyState, m: Member, k: Klus): boolean {
   if (a?.niet?.includes(m.id)) return false;
   if (a?.wel?.includes(m.id)) return true;
   if (!isKind(m)) return true;
+  // Met begeleiding (koken, schoonmaakmiddelen): nooit vanzelf naar een kind alleen. Leren kan samen met een ouder (weekplanning).
+  if (k.begeleiding) return false;
   return m.age === undefined || m.age >= k.vanaf;
 }
 /** Standaard verwachting (minuten) voor een kind, als de ouders niks hebben ingesteld. */
@@ -102,6 +104,8 @@ function totLaat(s: FamilyState, id: string, d: string) {
 export function verwachting(s: FamilyState, m: Member, d: string): Verwachting {
   const vrijst = s.vrijstelling?.[d]?.[m.id];
   if (vrijst) return { id: m.id, soort: "vrijstelling", doel: 0, reden: `vrijstelling: ${vrijst}` };
+  const weg = (s.klusAfspraken?.afwezig?.[m.id] ?? []).find((a) => d >= a.van && d <= a.tot);
+  if (weg) return { id: m.id, soort: "vrijstelling", doel: 0, reden: `afwezig${weg.reden ? `: ${weg.reden}` : ""}` };
   const wd = new Date(d + "T12:00:00").getDay();
   const weekend = wd === 0 || wd === 6;
   if (!isKind(m)) {
@@ -205,13 +209,15 @@ function bereken(s: FamilyState, d: string, zonder?: { key: string; id: string }
   // 1. Wat moet er vandaag? Eerst de langste klussen, dan de korte.
   const moet: { k: Klus; key: string; kind?: Member; ago: number | null }[] = [];
   const kan: { k: Klus; key: string }[] = [];
-  for (const k of KLUSSEN) {
+  for (const k of alleKlussen(s)) {
     if (k.naKoken || !klusAan(s, k)) continue; // restjes: regelt de koelkast-logica (na het eten, niet de kok)
     const rijen = k.perKind ? kids.map((m) => ({ key: klusKey(k, m.id), kind: m as Member | undefined })) : [{ key: k.id, kind: undefined }];
     for (const r of rijen) {
       const l = laatstVoor(s, r.key, d);
       const ago = l ? dagenTussen(l, d) : null;
-      if (k.elke === 1 || (ago !== null && ago >= k.elke) || (r.kind && ago === null)) moet.push({ k, key: r.key, kind: r.kind, ago });
+      // Nog nooit gedaan (nieuwe taak of nieuw gezin)? Dan op een vaste dag binnen de eerste cyclus, niet alles tegelijk op dag 1.
+      const eersteKeer = ago === null && !r.kind && (Math.floor(dagMs / 864e5) + Math.floor(hash(r.key) * k.elke)) % k.elke === 0;
+      if (k.elke === 1 || (ago !== null && ago >= k.elke) || (r.kind && ago === null) || eersteKeer) moet.push({ k, key: r.key, kind: r.kind, ago });
       else if (!r.kind && (ago === null || ago >= k.elke - 1)) kan.push({ k, key: r.key });
     }
   }
@@ -256,6 +262,26 @@ function bereken(s: FamilyState, d: string, zonder?: { key: string; id: string }
     reden[x.key] = "is vandaag vrij, dus deze mag alvast";
     extra.add(x.key);
     kreegExtra.add(lid.id);
+  }
+
+  // 3a. Een door ouders bevestigde weekplanning gaat voor de berekening van de dag.
+  const plan = s.klusAfspraken?.planning?.[d];
+  if (plan) {
+    for (const [key, r] of Object.entries(plan)) {
+      const k = klusVan(s, key);
+      if (!k || !klusAan(s, k) || !alle.some((m) => m.id === r.wie)) continue;
+      if (zonder && zonder.key === key && zonder.id === r.wie) continue;
+      if (wie[key]) vandaag[wie[key]] -= minutenVan(s, k);
+      wie[key] = r.wie;
+      vandaag[r.wie] = (vandaag[r.wie] ?? 0) + minutenVan(s, k) / (r.mee ? 2 : 1);
+      reden[key] = r.reden || "staat zo in de weekplanning";
+      extra.delete(key);
+      uitgesteld.delete(key);
+      if (r.mee && alle.some((m) => m.id === r.mee)) {
+        mee[key] = r.mee;
+        vandaag[r.mee] = (vandaag[r.mee] ?? 0) + minutenVan(s, k) / 2;
+      }
+    }
   }
 
   // 3. Gewisseld: samen beslist, of door een ouder.

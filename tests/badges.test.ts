@@ -34,3 +34,12 @@ test("bijna: toont voortgang zonder al gehaalde", () => {
   assert.equal(v[0].def.id, "huisheld");
   assert.equal(v[0].n, 7);
 });
+
+test("Teamspeler en Nieuwe vaardigheid: samen taken, en een taak die je nog nooit deed", () => {
+  const nu = at("2026-10-15", "21:00");
+  const oud = Array.from({ length: 6 }, (_, i) => ({ id: `o${i}`, klus: "vaat-uit", by: "k1", at: at("2026-10-1" + (i % 4), "18:00").toISOString() }));
+  const samen = [1, 2, 3].map((i) => ({ id: `s${i}`, klus: "keuken", by: "k1", at: at("2026-10-15", `1${i}:00`).toISOString(), samen: `g${i}` }));
+  const ids = nieuweBadges(gezin({ klusLog: [...oud, ...samen] }), nu).filter((b) => b.who === "k1").map((b) => b.def.id);
+  assert.ok(ids.includes("teamspeler"));
+  assert.ok(ids.includes("nieuwe-vaardigheid"), "keuken was nieuw na 6 keer vaatwasser");
+});

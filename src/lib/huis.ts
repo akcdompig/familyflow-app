@@ -30,23 +30,50 @@ export interface Klus {
   naKoken?: boolean;
   /** Hoe lang het ongeveer duurt. Daarmee wordt eerlijk verdeeld (niet het aantal klussen). */
   minuten: number;
-  /** Vanaf welke leeftijd (voorstel; ouders kunnen het aanpassen). */
+  /** Vanaf welke leeftijd (voorstel; ouders kunnen het aanpassen). Een richtlijn, geen garantie dat het veilig kan. */
   vanaf: number;
+  /** Wat je precies doet, concreet. */
+  instructie?: string;
+  /** Alleen met een ouder erbij (koken, schoonmaakmiddelen). Gaat nooit vanzelf naar een kind alleen. */
+  begeleiding?: boolean;
+  /** Uit de bibliotheek: staat standaard uit, ouders zetten hem aan. */
+  standaardUit?: boolean;
+  /** Zelf toegevoegd door de ouders. */
+  eigen?: boolean;
 }
 
 export const KLUSSEN: Klus[] = [
-  { id: "vaat-uit", label: "Vaatwasser uitruimen", emoji: "🍽️", elke: 1, xp: 5, rommel: "🍽️", minuten: 10, vanaf: 7 },
-  { id: "vaat-in", label: "Vaatwasser inruimen en aanzetten", emoji: "🫧", elke: 1, xp: 5, rommel: "🥣", minuten: 10, vanaf: 8 },
-  { id: "keuken", label: "Keuken opruimen", emoji: "🧽", elke: 1, xp: 5, rommel: "🍕", iedereen: true, minuten: 15, vanaf: 8 },
-  { id: "stofzuigen", label: "Stofzuigen", emoji: "🧹", elke: 2, xp: 10, rommel: "💨", minuten: 25, vanaf: 9 },
-  { id: "was", label: "Was doen (draaien, ophangen, vouwen)", emoji: "👕", elke: 2, xp: 10, rommel: "🧺", iedereen: true, minuten: 30, vanaf: 11 },
-  { id: "kamer", label: "Eigen kamer netjes", emoji: "🛏️", elke: 2, xp: 5, rommel: "🧦", perKind: true, minuten: 15, vanaf: 6 },
-  { id: "bedden", label: "Bedden verschonen", emoji: "🛌", elke: 7, xp: 15, rommel: "🛏️", iedereen: true, minuten: 30, vanaf: 10 },
-  { id: "afval", label: "Afval buiten zetten", emoji: "🗑️", elke: 3, xp: 5, rommel: "🗑️", minuten: 5, vanaf: 8 },
-  { id: "koelkast", label: "Restjes in de koelkast", emoji: "🧊", elke: 1, xp: 5, rommel: "🍲", iedereen: true, naKoken: true, minuten: 5, vanaf: 8 },
-  { id: "ramen", label: "Ramen lappen", emoji: "🪟", elke: 14, xp: 20, rommel: "🫧", iedereen: true, minuten: 45, vanaf: 12 },
-  { id: "flessen", label: "Flessen wegbrengen (statiegeld)", emoji: "🍾", elke: 7, xp: 10, rommel: "🍾", minuten: 20, vanaf: 10 },
+  { id: "vaat-uit", label: "Vaatwasser uitruimen", emoji: "🍽️", elke: 1, xp: 5, rommel: "🍽️", minuten: 10, vanaf: 7, instructie: "Alles uit de vaatwasser op zijn plek zetten. Scherpe messen laat je liggen voor een ouder." },
+  { id: "vaat-in", label: "Vaatwasser inruimen en aanzetten", emoji: "🫧", elke: 1, xp: 5, rommel: "🥣", minuten: 10, vanaf: 8, instructie: "Vieze borden en bekers erin, een tablet in het bakje, deur dicht en aanzetten." },
+  { id: "keuken", label: "Keuken opruimen", emoji: "🧽", elke: 1, xp: 5, rommel: "🍕", iedereen: true, minuten: 15, vanaf: 8, instructie: "Spullen van het aanrecht opruimen, het aanrecht schoonmaken en de tafel afvegen." },
+  { id: "stofzuigen", label: "Stofzuigen", emoji: "🧹", elke: 2, xp: 10, rommel: "💨", minuten: 25, vanaf: 9, instructie: "Woonkamer en gang. Eerst spullen van de vloer, dan stofzuigen, ook onder de tafel." },
+  { id: "was", label: "Was doen (draaien, ophangen, vouwen)", emoji: "👕", elke: 2, xp: 10, rommel: "🧺", iedereen: true, minuten: 30, vanaf: 11, instructie: "Was sorteren op kleur, machine aan op het juiste programma, daarna ophangen." },
+  { id: "kamer", label: "Eigen kamer netjes", emoji: "🛏️", elke: 2, xp: 5, rommel: "🧦", perKind: true, minuten: 15, vanaf: 6, instructie: "Kleren in de kast of de wasmand, bed rechtleggen, vloer vrij." },
+  { id: "bedden", label: "Bedden verschonen", emoji: "🛌", elke: 7, xp: 15, rommel: "🛏️", iedereen: true, minuten: 30, vanaf: 10, instructie: "Oude hoezen eraf en in de wasmand, schone hoezen erop." },
+  { id: "afval", label: "Afval buiten zetten", emoji: "🗑️", elke: 3, xp: 5, rommel: "🗑️", minuten: 5, vanaf: 8, instructie: "Vuilniszak dichtknopen, naar de container, nieuwe zak in de bak." },
+  { id: "koelkast", label: "Restjes in de koelkast", emoji: "🧊", elke: 1, xp: 5, rommel: "🍲", iedereen: true, naKoken: true, minuten: 5, vanaf: 8, instructie: "Restjes in een bakje met deksel, in de koelkast. Pannen in de gootsteen." },
+  { id: "ramen", label: "Ramen lappen", emoji: "🪟", elke: 14, xp: 20, rommel: "🫧", iedereen: true, minuten: 45, vanaf: 12, instructie: "Binnenkant van de ramen beneden. Emmer warm water, spons, daarna droog met de wisser." },
+  { id: "flessen", label: "Flessen wegbrengen (statiegeld)", emoji: "🍾", elke: 7, xp: 10, rommel: "🍾", minuten: 20, vanaf: 10, instructie: "Lege flessen naar de supermarkt en het bonnetje aan een ouder geven." },
+  // Bibliotheek: staan standaard uit. Ouders zetten aan wat bij hun gezin past.
+  { id: "tafel-dekken", label: "Tafel dekken", emoji: "🍴", elke: 1, xp: 5, rommel: "🍴", minuten: 5, vanaf: 6, standaardUit: true, instructie: "Borden, bestek en glazen voor iedereen die mee-eet." },
+  { id: "tafel-af", label: "Tafel afruimen", emoji: "🧺", elke: 1, xp: 5, rommel: "🍝", minuten: 5, vanaf: 6, standaardUit: true, instructie: "Alles van tafel naar het aanrecht of de vaatwasser, tafel afvegen." },
+  { id: "woonkamer", label: "Woonkamer netjes", emoji: "🛋️", elke: 1, xp: 5, rommel: "🧸", iedereen: true, minuten: 10, vanaf: 6, standaardUit: true, instructie: "Spullen terug naar de kamer van wie ze zijn, kussens recht, afstandsbediening op zijn plek." },
+  { id: "was-vouwen", label: "Was vouwen", emoji: "🧦", elke: 3, xp: 5, rommel: "🧺", minuten: 15, vanaf: 9, standaardUit: true, instructie: "Droge was vouwen en per persoon op een stapel leggen." },
+  { id: "was-opbergen", label: "Schone was opbergen", emoji: "🗄️", elke: 3, xp: 5, rommel: "👚", minuten: 10, vanaf: 8, standaardUit: true, instructie: "Je eigen stapel in je kast leggen. Handdoeken in de badkamer." },
+  { id: "badkamer", label: "Badkamer schoonmaken", emoji: "🛁", elke: 7, xp: 15, rommel: "🧴", iedereen: true, minuten: 25, vanaf: 12, standaardUit: true, instructie: "Wastafel, spiegel en kraan schoon met het groene middel en een doekje. Geen bleek of chloor." },
+  { id: "boodschappen", label: "Boodschappen uitpakken", emoji: "🛍️", elke: 7, xp: 5, rommel: "🥫", minuten: 10, vanaf: 7, standaardUit: true, instructie: "Koel spul eerst in de koelkast, de rest in de kast. Tassen terug in de auto." },
+  { id: "boodschappenlijst", label: "Boodschappenlijst aanvullen", emoji: "📝", elke: 7, xp: 5, rommel: "📝", minuten: 5, vanaf: 9, standaardUit: true, instructie: "Kijk in de koelkast en de kast wat bijna op is en zet het op de lijst." },
+  { id: "koken-helpen", label: "Helpen met koken", emoji: "🥕", elke: 7, xp: 10, rommel: "🥘", iedereen: true, minuten: 30, vanaf: 8, standaardUit: true, begeleiding: true, instructie: "Groente wassen en snijden, tafel klaarzetten. Een ouder doet het fornuis en de oven." },
+  { id: "maaltijd", label: "Een eenvoudige maaltijd maken", emoji: "🍳", elke: 7, xp: 20, rommel: "🥘", iedereen: true, minuten: 45, vanaf: 11, standaardUit: true, begeleiding: true, instructie: "Samen een recept kiezen, boodschappen checken en koken. Een ouder blijft in de keuken." },
 ];
+
+/** Alle taken van dit gezin: de bibliotheek en wat de ouders zelf toevoegden. */
+export function alleKlussen(s: FamilyState): Klus[] {
+  return [...KLUSSEN, ...((s.klusAfspraken?.eigen ?? []).map((e) => ({ rommel: "📌", ...e, eigen: true })) as Klus[])];
+}
+export const klusById = (s: FamilyState, id: string) => alleKlussen(s).find((k) => k.id === id.split(":")[0]);
+/** Staat deze taak aan? Afspraak gaat voor; anders staat de basis aan en de bibliotheek uit. */
+export const klusAan = (s: FamilyState, k: Klus) => s.klusAfspraken?.klussen?.[k.id]?.aan ?? !k.standaardUit;
 
 const dagenTussen = (a: string, b: string) => Math.round((new Date(b + "T12:00:00").getTime() - new Date(a + "T12:00:00").getTime()) / 864e5);
 const kidsVan = (s: FamilyState) => s.members.filter((m) => m.role !== "ouder" && m.joined !== false);
@@ -68,8 +95,8 @@ export function klusStatus(s: FamilyState, nu = new Date()): KlusStatus[] {
   const out: KlusStatus[] = [];
   const v = verdeling(s, vandaag);
   const lid = (id?: string) => (id ? s.members.find((m) => m.id === id) : undefined);
-  for (const k of KLUSSEN) {
-    if (s.klusAfspraken?.klussen?.[k.id]?.aan === false) continue;
+  for (const k of alleKlussen(s)) {
+    if (!klusAan(s, k)) continue;
     const rijen = k.perKind ? kidsVan(s).map((m) => ({ key: klusKey(k, m.id), kind: m as Member | undefined })) : [{ key: k.id, kind: undefined }];
     if (k.naKoken) {
       out.push(koelkastStatus(s, k, nu));

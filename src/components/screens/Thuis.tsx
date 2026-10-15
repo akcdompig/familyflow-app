@@ -7,8 +7,9 @@ import { addDays, iso } from "@/lib/planner";
 import { restTekst, werktNu } from "@/lib/status";
 import { actions } from "@/lib/store";
 import { timeLabel } from "@/lib/mood";
+import { MijnWeek, PlanStatus, VerdeelTaken } from "./VerdeelTaken";
 import {
-  BELONINGEN, KLUSSEN, bijdragen, dagKort, eters, euro, isGeregeld, klusStatus, kookplan, naamKlus, magRestjes, maandag, parseEuro, potStand, werkOp, werktTijdensEten, type KlusStatus,
+  BELONINGEN, klusById, bijdragen, dagKort, eters, euro, isGeregeld, klusStatus, kookplan, naamKlus, magRestjes, maandag, parseEuro, potStand, werkOp, werktTijdensEten, type KlusStatus,
 } from "@/lib/huis";
 import type { FamilyState, Member } from "@/lib/types";
 import { KlusSheet } from "./KlusSheet";
@@ -144,6 +145,7 @@ export function Eten({ state, me, onToast }: { state: FamilyState; me: Member; o
 
 export function Klussen({ state, me, lijst, onToast, simpel = false }: { state: FamilyState; me: Member; lijst: KlusStatus[]; onToast: (m: string) => void; simpel?: boolean }) {
   const [openKey, setOpenKey] = useState<string | null>(null);
+  const [verdeel, setVerdeel] = useState(false);
   const [afspraken, setAfspraken] = useState(false);
   const open = lijst.find((k) => k.key === openKey) ?? null;
   const isOuder = me.role === "ouder";
@@ -178,7 +180,7 @@ export function Klussen({ state, me, lijst, onToast, simpel = false }: { state: 
         <section className="ff-card ff-stack-s">
           <b>Laatst gedaan</b>
           {recent.map((r) => {
-            const base = KLUSSEN.find((k) => k.id === r.klus.split(":")[0]);
+            const base = klusById(state, r.klus);
             const magWeg = isOuder || r.by === me.id;
             const ander = r.samen ? (state.klusLog ?? []).find((x) => x.samen === r.samen && x.id !== r.id) : undefined;
             return (
@@ -194,11 +196,18 @@ export function Klussen({ state, me, lijst, onToast, simpel = false }: { state: 
     </>
   );
 
+  if (verdeel) return <VerdeelTaken state={state} me={me} onClose={() => setVerdeel(false)} onToast={onToast} />;
+
   return (
     <div className="ff-stack">
+      {isOuder && (
+        <button className="ff-btn ff-btn-primary ff-btn-wide v2-verdeel-knop" onClick={() => setVerdeel(true)}>📋 Verdeel de taken</button>
+      )}
+      {isOuder && <PlanStatus state={state} />}
       <AfsprakenBanner state={state} me={me} onOpen={() => setAfspraken(true)} />
       <Vragen state={state} me={me} onToast={onToast} />
       <VerdelingVandaag state={state} me={me} lijst={lijst} onOpen={(k) => setOpenKey(k.key)} />
+      <MijnWeek state={state} me={me} />
       <p className="ff-small ff-muted">Eerlijk verdeeld in tijd, niet in aantal. Blijft er iets liggen, dan wordt de huiskamer rommelig.</p>
       {/* Kinderen: eerst alleen "wie doet wat vandaag". De hele lijst staat ingeklapt. */}
       {simpel ? (
