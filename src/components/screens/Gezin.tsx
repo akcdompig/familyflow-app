@@ -207,7 +207,7 @@ export function Gezin({ state, me, onToast, onOefenen, onCoachNu }: Props) {
       <section className="ff-card ff-stack">
         <div>
           <h2 className="ff-h2">Beloningen</h2>
-          <p className="ff-small ff-muted">Kinderen sparen XP met taken, oefenen en ruzies oplossen. Wat krijgen ze bij elk level?</p>
+          <p className="ff-small ff-muted">Kinderen sparen punten met taken, oefenen en ruzies oplossen. Wat krijgen ze bij elk level?</p>
         </div>
         {state.rewards.map((r, i) => (
           <label key={r.level} className="ff-reward-edit">
@@ -217,14 +217,14 @@ export function Gezin({ state, me, onToast, onOefenen, onCoachNu }: Props) {
         ))}
         <button className="ff-link" onClick={() => actions.setRewards([...state.rewards, { level: (state.rewards[state.rewards.length - 1]?.level ?? 1) + 1, title: "" }])}>+ Level toevoegen</button>
         <details className="ff-details">
-          <summary><b>Zo verdienen de kinderen XP</b></summary>
+          <summary><b>Zo verdienen de kinderen punten</b></summary>
           <ul className="ff-list ff-small">{XP_UITLEG.map(([a, b]) => <li key={a}><b>{a}:</b> {b}</li>)}</ul>
-          <p className="ff-small ff-muted">Een kind dat alles doet, haalt zo'n 40 tot 60 XP per dag. Level 2 is na een paar dagen binnen, level 5 na ruim twee weken. Elk level wordt iets zwaarder.</p>
-          <p className="ff-small">Levels: {[2, 3, 4, 5, 6].map((l) => `${l} = ${xpForLevel(l)} XP`).join(" · ")}</p>
+          <p className="ff-small ff-muted">Een kind dat alles doet, haalt zo'n 40 tot 60 punten per dag. Level 2 is na een paar dagen binnen, level 5 na ruim twee weken. Elk level wordt iets zwaarder.</p>
+          <p className="ff-small">Levels: {[2, 3, 4, 5, 6].map((l) => `${l} = ${xpForLevel(l)} punten`).join(" · ")}</p>
         </details>
         {state.members.filter((m) => m.role !== "ouder").map((k) => {
           const mins = (state.reading?.[k.id] ?? []).filter((r) => Date.now() - new Date(r.at).getTime() < 7 * 864e5).reduce((a, r) => a + r.min, 0);
-          return <p key={k.id} className="ff-small"><b>{k.name}:</b> level {levelOf(state.xp[k.id] ?? 0)} · {state.xp[k.id] ?? 0} XP · {mins} min gelezen deze week</p>;
+          return <p key={k.id} className="ff-small"><b>{k.name}:</b> level {levelOf(state.xp[k.id] ?? 0)} · {state.xp[k.id] ?? 0} punten · {mins} min gelezen deze week</p>;
         })}
       </section>
 

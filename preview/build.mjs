@@ -46,9 +46,9 @@ mkdirSync(dist, { recursive: true });
 cpSync(resolve(root, "public"), dist, { recursive: true });
 const cfgFile = resolve(dist, "config.js");
 if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
-  writeFileSync(cfgFile, `window.FF_CONFIG = ${JSON.stringify({ url: process.env.SUPABASE_URL, anonKey: process.env.SUPABASE_ANON_KEY })};\n`);
+  writeFileSync(cfgFile, `self.FF_CONFIG = ${JSON.stringify({ url: process.env.SUPABASE_URL, anonKey: process.env.SUPABASE_ANON_KEY })};\n`);
 } else if (!existsSync(cfgFile)) {
-  writeFileSync(cfgFile, `// Vul hier je Supabase-gegevens in (Project Settings › API). Leeg = demo.\nwindow.FF_CONFIG = { url: "", anonKey: "" };\n`);
+  writeFileSync(cfgFile, `// Vul hier je Supabase-gegevens in (Project Settings › API). Leeg = demo.\nself.FF_CONFIG = { url: "", anonKey: "" };\n`);
 }
 const head = [
   '<meta charset="utf-8">',

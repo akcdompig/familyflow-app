@@ -122,7 +122,7 @@ function Play({ scenario: s, me, onClose, onToast }: { scenario: Scenario; me: M
 
   const finish = () => {
     const first = actions.finishScenario(me.id, s.id);
-    onToast(first && me.role !== "ouder" ? "Klaar! +10 XP" : "Goed geoefend");
+    onToast(first ? "Klaar! +10 punten" : "Goed geoefend");
     onClose();
   };
 

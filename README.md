@@ -64,6 +64,21 @@ Logt de school in via Microsoft, dan gaat het via een inloglink (het makkelijkst
 - "Nu ophalen" op de Somtoday-kaart doet het meteen.
 - De Somtoday-API is niet officieel. Werkt het opeens niet meer, dan zie je de fout op de kaart. Opnieuw koppelen helpt meestal.
 
+## Herinneringen op je telefoon (versie 1.10)
+
+Ben je 2 uur stil in de app, dan krijg je een seintje met wat er nog open staat (ochtendroutine, water, lunch, fruit) en wie er al lekker bezig is. Kinderen krijgen in het weekend en de vakantie om 9 uur een wekmelding als ze nog niks deden, daarna elk uur. Op schooldagen niet onder schooltijd (8.15–15.00); na 15.30 een seintje als ze nog niet in de app zijn geweest. Nooit voor 7 uur, en niet vlak voor bedtijd of als iemand slaapt.
+
+**Eenmalig in Supabase, ± 5 minuten**
+1. **Edge Functions › Deploy a new function › Via Editor**. Noem hem precies `herinneringen`, plak de inhoud van `supabase/functions/herinneringen/index.ts` en klik op **Deploy**. Laat "Verify JWT" aan.
+2. **SQL Editor › New query**: plak `supabase/herinneringen.sql` en klik op **Run**. Dit maakt de tabellen en zet de klok aan (elke 15 minuten).
+
+Sleutels hoef je niet te maken: de functie maakt ze zelf bij de eerste keer.
+
+**Aanzetten op elke telefoon**
+Huiskamer › kaart **Herinneringen** › Zet aan (of Ik › Herinneringen). Daarna "Stuur een test".
+- **iPhone**: alleen als FamilyFlow op het beginscherm staat (Safari › Deel › Zet op beginscherm), iOS 16.4 of nieuwer. Open de app vanaf het beginscherm en zet het daar aan.
+- **Android**: werkt in Chrome en als app.
+
 ## Wat er nu in zit (stukje 1, 2, 3 en release 1)
 
 - **Designsysteem "Zonsondergang"**: `src/styles/tokens.css`. Alle kleuren, letters, ruimtes, rondingen en bewegingen staan hier.

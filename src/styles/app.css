@@ -730,3 +730,5 @@ i.is-vak { background: var(--ff-munt-zacht); border: 1px solid var(--ff-munt-don
 .ff-kook-regel { text-align: left; border: 2px solid var(--ff-lijn); background: var(--ff-wolk); border-radius: var(--ff-rond-m); padding: 10px 12px; font: inherit; font-weight: 700; font-size: var(--ff-t-s); color: var(--ff-tekst); cursor: pointer; }
 .ff-kook-regel.is-open { border-color: var(--ff-koraal-knop); background: var(--ff-koraal-zacht); }
 .ff-btn-s { min-height: 34px; padding: 4px 12px; font-size: var(--ff-t-s); }
+.ff-feed-rij { align-items: center; gap: 8px; }
+.ff-feed-punten { font-weight: 800; font-size: var(--ff-t-s); color: var(--ff-munt-donker); background: var(--ff-munt-zacht); border-radius: 999px; padding: 2px 8px; }

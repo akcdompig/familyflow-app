@@ -32,7 +32,7 @@ export function Taken({ state, me, onToast, onPlay, onPlanner }: Props) {
   const toggle = (t: Task, who: string) => {
     const nowDone = actions.toggleTask(t, who);
     const kid = state.members.find((m) => m.id === who)?.role !== "ouder";
-    if (nowDone) onToast(t.study?.ouder && kid ? "Goed bezig! Laat je ouder je nu overhoren" : kid && t.xp ? `Top! +${t.xp} XP` : "Afgevinkt");
+    if (nowDone) onToast(t.study?.ouder && kid ? "Goed bezig! Laat je ouder je nu overhoren" : t.xp ? `Top! +${t.xp} punten` : "Afgevinkt");
   };
 
   return (
@@ -98,7 +98,7 @@ export function Taken({ state, me, onToast, onPlay, onPlanner }: Props) {
                     who={m.id}
                     canToggle={m.id === me.id || isParent}
                     onToggle={() => toggle(t, m.id)}
-                    onConfirm={isParent && m.id !== me.id ? () => { actions.confirmTask(t, me.id); onToast(`Bevestigd, ${m.name} krijgt +${t.xp} XP`); } : undefined}
+                    onConfirm={isParent && m.id !== me.id ? () => { actions.confirmTask(t, me.id); onToast(`Bevestigd, ${m.name} krijgt +${t.xp} punten`); } : undefined}
                     showXp={m.role !== "ouder"}
                     onRemove={isParent ? () => { actions.removeTask(t.id); onToast("Taak verwijderd"); } : undefined}
                   />
@@ -136,7 +136,7 @@ function Quests({ state, memberId, onToast, onPlay, compact = false }: { state: 
               aria-pressed={!!q.done}
               onClick={() => {
                 actions.toggleQuest(q.id);
-                if (!q.done) onToast(kid ? "Quest gehaald! +30 XP" : "Quest gehaald");
+                if (!q.done) onToast("Quest gehaald! +30 punten");
               }}
               aria-label={q.done ? `${q.title}: gehaald. Tik om terug te zetten` : `${q.title}: afvinken`}
             >
@@ -311,7 +311,7 @@ function Lezen({ state, me, onToast }: { state: FamilyState; me: Member; onToast
   const count = readOn.filter(Boolean).length;
   const save = () => {
     const xp = actions.logReading(me.id, min, book, uit);
-    onToast(uit ? `Boek uit! +${xp} XP` : xp ? `Lekker gelezen! +${xp} XP` : "Gelezen! Max XP voor vandaag is al gehaald");
+    onToast(uit ? `Boek uit! +${xp} punten` : xp ? `Lekker gelezen! +${xp} punten` : "Gelezen! Max punten voor vandaag is al gehaald");
     setOpen(false);
     setUit(false);
     if (uit) setBook("");
@@ -335,7 +335,7 @@ function Lezen({ state, me, onToast }: { state: FamilyState; me: Member; onToast
           <input value={book} onChange={(e) => setBook(e.target.value)} maxLength={60} placeholder="Titel van je boek" />
         </label>
         <button className="ff-chip ff-chip-l" aria-pressed={uit} onClick={() => setUit(!uit)}>📕 Boek uit!</button>
-        <p className="ff-small ff-muted">5 XP per 10 minuten, max 20 per dag. Boek uit: 25 XP extra.</p>
+        <p className="ff-small ff-muted">5 punten per 10 minuten, max 20 per dag. Boek uit: 25 punten extra.</p>
         <button className="ff-btn ff-btn-primary ff-btn-wide" onClick={save}>Opslaan</button>
       </Sheet>
     </section>

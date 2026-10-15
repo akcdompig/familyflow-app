@@ -6,6 +6,7 @@ import { slaapt, werktNu } from "@/lib/status";
 import { DAGDELEN, DOEL, ETEN, ROUTINE, begroeting, dagdeel, dagLog, dagscore, datumTijd, dorst, gegeten, reeks, tipVanNu, walm } from "@/lib/dag";
 import { honger, isGeregeld, klusStatus, kookplan, naamKlus, rommel } from "@/lib/huis";
 import { Meters } from "@/components/screens/MijnDag";
+import { Herinneringen } from "@/components/screens/Herinneringen";
 import { Icon } from "@/components/ui/Icon";
 import { MoodFace } from "@/components/ui/MoodFace";
 import { actions } from "@/lib/store";
@@ -26,6 +27,7 @@ interface Props {
   onCoachNu: () => void;
   onMijnDag: () => void;
   onGoThuis: () => void;
+  onToast: (m: string) => void;
 }
 
 function timeOfDay() {
@@ -35,7 +37,7 @@ function timeOfDay() {
   return "nacht";
 }
 
-export function Huiskamer({ state, me, onCheckIn, onOpenMember, onTalkTips, onWho, onGoTasks, onRuzie, onGoGezin, onCoachNu, onMijnDag, onGoThuis }: Props) {
+export function Huiskamer({ state, me, onCheckIn, onOpenMember, onTalkTips, onWho, onGoTasks, onRuzie, onGoGezin, onCoachNu, onMijnDag, onGoThuis, onToast }: Props) {
   const back = state.members.filter((m) => m.role === "ouder");
   const front = state.members.filter((m) => m.role !== "ouder");
   const tod = timeOfDay();
@@ -46,6 +48,13 @@ export function Huiskamer({ state, me, onCheckIn, onOpenMember, onTalkTips, onWh
     return () => window.clearInterval(t);
   }, []);
   const ikSlaap = slaapt(state, me.id);
+  const [pushWeg, setPushWeg] = useState(() => {
+    try {
+      return Date.now() - Number(localStorage.getItem("familyflow:push-later") ?? 0) < 3 * 864e5;
+    } catch {
+      return false;
+    }
+  });
   const troep = rommel(state);
   const stof = klusStatus(state).some((k) => k.klus.id === "stofzuigen" && k.teLaat > 0);
   const iedereenSlaapt = state.members.filter((m) => m.joined !== false).every((m) => slaapt(state, m.id));
@@ -83,8 +92,10 @@ export function Huiskamer({ state, me, onCheckIn, onOpenMember, onTalkTips, onWh
         <Row members={front} row="voor" state={state} me={me} onOpen={onOpenMember} />
       </section>
 
+      {!pushWeg && <Herinneringen compact onToast={onToast} onWeg={() => { setPushWeg(true); try { localStorage.setItem("familyflow:push-later", String(Date.now())); } catch { /* */ } }} />}
       {!ikSlaap && <JouwDag state={state} me={me} onOpen={onMijnDag} onGoThuis={onGoThuis} />}
       <Klassement state={state} me={me} onOpen={onOpenMember} />
+      <NetGedaan state={state} me={me} />
 
       <Attention state={state} me={me} onTalkTips={onTalkTips} onCheckIn={onCheckIn} onGoTasks={onGoTasks} onRuzie={onRuzie} onGoGezin={onGoGezin} />
       <Inbox state={state} me={me} />
@@ -351,7 +362,7 @@ function JouwDag({ state, me, onOpen, onGoThuis }: { state: FamilyState; me: Mem
             <div key={k.key} className="ff-row ff-log-rij">
               <span aria-hidden="true">{k.klus.emoji}</span>
               <span className="ff-grow ff-small"><b>{naamKlus(k, me.id)}</b></span>
-              <button className="ff-btn ff-btn-ghost ff-btn-s" onClick={() => actions.klusGedaan(k.key, me.id, k.klus.xp)}>Gedaan</button>
+              <button className="ff-btn ff-btn-ghost ff-btn-s" onClick={() => actions.klusGedaan(k.key, me.id, k.klus.xp, naamKlus(k, me.id))}>Gedaan</button>
             </div>
           ))}
         </div>
@@ -389,6 +400,30 @@ function Klassement({ state, me, onOpen }: { state: FamilyState; me: Member; onO
           </button>
         ))}
       </div>
+    </section>
+  );
+}
+
+/** Net gedaan: wat iedereen vandaag heeft afgevinkt. Geen melding per actie, wel zichtbaar voor het hele gezin. */
+function NetGedaan({ state, me }: { state: FamilyState; me: Member }) {
+  const vandaag = new Date().toDateString();
+  const lijst = (state.feed ?? []).filter((f) => new Date(f.at).toDateString() === vandaag).slice(-6).reverse();
+  if (!lijst.length) return null;
+  return (
+    <section className="ff-card ff-stack-s">
+      <b>Net gedaan</b>
+      {lijst.map((f) => {
+        const m = state.members.find((x) => x.id === f.who);
+        if (!m) return null;
+        return (
+          <div key={f.id} className="ff-row ff-feed-rij">
+            <Avatar config={m.avatar} expression="blij" headOnly size={28} animate={false} label={m.name} />
+            <span className="ff-grow ff-small"><b>{m.id === me.id ? "Jij" : m.name}</b> {m.id === me.id ? f.tekst.replace(/^heeft /, "hebt ").replace(/^kookt /, "kookt ") : f.tekst}</span>
+            {f.punten > 0 && <span className="ff-feed-punten">+{f.punten}</span>}
+            <span className="ff-small ff-muted">{new Date(f.at).toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" })}</span>
+          </div>
+        );
+      })}
     </section>
   );
 }

@@ -55,7 +55,7 @@ export function CalmSheet({ open, onClose, me, plan, onDone }: { open: boolean; 
           className="ff-btn ff-btn-dark ff-btn-wide"
           onClick={() => {
             actions.calmDone(me.id);
-            onDone(me.role === "ouder" ? "Goed gedaan. Ook voor ouders werkt dit" : "Knap! Rustig worden is een echte skill. +5 XP");
+            onDone(me.role === "ouder" ? "Goed gedaan. Ook voor ouders werkt dit" : "Knap! Rustig worden is een echte skill. +5 punten");
             onClose();
           }}
         >

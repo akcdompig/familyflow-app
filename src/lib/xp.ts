@@ -42,15 +42,15 @@ export function levelProgress(xp: number) {
 
 /** Uitleg voor ouders: zo verdienen de kinderen XP. */
 export const XP_UITLEG: [string, string][] = [
-  ["Inchecken", `${XP.inchecken} XP, één keer per dag`],
-  ["Klein klusje (tafel, vaatwasser)", `${XP.klusjeKlein} XP`],
-  ["Telefoon op tijd aan de lader", `${XP.telefoon} XP`],
-  ["Huiswerk maken", `${XP.huiswerk} XP`],
-  ["Leren volgens de planner", "10 XP per 20 minuten"],
-  ["Lezen", `${XP.lezenPer10Min} XP per 10 minuten, max ${XP.lezenMaxPerDag} per dag. Boek uit: ${XP.boekUit} XP`],
-  ["Oefening in de conflictcoach", `${XP.oefenscenario} XP, alleen de eerste keer`],
-  ["Opdracht in het echt gedaan", `${XP.quest} XP`],
-  ["Ruzie samen opgelost", `${XP.ruzieOpgelost} XP, max één keer per dag`],
+  ["Inchecken", `${XP.inchecken} punten, één keer per dag`],
+  ["Klein klusje (tafel, vaatwasser)", `${XP.klusjeKlein} punten`],
+  ["Telefoon op tijd aan de lader", `${XP.telefoon} punten`],
+  ["Huiswerk maken", `${XP.huiswerk} punten`],
+  ["Leren volgens de planner", "10 punten per 20 minuten"],
+  ["Lezen", `${XP.lezenPer10Min} punten per 10 minuten, max ${XP.lezenMaxPerDag} per dag. Boek uit: ${XP.boekUit} punten`],
+  ["Oefening in de conflictcoach", `${XP.oefenscenario} punten, alleen de eerste keer`],
+  ["Opdracht in het echt gedaan", `${XP.quest} punten`],
+  ["Ruzie samen opgelost", `${XP.ruzieOpgelost} punten, max één keer per dag`],
 ];
 
 export const DEFAULT_REWARDS = [

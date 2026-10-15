@@ -177,7 +177,7 @@ export function FamilyFlowApp() {
       ) : (
         <>
       {view === "huis" && (
-        <Huiskamer state={state} me={me} onCheckIn={() => setCheckIn(true)} onOpenMember={setMember} onTalkTips={setTips} onWho={() => (live ? setScreen("ik") : setWho(true))} onGoTasks={() => setScreen("taken")} onRuzie={(id) => setRuzie(id ?? "")} onGoGezin={() => setScreen("gezin")} onCoachNu={() => setCoachNu("")} onMijnDag={() => setMijnDag(true)} onGoThuis={() => setScreen("thuis")} />
+        <Huiskamer state={state} me={me} onCheckIn={() => setCheckIn(true)} onOpenMember={setMember} onTalkTips={setTips} onWho={() => (live ? setScreen("ik") : setWho(true))} onGoTasks={() => setScreen("taken")} onRuzie={(id) => setRuzie(id ?? "")} onGoGezin={() => setScreen("gezin")} onCoachNu={() => setCoachNu("")} onMijnDag={() => setMijnDag(true)} onGoThuis={() => setScreen("thuis")} onToast={setToast} />
       )}
       {view === "thuis" && <Thuis state={state} me={me} onToast={setToast} />}
       {view === "taken" && <Taken state={state} me={me} onToast={setToast} onPlay={setCoach} onPlanner={() => setPlanner(true)} />}

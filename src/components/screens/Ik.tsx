@@ -1,6 +1,7 @@
 "use client";
 
 import { MijnWerk } from "@/components/screens/MijnWerk";
+import { Herinneringen } from "@/components/screens/Herinneringen";
 import { Avatar } from "@/components/avatar/Avatar";
 import { expressionFor } from "@/lib/mood";
 import { PLAN_OPTIONS } from "@/lib/scenarios";
@@ -43,20 +44,22 @@ export function Ik({ state, me, onEditAvatar, onCalm, onToast }: { state: Family
         </div>
       </section>
 
+      <Herinneringen onToast={onToast} />
+
       {me.role !== "kind" && (
         <button className="ff-level" onClick={() => setWerk(true)}>
           <span className="ff-grow"><b>Werk en roosters</b><br /><span className="ff-small ff-muted">{(state.werk?.[me.id] ?? []).length ? (state.werk?.[me.id] ?? []).map((w) => w.naam).join(", ") : "Vaste baan, trainingen, diensten. Telt mee bij Wie doet wat"}</span></span>
         </button>
       )}
 
-      {!isParent && (
+      {(
         <section className="ff-card ff-level-card">
           <div className="ff-row" style={{ justifyContent: "space-between" }}>
-            <b className="ff-level-big">Level {level}</b>
-            <span className="ff-small">{lp.into} / {lp.need} XP</span>
+            <b className="ff-level-big">Level {level} · {xp} punten</b>
+            <span className="ff-small">{lp.into} / {lp.need} punten</span>
           </div>
           <span className="ff-bar ff-bar-l"><i style={{ width: `${lp.pct}%` }} /></span>
-          <p className="ff-small">Nog {lp.left} XP tot level {level + 1}.</p>
+          <p className="ff-small">Nog {lp.left} punten tot level {level + 1}.</p>
         </section>
       )}
 
@@ -69,7 +72,7 @@ export function Ik({ state, me, onEditAvatar, onCalm, onToast }: { state: Family
               <li key={r.level} className={r.level <= level ? "is-open" : ""}>
                 <span className="ff-reward-lvl">Lvl {r.level}</span>
                 <span className="ff-grow">{r.title}</span>
-                <span className="ff-small">{r.level <= level ? "Behaald!" : `nog ${xpForLevel(r.level) - xp} XP`}</span>
+                <span className="ff-small">{r.level <= level ? "Behaald!" : `nog ${xpForLevel(r.level) - xp} punten`}</span>
               </li>
             ))}
           </ul>

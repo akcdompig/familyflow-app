@@ -227,6 +227,10 @@ export interface FamilyState {
   klusLog?: KlusDone[];
   /** Het gezinspotje: sparen voor iets leuks samen. Geen bank, alleen bijhouden. */
   pot?: { doel: string; cents: number; items: PotItem[] };
+  /** Laatst actief in de app, per lid (ISO-tijd). Daarop rekenen de herinneringen. */
+  actief?: Record<string, string>;
+  /** "Net gedaan": wat iedereen vandaag heeft afgevinkt. Geen melding, alleen zichtbaar in de huiskamer. */
+  feed?: { id: string; who: string; tekst: string; punten: number; at: string }[];
   /** Vast werk dat een keer niet doorgaat: vrij[datum] = ["lidId:werkId"]. */
   vrij?: Record<string, string[]>;
   /** Porren: een duwtje van een gezinslid. */

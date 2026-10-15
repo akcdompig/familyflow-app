@@ -174,10 +174,10 @@ export function Leerplanner({ state, me, onClose, onToast }: { state: FamilyStat
                 <b>{d === today ? "Vandaag" : d === addDays(today, 1) ? "Morgen" : dayLabel(d)}</b>
                 <span className="ff-small ff-muted">{list.reduce((a, x) => a + x.min, 0)} min</span>
               </div>
-              {list.map((x, i) => <div key={i} className="ff-planblok"><span>{x.title}</span><span className="ff-small ff-muted">{x.min} min · +{Math.round(x.min / 2)} XP</span></div>)}
+              {list.map((x, i) => <div key={i} className="ff-planblok"><span>{x.title}</span><span className="ff-small ff-muted">{x.min} min · +{Math.round(x.min / 2)} punten</span></div>)}
             </div>
           ))}
-          <p className="ff-small ff-muted">Totaal {result.blokken.reduce((a, b) => a + b.min, 0)} minuten, {result.blokken.length} blokjes, {result.blokken.reduce((a, b) => a + Math.round(b.min / 2), 0)} XP te verdienen.</p>
+          <p className="ff-small ff-muted">Totaal {result.blokken.reduce((a, b) => a + b.min, 0)} minuten, {result.blokken.length} blokjes, {result.blokken.reduce((a, b) => a + Math.round(b.min / 2), 0)} punten te verdienen.</p>
           <button className="ff-btn ff-btn-primary ff-btn-wide" disabled={!result.blokken.length} onClick={save}>Zet in {me.id === who ? "mijn" : `de`} taken</button>
         </section>
       )}

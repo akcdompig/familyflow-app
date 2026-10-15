@@ -5,7 +5,8 @@ import * as cloud from "./cloud";
 import { demoFamily } from "./demo";
 import { phoneTaskTitle, todayKey } from "./tasks";
 import { XP } from "./xp";
-import { basisXp, type DagLog } from "./dag";
+import { DOEL, ROUTINE, basisXp, type DagLog } from "./dag";
+const routineAf = (l: DagLog) => ROUTINE.filter((r) => r.gewicht > 0).every((r) => l.routine.includes(r.id));
 import type { Kookplan, PotItem, Dienst, WerkItem, CoachRun, Quest, AvatarConfig, CalmPlan, CheckIn, Conflict, ConflictSide, FamilyState, Meeting, ProKind, Task } from "./types";
 
 /*
@@ -71,8 +72,19 @@ function persistLocal() {
   }
 }
 
+/** Wie bedient de app nu? Live: de ingelogde persoon. Demo: wie er gekozen is. */
+const wieNu = (s: FamilyState) => (live ? me : s.me);
+/** "Laatst actief" bijwerken, hooguit om de 3 minuten. Daarop rekenen de herinneringen. */
+const stempel: Fn = (s) => {
+  const id = wieNu(s);
+  const oud = s.actief?.[id];
+  if (!id || (oud && Date.now() - new Date(oud).getTime() < 3 * 60e3)) return s;
+  return { ...s, actief: { ...(s.actief ?? {}), [id]: new Date().toISOString() } };
+};
+
 /** Alle wijzigingen gaan hierdoorheen. */
-function update(fn: Fn) {
+function update(fn0: Fn) {
+  const fn: Fn = (s) => stempel(fn0(s));
   state = fn(state);
   persistLocal();
   emit();
@@ -204,6 +216,12 @@ export function useFamily(): FamilyState {
 const addXp = (s: FamilyState, id: string, n: number) => ({ ...s.xp, [id]: Math.max(0, (s.xp[id] ?? 0) + n) });
 const newId = (p = "t") => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
 const isToday = (iso: string) => new Date(iso).toDateString() === new Date().toDateString();
+/** Iets voor het "Net gedaan"-lijstje in de huiskamer. Geen melding, alleen zichtbaar. */
+const metFeed = (s: FamilyState, who: string, tekst: string, punten = 0): FamilyState => {
+  const vandaag = new Date().toDateString();
+  const feed = (s.feed ?? []).filter((f) => new Date(f.at).toDateString() === vandaag || Date.now() - new Date(f.at).getTime() < 864e5);
+  return { ...s, feed: [...feed, { id: newId("f"), who, tekst, punten, at: new Date().toISOString() }].slice(-40) };
+};
 const isKid = (s: FamilyState, id: string) => !!s.members.find((m) => m.id === id) && s.members.find((m) => m.id === id)!.role !== "ouder";
 
 export const actions = {
@@ -217,7 +235,7 @@ export const actions = {
     update((s) => {
       const first = !(s.history[memberId] ?? []).some((h) => isToday(h.at));
       const hist = [...(s.history[memberId] ?? []), { mood: c.mood, rest: c.rest, at }].slice(-60);
-      const xp = first && isKid(s, memberId) ? addXp(s, memberId, XP.inchecken) : s.xp;
+      const xp = first ? addXp(s, memberId, XP.inchecken) : s.xp;
       const sleep = { ...(s.sleep ?? {}) };
       delete sleep[memberId]; // inchecken = wakker
       return { ...s, xp, sleep, checkins: { ...s.checkins, [memberId]: { ...c, at } }, history: { ...s.history, [memberId]: hist } };
@@ -235,7 +253,11 @@ export const actions = {
       // Alleen de laatste 21 dagen bewaren.
       const grens = new Date(Date.now() - 21 * 864e5).toLocaleDateString("sv-SE");
       const dag = Object.fromEntries(Object.entries(s.dag ?? {}).filter(([k]) => k >= grens));
-      return { ...s, dag: { ...dag, [d]: { ...(dag[d] ?? {}), [memberId]: nieuw } }, xp: delta && isKid(s, memberId) ? addXp(s, memberId, delta) : s.xp };
+      let uit: FamilyState = { ...s, dag: { ...dag, [d]: { ...(dag[d] ?? {}), [memberId]: nieuw } }, xp: delta ? addXp(s, memberId, delta) : s.xp };
+      if (!routineAf(oud) && routineAf(nieuw)) uit = metFeed(uit, memberId, "heeft de ochtendroutine gedaan 🚿", ROUTINE.filter((r) => r.gewicht > 0).length * 2 + 5);
+      if (oud.water < DOEL.water && nieuw.water >= DOEL.water) uit = metFeed(uit, memberId, "heeft genoeg water gedronken 💧", 5);
+      if (oud.fruit < DOEL.fruit && nieuw.fruit >= DOEL.fruit) uit = metFeed(uit, memberId, "heeft 2 stuks fruit gegeten 🍎", 5);
+      return uit;
     });
   },
   /** Eetmoment afvinken (ontbijt, lunch, tussendoor, avondeten). */
@@ -247,9 +269,9 @@ export const actions = {
     });
   },
   /** Klus gedaan. Kinderen krijgen XP. Geeft het id terug, zodat je het meteen kunt terugdraaien. */
-  klusGedaan(key: string, by: string, xp: number): string {
+  klusGedaan(key: string, by: string, xp: number, label = ""): string {
     const id = newId("k");
-    update((s) => ({ ...s, klusLog: [...(s.klusLog ?? []), { id, klus: key, by, at: new Date().toISOString() }].slice(-300), xp: isKid(s, by) && xp ? addXp(s, by, xp) : s.xp }));
+    update((s) => metFeed({ ...s, klusLog: [...(s.klusLog ?? []), { id, klus: key, by, at: new Date().toISOString() }].slice(-300), xp: xp ? addXp(s, by, xp) : s.xp }, by, label ? `heeft gedaan: ${label.toLowerCase()} ✓` : "heeft een klus gedaan ✓", xp));
     return id;
   },
   /** Verkeerd ingevuld? Weghalen, XP gaat er weer af. */
@@ -257,21 +279,30 @@ export const actions = {
     update((s) => {
       const k = (s.klusLog ?? []).find((x) => x.id === id);
       if (!k) return s;
-      return { ...s, klusLog: (s.klusLog ?? []).filter((x) => x.id !== id), xp: isKid(s, k.by) && xp ? addXp(s, k.by, -xp) : s.xp };
+      return { ...s, klusLog: (s.klusLog ?? []).filter((x) => x.id !== id), xp: xp ? addXp(s, k.by, -xp) : s.xp };
     });
   },
   setKoken(date: string, fn: (p: Kookplan) => Kookplan) {
     update((s) => {
       const grens = new Date(Date.now() - 30 * 864e5).toLocaleDateString("sv-SE");
       const koken = Object.fromEntries(Object.entries(s.koken ?? {}).filter(([k]) => k >= grens));
-      return { ...s, koken: { ...koken, [date]: fn({ ...(koken[date] ?? {}) }) } };
+      const oud = koken[date] ?? {};
+      const nieuw = fn({ ...oud });
+      const uit = { ...s, koken: { ...koken, [date]: nieuw } };
+      const vandaag = date === new Date().toLocaleDateString("sv-SE");
+      if (vandaag && nieuw.kok && nieuw.kok !== oud.kok) return metFeed(uit, nieuw.kok, `kookt vanavond${nieuw.wat ? `: ${nieuw.wat}` : ""} 🍳`);
+      return uit;
     });
   },
   setPotDoel(doel: string, cents: number) {
     update((s) => ({ ...s, pot: { items: [], ...(s.pot ?? {}), doel, cents } }));
   },
   addPot(item: Omit<PotItem, "id" | "at">) {
-    update((s) => ({ ...s, pot: { doel: "", cents: 0, ...(s.pot ?? { items: [] }), items: [...(s.pot?.items ?? []), { ...item, id: newId("e"), at: new Date().toISOString() }].slice(-500) } }));
+    const tekst = item.soort === "beloning" ? `kreeg een beloning in het potje: ${item.reden.toLowerCase()} 🐷` : item.soort === "statiegeld" ? "bracht statiegeld naar het potje 🍾" : "";
+    update((s) => {
+      const uit: FamilyState = { ...s, pot: { doel: "", cents: 0, ...(s.pot ?? { items: [] }), items: [...(s.pot?.items ?? []), { ...item, id: newId("e"), at: new Date().toISOString() }].slice(-500) } };
+      return tekst ? metFeed(uit, item.voor ?? item.by, tekst) : uit;
+    });
   },
   removePot(id: string) {
     update((s) => (s.pot ? { ...s, pot: { ...s.pot, items: s.pot.items.filter((x) => x.id !== id) } } : s));
@@ -338,7 +369,7 @@ export const actions = {
         delete c[task.id];
         checked = { ...(s.checked ?? {}), [d]: c };
       }
-      return { ...s, checked, done: { ...s.done, [d]: day }, xp: telt && isKid(s, doer) && task.xp ? addXp(s, doer, wasDone ? -task.xp : task.xp) : s.xp };
+      return { ...s, checked, done: { ...s.done, [d]: day }, xp: telt && task.xp ? addXp(s, doer, wasDone ? -task.xp : task.xp) : s.xp };
     });
     return nowDone;
   },
@@ -348,7 +379,7 @@ export const actions = {
     update((s) => {
       const doer = s.done[d]?.[task.id];
       if (!doer || s.checked?.[d]?.[task.id]) return s;
-      return { ...s, checked: { ...(s.checked ?? {}), [d]: { ...(s.checked?.[d] ?? {}), [task.id]: parentId } }, xp: isKid(s, doer) && task.xp ? addXp(s, doer, task.xp) : s.xp };
+      return { ...s, checked: { ...(s.checked ?? {}), [d]: { ...(s.checked?.[d] ?? {}), [task.id]: parentId } }, xp: task.xp ? addXp(s, doer, task.xp) : s.xp };
     });
   },
   /** Werk van een gezinslid opslaan (hele lijst). */
@@ -395,7 +426,7 @@ export const actions = {
     const at = new Date().toISOString();
     update((s) => {
       const first = !s.calm.some((c) => c.member === memberId && isToday(c.at));
-      return { ...s, calm: [...s.calm, { member: memberId, at }].slice(-100), xp: first && isKid(s, memberId) ? addXp(s, memberId, XP.rustig) : s.xp };
+      return { ...s, calm: [...s.calm, { member: memberId, at }].slice(-100), xp: first ? addXp(s, memberId, XP.rustig) : s.xp };
     });
   },
   /** Oefenlevel klaar. Alleen de eerste keer XP. */
@@ -404,7 +435,7 @@ export const actions = {
     update((s) => {
       const list = s.played[memberId] ?? [];
       if (list.includes(id)) return s;
-      return { ...s, played: { ...s.played, [memberId]: [...list, id] }, xp: isKid(s, memberId) ? addXp(s, memberId, XP.korteOefening) : s.xp };
+      return { ...s, played: { ...s.played, [memberId]: [...list, id] }, xp: addXp(s, memberId, XP.korteOefening) };
     });
     return true;
   },
@@ -467,7 +498,7 @@ export const actions = {
     update((s) => {
       const list = s.coach?.[memberId] ?? [];
       const first = !list.some((r) => r.id === run.id);
-      return { ...s, coach: { ...(s.coach ?? {}), [memberId]: [...list, { ...run, at }].slice(-200) }, xp: first && isKid(s, memberId) ? addXp(s, memberId, XP.oefenscenario) : s.xp };
+      return { ...s, coach: { ...(s.coach ?? {}), [memberId]: [...list, { ...run, at }].slice(-200) }, xp: first ? addXp(s, memberId, XP.oefenscenario) : s.xp };
     });
   },
   addQuest(q: Omit<Quest, "id" | "at">) {
@@ -487,7 +518,7 @@ export const actions = {
       return {
         ...s,
         quests: (s.quests ?? []).map((x) => (x.id === id ? { ...x, done } : x)),
-        xp: isKid(s, q.member) ? addXp(s, q.member, done ? XP.quest : -XP.quest) : s.xp,
+        xp: addXp(s, q.member, done ? XP.quest : -XP.quest),
       };
     });
   },
@@ -511,7 +542,7 @@ export const actions = {
     const today = (state.reading?.[memberId] ?? []).filter((r) => isToday(r.at)).reduce((a, r) => a + r.min, 0);
     const earnedToday = Math.min(XP.lezenMaxPerDag, Math.floor(today / 10) * XP.lezenPer10Min);
     const earnedAfter = Math.min(XP.lezenMaxPerDag, Math.floor((today + min) / 10) * XP.lezenPer10Min);
-    const gained = (isKid(state, memberId) ? earnedAfter - earnedToday : 0) + (uit && isKid(state, memberId) ? XP.boekUit : 0);
+    const gained = (earnedAfter - earnedToday) + (uit ? XP.boekUit : 0);
     const entry = { at: new Date().toISOString(), min, book: book.trim() || undefined, uit: uit || undefined };
     update((s) => ({ ...s, reading: { ...(s.reading ?? {}), [memberId]: [...(s.reading?.[memberId] ?? []), entry].slice(-300) }, xp: gained ? addXp(s, memberId, gained) : s.xp }));
     return gained;

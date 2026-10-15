@@ -37,7 +37,6 @@ export function MijnDag({ open, onClose, state, me, onToast }: { open: boolean; 
     if (open) setDeel(dagdeel());
   }, [open]);
   const log = dagLog(state, me.id);
-  const kind = me.role !== "ouder";
   const kd = kledingDag(state, me.id);
   const r = reeks(state, me.id);
   const nodig = ROUTINE.filter((x) => x.gewicht > 0);
@@ -46,7 +45,7 @@ export function MijnDag({ open, onClose, state, me, onToast }: { open: boolean; 
   const toggle = (id: string) => {
     const aan = !log.routine.includes(id);
     upd((l) => ({ ...l, routine: aan ? [...l.routine, id] : l.routine.filter((x) => x !== id) }));
-    if (aan && klaar + 1 === nodig.length && ROUTINE.find((x) => x.id === id)!.gewicht > 0) onToast(kind ? "Ochtendroutine compleet! +5 XP bonus" : "Ochtendroutine compleet!");
+    if (aan && klaar + 1 === nodig.length && ROUTINE.find((x) => x.id === id)!.gewicht > 0) onToast("Ochtendroutine compleet! +5 punten bonus");
   };
   const eetTegel = (id: string) => {
     const e = ETEN.find((x) => x.id === id)!;
@@ -164,7 +163,7 @@ export function MijnDag({ open, onClose, state, me, onToast }: { open: boolean; 
           </div>
         </section>
 
-        {kind && <p className="ff-small"><b>+{basisXp(log)} XP</b> verdiend vandaag met je basis.</p>}
+        <p className="ff-small"><b>+{basisXp(log)} punten</b> verdiend vandaag met je basis.</p>
         <button className="ff-btn ff-btn-primary ff-btn-wide" onClick={onClose}>Klaar</button>
       </div>
     </Sheet>

@@ -7,7 +7,7 @@ import { addDays, iso } from "@/lib/planner";
 import { actions } from "@/lib/store";
 import { timeLabel } from "@/lib/mood";
 import {
-  BELONINGEN, KLUSSEN, bijdragen, dagKort, eters, euro, isGeregeld, klusStatus, kookplan, magRestjes, maandag, parseEuro, potStand, werkOp, werktTijdensEten, type KlusStatus,
+  BELONINGEN, KLUSSEN, bijdragen, dagKort, eters, euro, isGeregeld, klusStatus, kookplan, naamKlus, magRestjes, maandag, parseEuro, potStand, werkOp, werktTijdensEten, type KlusStatus,
 } from "@/lib/huis";
 import type { FamilyState, Member } from "@/lib/types";
 
@@ -142,9 +142,9 @@ function Klussen({ state, me, lijst, onToast }: { state: FamilyState; me: Member
   const recent = [...(state.klusLog ?? [])].reverse().slice(0, 12);
 
   const gedaan = (k: KlusStatus, by: string) => {
-    const id = actions.klusGedaan(k.key, by, k.klus.xp);
+    const id = actions.klusGedaan(k.key, by, k.klus.xp, naamKlus(k, by));
     setOpen(null);
-    onToast(`${k.klus.label} ✓${by === me.id && me.role !== "ouder" ? ` +${k.klus.xp} XP` : ""}`);
+    onToast(`${k.klus.label} ✓ +${k.klus.xp} punten`);
     return id;
   };
 
