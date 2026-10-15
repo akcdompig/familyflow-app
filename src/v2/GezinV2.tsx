@@ -11,6 +11,7 @@ import { slaapt } from "@/lib/status";
 import { actions } from "@/lib/store";
 import { isDone, tasksFor } from "@/lib/tasks";
 import type { FamilyState, Member } from "@/lib/types";
+import { VoedingOverzicht } from "./Voeding";
 
 type Tab = "nu" | "eten" | "klussen" | "potje" | "plan";
 const TABS: { id: Tab; label: string }[] = [
@@ -74,6 +75,7 @@ export function GezinV2({ state, me, onToast, onOuders, onOpenLid, onTips, onRuz
             <Row members={state.members.filter((m) => m.role !== "ouder")} row="voor" state={state} me={me} onOpen={onOpenLid} />
           </section>
           <Attention state={state} me={me} onTalkTips={onTips} onCheckIn={onCheckIn} onGoTasks={() => setTab("plan")} onRuzie={onRuzie} onGoGezin={onOuders} />
+          {isOuder && <VoedingOverzicht state={state} onOpen={onOpenLid} />}
           <Inbox state={state} me={me} />
           <NetGedaan state={state} me={me} />
           <Klassement state={state} me={me} onOpen={onOpenLid} />

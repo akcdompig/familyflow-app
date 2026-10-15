@@ -222,7 +222,7 @@ export interface FamilyState {
   werk?: Record<string, WerkItem[]>;
   diensten?: Dienst[];
   /** Dagelijkse basis per dag en lid: ochtendroutine, kleding, water, fruit, ontbijt, sport. */
-  dag?: Record<string, Record<string, { routine: string[]; kleding?: "nieuw" | "zelfde"; water: number; fruit: number; ontbijt?: boolean; sport?: boolean; eten?: string[] }>>;
+  dag?: Record<string, Record<string, { routine: string[]; kleding?: "nieuw" | "zelfde"; water: number; fruit: number; ontbijt?: boolean; sport?: boolean; eten?: string[]; snoep?: number; zoet?: number }>>;
   /** Koken per dag: wie kookt, wat, restjes van gisteren, wie eet mee. */
   koken?: Record<string, Kookplan>;
   /** Klussen in huis: wie deed wat en wanneer. Nieuwste achteraan. */

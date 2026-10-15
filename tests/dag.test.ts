@@ -62,3 +62,15 @@ test("gemiste eetmomenten", () => {
   assert.deepEqual(gemist(s, "k1", at("2026-10-15", "15:00")), ["lunch"]);
   assert.deepEqual(gemist(s, "k1", at("2026-10-15", "09:00")), []);
 });
+
+test("ongezond: eerste gratis, daarna zakt gezondheid, hooguit 30", async () => {
+  const { gezondheid, ongezond, ongezondAftrek } = await import("../src/lib/dag");
+  const nu = new Date();
+  const d = nu.toLocaleDateString("sv-SE");
+  const st = (extra: object) => ({ members: [], dag: { [d]: { k: { routine: [], water: 6, fruit: 2, eten: ["ontbijt", "lunch", "tussendoor", "avondeten"], ...extra } } } }) as never;
+  const basis = gezondheid(st({}), "k", nu);
+  assert.equal(gezondheid(st({ snoep: 1 }), "k", nu), basis);
+  assert.equal(gezondheid(st({ snoep: 1, zoet: 1 }), "k", nu), basis - 6);
+  assert.equal(ongezond({ routine: [], water: 0, fruit: 0, snoep: 2, zoet: 3 }), 5);
+  assert.equal(ongezondAftrek({ routine: [], water: 0, fruit: 0, snoep: 20 }), 30);
+});

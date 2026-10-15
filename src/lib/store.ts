@@ -281,6 +281,7 @@ export const actions = {
       const nieuw = fn({ ...oud, routine: [...oud.routine] });
       nieuw.water = Math.max(0, Math.min(20, nieuw.water));
       nieuw.fruit = Math.max(0, Math.min(10, nieuw.fruit));
+      for (const k of ["snoep", "zoet"] as const) if (nieuw[k] !== undefined) nieuw[k] = Math.max(0, Math.min(20, nieuw[k] ?? 0));
       const delta = basisXp(nieuw) - basisXp(oud);
       // Alleen de laatste 21 dagen bewaren.
       const grens = new Date(Date.now() - 21 * 864e5).toLocaleDateString("sv-SE");

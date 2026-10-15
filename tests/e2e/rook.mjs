@@ -119,6 +119,22 @@ await scenario("v2: water tellen met één tik", v2, "10:00", async (p) => {
   assert.notEqual(await p.locator(".v2-teller").first().innerText(), voor);
 });
 
+await scenario("v2: kind geeft snoep aan, ouder ziet het in het overzicht", v2, "16:00", async (p) => {
+  await wissel(p, "Lina");
+  await p.getByRole("button", { name: /Ongezond vandaag/ }).click();
+  await p.getByRole("button", { name: "Zoet drinken plus één" }).click();
+  await p.getByRole("button", { name: "Snoep of snack plus één" }).click();
+  await knop(p, /^Klaar$/).click();
+  assert.match(await p.getByRole("button", { name: /Ongezond vandaag/ }).innerText(), /2/);
+  await wissel(p, "Papa");
+  await tab(p, /Gezin/).click();
+  const rij = p.locator(".v2-voeding-kind", { hasText: "Lina" });
+  assert.match(await rij.innerText(), /2× ongezond/);
+  await rij.click();
+  assert.match(await p.locator(".v2-voeding").innerText(), /Zoet drinken/);
+  await p.locator(".v2-voeding").scrollIntoViewIfNeeded();
+});
+
 await browser.close();
 if (fouten) {
   console.log(`\n${fouten} scenario('s) mislukt`);

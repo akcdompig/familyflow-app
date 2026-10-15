@@ -19,6 +19,10 @@ export interface DagLog {
   sport?: boolean;
   /** Afgevinkte eetmomenten: ontbijt, lunch, tussendoor, avondeten. */
   eten?: string[];
+  /** Ongezond: snoep, koek, chips of een snack (aantal). */
+  snoep?: number;
+  /** Ongezond: zoet drinken, zoals frisdrank, sap, ijsthee of energydrank (aantal glazen/blikjes). */
+  zoet?: number;
 }
 
 /* De dag in vier stukken, zoals thuis: ochtend, middag, avond en nacht. */
@@ -101,6 +105,16 @@ export const ROUTINE: { id: string; label: string; emoji: string; gewicht: numbe
 
 export const DOEL = { water: 6, fruit: 2 };
 
+/** Ongezond: met één knop aangeven. Eén keer iets lekkers mag, daarna zakt de gezondheid een beetje. */
+export const ONGEZOND: { id: "snoep" | "zoet"; label: string; kort: string; emoji: string; voorbeeld: string }[] = [
+  { id: "snoep", label: "Snoep of snack", kort: "snoep", emoji: "🍬", voorbeeld: "snoep, koek, chips, patat" },
+  { id: "zoet", label: "Zoet drinken", kort: "zoet", emoji: "🥤", voorbeeld: "frisdrank, sap, ijsthee, energydrank" },
+];
+/** Hoeveel ongezonde dingen vandaag (snoep + zoet drinken). */
+export const ongezond = (log: DagLog) => (log.snoep ?? 0) + (log.zoet ?? 0);
+/** Aftrek op gezondheid: de eerste is gratis, daarna 6 per stuk, hooguit 30. */
+export const ongezondAftrek = (log: DagLog) => Math.min(30, Math.max(0, ongezond(log) - 1) * 6);
+
 const leeg = (): DagLog => ({ routine: [], water: 0, fruit: 0 });
 export const dagLog = (s: FamilyState, id: string, d = iso(new Date())): DagLog => ({ ...leeg(), ...(s.dag?.[d]?.[id] ?? {}) });
 
@@ -140,7 +154,7 @@ export function gezondheid(s: FamilyState, id: string, nu = new Date()): number 
   const w = Math.min(1, log.water / DOEL.water) * 35;
   const f = Math.min(1, log.fruit / DOEL.fruit) * 20;
   const m = (gegeten(log, "ontbijt") ? 10 : 0) + (gegeten(log, "lunch") ? 10 : 0) + (gegeten(log, "avondeten") ? 10 : 0) + (gegeten(log, "tussendoor") ? 5 : 0);
-  return Math.round(w + f + m + (log.sport ? 10 : 0));
+  return Math.max(0, Math.round(w + f + m + (log.sport ? 10 : 0) - ongezondAftrek(log)));
 }
 
 /** Komt er een walmpje van je af? Pas na de deadline, of als je op dag 3 in dezelfde kleren loopt. */

@@ -9,6 +9,7 @@ import { dagprogramma, nuDoen, voortgang, type Stap } from "@/lib/dagprogramma";
 import { expressionFor } from "@/lib/mood";
 import { actions } from "@/lib/store";
 import { geclaimd, teClaimen } from "@/lib/xp";
+import { OngezondKnop } from "./Voeding";
 import type { FamilyState, Member, MoodLevel } from "@/lib/types";
 
 const MOODS: { m: MoodLevel; e: string; l: string }[] = [
@@ -135,6 +136,7 @@ export function Vandaag({ state, me, onToast, onMeerGevoel, onWie }: { state: Fa
             <button className="v2-teller" onClick={() => { actions.updateDag(me.id, (l) => ({ ...l, fruit: l.fruit + 1 })); }} aria-label={`Fruit: ${log.fruit} van ${DOEL.fruit}. Tik voor een stuk erbij`}>
               🍎 <b>{log.fruit}</b>/{DOEL.fruit}
             </button>
+            <OngezondKnop state={state} me={me} onToast={onToast} />
             {kist > 0 && (
               <button className="v2-teller is-kist" onClick={() => { const van = geclaimd(state, me.id); const c = actions.claimPunten(me.id); if (c) setClaim({ van, n: c }); }}>
                 💎 <b>+{kist}</b> claim
