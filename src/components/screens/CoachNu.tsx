@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
-import { CATEGORY_LABEL, CONFLICTS, type ConflictScenario } from "@/lib/conflicts";
+import { CATEGORY_LABEL, CONFLICTS, OPVOEDVRAGEN, type ConflictScenario } from "@/lib/conflicts";
 import {
   ALGEMENE_HULP,
   GEEN_SORRY_DWANG,
@@ -38,13 +38,18 @@ const WIE: { id: string; label: string; ids: string[] }[] = [
   { id: "online", label: "Online, in een app of game", ids: ["groepsapp"] },
 ];
 
-export function CoachNu({ state, me, onClose, onToast, onPractice, onSamen, startId }: { state: FamilyState; me: Member; onClose: () => void; onToast: (m: string) => void; onPractice: (id: string) => void; onSamen?: () => void; startId?: string }) {
+export function CoachNu({ state, me, onClose, onToast, onPractice, onSamen, startId }: { state: FamilyState; me: Member; onClose: () => void; onToast: (m: string) => void; onPractice: (id: string) => void; onSamen?: (met: "ouder" | "kind" | "sib") => void; startId?: string }) {
   const ouder = me.role === "ouder";
   const heeftSib = state.members.some((m) => m.role !== "ouder" && m.id !== me.id);
-  const [filter, setFilter] = useState<string[] | null>(null);
+  const heeftOuder = state.members.some((m) => m.role === "ouder");
+  const heeftKind = state.members.some((m) => m.role !== "ouder" && m.joined !== false);
+  // "@opvoed": een opvoedvraag van een ouder, geen ruzie op het moment zelf.
+  const opvoed = startId === "@opvoed";
+  const [filter, setFilter] = useState<string[] | null>(opvoed ? OPVOEDVRAGEN : null);
   const [met, setMet] = useState("");
-  const [stage, setStage] = useState<Stage>(startId ? "veilig" : ouder ? "kies" : "wie");
-  const [sc, setSc] = useState<ConflictScenario | null>(startId ? CONFLICTS.find((c) => c.id === startId) ?? null : null);
+  const [samenMet, setSamenMet] = useState<"ouder" | "sib">("sib");
+  const [stage, setStage] = useState<Stage>(startId && !opvoed ? "veilig" : ouder ? "kies" : "wie");
+  const [sc, setSc] = useState<ConflictScenario | null>(startId && !opvoed ? CONFLICTS.find((c) => c.id === startId) ?? null : null);
   const [gevaar, setGevaar] = useState<Gevaar | null>(null);
   const [licht, setLicht] = useState<Licht | null>(null);
   const [rust, setRust] = useState<string>("");
@@ -93,7 +98,9 @@ export function CoachNu({ state, me, onClose, onToast, onPractice, onSamen, star
               key={w.id}
               className="ff-choice"
               onClick={() => {
-                if (w.id === "sib" && heeftSib && onSamen) return setStage("samen");
+                // Samen uitpraten kan met een broer of zus, en ook met een ouder: dan wordt het kind ook gehoord.
+                if (w.id === "sib" && heeftSib && onSamen) { setSamenMet("sib"); return setStage("samen"); }
+                if (w.id === "ouder" && heeftOuder && onSamen) { setSamenMet("ouder"); return setStage("samen"); }
                 if (w.ids.length === 1) {
                   setSc(CONFLICTS.find((c) => c.id === w.ids[0]) ?? null);
                   return setStage("veilig");
@@ -113,10 +120,10 @@ export function CoachNu({ state, me, onClose, onToast, onPractice, onSamen, star
       {stage === "samen" && (
         <section className="ff-stack-s">
           <h2 className="ff-h2">Wat wil je doen?</h2>
-          <button className="ff-choice" onClick={onSamen}>
+          <button className="ff-choice" onClick={() => onSamen?.(samenMet)}>
             <span className="ff-grow"><b>Samen uitpraten</b><br /><span className="ff-small ff-muted">Jullie vertellen allebei jullie kant in de app en kiezen samen een oplossing</span></span>
           </button>
-          <button className="ff-choice" onClick={() => { setFilter(WIE[0].ids); setStage("kies"); }}>
+          <button className="ff-choice" onClick={() => { setFilter((WIE.find((w) => w.id === samenMet) ?? WIE[0]).ids); setStage("kies"); }}>
             <span className="ff-grow"><b>Eerst zelf hulp van de coach</b><br /><span className="ff-small ff-muted">Stap voor stap: rustig worden, praten, goedmaken</span></span>
           </button>
         </section>
@@ -125,7 +132,13 @@ export function CoachNu({ state, me, onClose, onToast, onPractice, onSamen, star
       {/* Situatie kiezen */}
       {stage === "kies" && (
         <section className="ff-stack-s">
-          <p className="ff-muted">{ouder ? "Kies de situatie die er het meest op lijkt. De coach helpt u stap voor stap." : `${met ? `Gedoe ${met.startsWith("online") ? "" : "met "}${met}. ` : ""}Wat lijkt er het meest op? De coach helpt je stap voor stap.`}</p>
+          {ouder && !opvoed && heeftKind && onSamen && (
+            <button className="ff-choice is-samen" onClick={() => onSamen("kind")}>
+              <span className="ff-grow"><b>Samen uitpraten met je kind</b><br /><span className="ff-small ff-muted">Jullie vertellen allebei je kant in de app en kiezen samen een oplossing</span></span>
+            </button>
+          )}
+          {opvoed && <h2 className="ff-h2">Waar wil je hulp bij?</h2>}
+          <p className="ff-muted">{opvoed ? "Geen ruzie op dit moment, wel iets waar je als ouder mee zit. Kies wat er het meest op lijkt." : ouder ? "Kies de situatie die er het meest op lijkt. De coach helpt u stap voor stap." : `${met ? `Gedoe ${met.startsWith("online") ? "" : "met "}${met}. ` : ""}Wat lijkt er het meest op? De coach helpt je stap voor stap.`}</p>
           {(filter ? CONFLICTS.filter((c) => filter.includes(c.id)) : CONFLICTS).map((c) => (
             <button key={c.id} className="ff-choice" onClick={() => { setSc(c); setStage("veilig"); }}>
               <span className="ff-grow"><span className="ff-coachcard-tag">{CATEGORY_LABEL[c.category]}</span><br /><b>{c.title}</b></span>

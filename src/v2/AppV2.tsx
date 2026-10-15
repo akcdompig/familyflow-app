@@ -9,7 +9,6 @@ import { CalmSheet } from "@/components/screens/CalmSheet";
 import { CheckInSheet } from "@/components/screens/CheckInSheet";
 import { CoachPlay } from "@/components/screens/Coach";
 import { CoachNu } from "@/components/screens/CoachNu";
-import { CoachTip } from "@/components/screens/CoachTip";
 import { Gezin } from "@/components/screens/Gezin";
 import { Ik } from "@/components/screens/Ik";
 import { Leerplanner } from "@/components/screens/Leerplanner";
@@ -37,13 +36,15 @@ import { Vandaag } from "./Vandaag";
 import { VoedingKaart } from "./Voeding";
 import { Groei } from "./Groei";
 import { SchermOuder } from "./Scherm";
+import { SamenVerder } from "./SamenVerder";
 
-type Tab = "vandaag" | "gezin" | "hulp" | "ik";
+type Tab = "vandaag" | "gezin" | "samen" | "hulp" | "ik";
 type Pagina = null | "avatar" | "werk" | "meer" | "ouders" | "planner" | "privacy";
 
 const NAV: { id: Tab; label: string; icon: IconName }[] = [
   { id: "vandaag", label: "Vandaag", icon: "taken" },
   { id: "gezin", label: "Gezin", icon: "huis" },
+  { id: "samen", label: "Samen verder", icon: "groei" },
   { id: "hulp", label: "Hulp", icon: "chat" },
   { id: "ik", label: "Ik", icon: "ik" },
 ];
@@ -58,11 +59,12 @@ const OPENERS: Record<string, string> = {
 };
 
 /**
-  FamilyFlow 2.0 (acceptatie): vier tabbladen.
-  - Vandaag: jouw dagprogramma, één ding tegelijk.
-  - Gezin: de huiskamer, eten, klussen, potje, planning.
-  - Hulp: rust, ruzie, oefenen en je coach-tip.
-  - Ik: level, schatkist, achievements, instellingen.
+  FamilyFlow 3.0: vijf tabbladen.
+  - Vandaag: jouw dagprogramma, één ding tegelijk, en de acties uit jullie afspraken.
+  - Gezin: de huiskamer, klussen, samen-momenten (en voor ouders week en eten).
+  - Samen verder: afspraken en doelen op één plek, "hielp het?", het weekoverleg en het weekverhaal.
+  - Hulp: rust, ruzie, opvoedvragen en oefenen.
+  - Ik: jezelf, tips en instellingen.
 */
 export function AppV2() {
   const raw = useFamily();
@@ -79,6 +81,7 @@ export function AppV2() {
   const [ruzie, setRuzie] = useState<string | null>(null);
   const [coach, setCoach] = useState<string | null>(null);
   const [coachNu, setCoachNu] = useState<string | null>(null);
+  const [gezinTab, setGezinTab] = useState<string | undefined>(undefined);
 
   useEffect(() => setMounted(true), []);
   useEffect(() => {
@@ -130,7 +133,7 @@ export function AppV2() {
   let vol: ReactElement | null = null;
   if (coachNu !== null) {
     vol = (
-      <CoachNu key={coachNu || "kies"} state={state} me={me} startId={coachNu || undefined} onClose={() => setCoachNu(null)} onSamen={() => { setCoachNu(null); setRuzie(""); }} onToast={setToast}
+      <CoachNu key={coachNu || "kies"} state={state} me={me} startId={coachNu || undefined} onClose={() => setCoachNu(null)} onSamen={(met) => { setCoachNu(null); setRuzie(`@${met}`); }} onToast={setToast}
         onPractice={(id) => {
           setCoachNu(null);
           if (isOuder) {
@@ -141,7 +144,11 @@ export function AppV2() {
         }} />
     );
   } else if (coach !== null) vol = <CoachPlay key={coach} id={coach} state={state} me={me} onClose={() => setCoach(null)} onToast={setToast} />;
-  else if (ruzie !== null) vol = <Ruzie key={ruzie || "nieuw"} state={state} me={me} conflictId={ruzie || undefined} onClose={() => setRuzie(null)} onToast={setToast} onAfter={() => setCheckIn(true)} />;
+  else if (ruzie !== null) {
+    // "@sib", "@ouder", "@kind": een nieuwe ruzie met wie; anders het id van een bestaande ruzie.
+    const met = ruzie.startsWith("@") ? (ruzie.slice(1) as "sib" | "ouder" | "kind") : undefined;
+    vol = <Ruzie key={ruzie || "nieuw"} state={state} me={me} conflictId={ruzie && !met ? ruzie : undefined} met={met} onClose={() => setRuzie(null)} onToast={setToast} onAfter={() => setCheckIn(true)} />;
+  }
   else if (pagina === "avatar") vol = <AvatarMaker key={me.id} member={me} onClose={() => setPagina(null)} onSaved={setToast} />;
   else if (pagina === "werk") vol = <MijnWerk state={state} me={me} onClose={() => setPagina(null)} onToast={setToast} />;
   else if (pagina === "planner") vol = <Leerplanner key={me.id} state={state} me={me} onClose={() => setPagina(null)} onToast={setToast} />;
@@ -160,15 +167,19 @@ export function AppV2() {
         <>
           {pagina === "meer" && terug(<Ik state={state} me={me} onEditAvatar={() => setPagina("avatar")} onCalm={() => setCalm(true)} onToast={setToast} />)}
           {pagina === "privacy" && <Privacy state={state} me={me} onToast={setToast} onTerug={() => setPagina(null)} />}
-          {pagina === "ouders" && terug(<Gezin state={state} me={me} onToast={setToast} onOefenen={() => { setPagina(null); setTab("hulp"); }} onCoachNu={() => setCoachNu("")} />)}
-          {!pagina && tab === "vandaag" && <Vandaag state={state} me={me} onToast={setToast} onMeerGevoel={() => setCheckIn(true)} onWie={() => (live ? setTab("ik") : setWie(true))} />}
-          {!pagina && tab === "gezin" && <GezinV2 state={state} me={me} onToast={setToast} onOuders={() => setPagina("ouders")} onOpenLid={setLid} onTips={setTips} onRuzie={(id) => setRuzie(id ?? "")} onCheckIn={() => setCheckIn(true)} />}
+          {pagina === "ouders" && terug(<Gezin instellen state={state} me={me} onToast={setToast} onOefenen={() => { setPagina(null); setTab("hulp"); }} onCoachNu={() => setCoachNu("")} />)}
+          {!pagina && tab === "vandaag" && <Vandaag state={state} me={me} onToast={setToast} onMeerGevoel={() => setCheckIn(true)} onWie={() => (live ? setTab("ik") : setWie(true))} onSamenVerder={() => setTab("samen")} onPlanner={() => setPagina("planner")} />}
+          {!pagina && tab === "samen" && <SamenVerder state={state} me={me} onToast={setToast} onCoach={(id) => setCoachNu(id)} onKlussen={() => { setGezinTab("klussen"); setTab("gezin"); }} />}
+          {!pagina && tab === "gezin" && <GezinV2 key={gezinTab ?? "nu"} startTab={gezinTab} state={state} me={me} onToast={setToast} onOuders={() => setPagina("ouders")} onOpenLid={setLid} onTips={setTips} onRuzie={(id) => setRuzie(id ?? "")} onCheckIn={() => setCheckIn(true)} />}
           {!pagina && tab === "hulp" && (
             <Oefenen state={state} me={me} titel="Hulp" onToast={setToast} onCalm={() => setCalm(true)} onRuzie={() => setRuzie("")} onCoach={setCoach} onCoachNu={() => setCoachNu("")}
-              onder={<>
-                <CoachTip state={state} me={me} onToast={setToast} />
-                {!isOuder && <button className="v2-menu-rij" onClick={() => setPagina("planner")}><span aria-hidden="true">📚</span><b className="ff-grow">Leerplanner: toetsen en huiswerk plannen</b><span aria-hidden="true">›</span></button>}
-              </>} />
+              onder={isOuder ? (
+                <button className="ff-card v2-opvoed" onClick={() => setCoachNu("@opvoed")}>
+                  <span aria-hidden="true" className="v2-opvoed-emoji">🧭</span>
+                  <span className="ff-grow"><b>Ik heb een opvoedvraag</b><span className="ff-small ff-muted ff-block">Geen ruzie nu, wel iets waar je mee zit: huiswerk, schermregels</span></span>
+                  <span aria-hidden="true">›</span>
+                </button>
+              ) : undefined} />
           )}
           {!pagina && tab === "ik" && <IkV2 state={state} me={me} onToast={setToast} onAvatar={() => setPagina("avatar")} onWerk={() => setPagina("werk")} onMeer={() => setPagina("meer")} onPrivacy={() => setPagina("privacy")} onOuders={isOuder ? () => setPagina("ouders") : undefined} />}
 
@@ -176,7 +187,7 @@ export function AppV2() {
             {NAV.map((n) => {
               const cur = tab === n.id && !pagina;
               return (
-                <button key={n.id} className="ff-nav-item" aria-current={cur ? "page" : undefined} onClick={() => { setPagina(null); setTab(n.id); }}>
+                <button key={n.id} className="ff-nav-item" aria-current={cur ? "page" : undefined} onClick={() => { setPagina(null); setGezinTab(undefined); setTab(n.id); }}>
                   <Icon name={n.icon} size={26} filled={cur} />
                   <span>{n.label}</span>
                 </button>

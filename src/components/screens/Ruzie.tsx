@@ -9,6 +9,8 @@ import { actions } from "@/lib/store";
 import type { ConflictSide, FamilyState, Member } from "@/lib/types";
 
 export const TOPICS = ["Spullen pakken of lenen", "Taken in huis", "Plagen of uitlachen", "Iets eerlijk verdelen", "Fysiek: duwen, slaan, schoppen", "Iets anders"];
+/** Tussen ouder en kind: andere onderwerpen, en geen \"fysiek\" (dat hoort bij de veiligheidscheck van de coach). */
+export const TOPICS_OUDER = ["Gamen of schermtijd", "Huiswerk", "Taken in huis", "Een afspraak die niet lukt", "Niet naar elkaar luisteren", "Iets anders"];
 const FEEL = ["Boos", "Verdrietig", "Oneerlijk behandeld", "Gekwetst", "Schuldig"];
 const WANT = ["Sorry horen", "Een eerlijke verdeling", "Met rust gelaten worden", "Het weer goedmaken", "Een afspraak maken"];
 export const SOLUTIONS = ["Sorry zeggen, als we het menen", "We spreken een regel af", "Om de beurt", "Het goedmaken met een actie", "Een ouder helpt ons"];
@@ -22,12 +24,18 @@ interface Props {
   onToast: (m: string) => void;
   /** Na het oplossen: vraag hoe je je nu voelt. */
   onAfter: () => void;
+  /** Met wie: broer of zus (standaard voor kinderen), een ouder, of (voor ouders) een kind. */
+  met?: "sib" | "ouder" | "kind";
 }
 
-export function Ruzie({ state, me, conflictId, onClose, onToast, onAfter }: Props) {
+export function Ruzie({ state, me, conflictId, onClose, onToast, onAfter, met }: Props) {
   const existing = conflictId ? state.conflicts.find((c) => c.id === conflictId) : undefined;
   const respond = !!existing;
-  const siblings = state.members.filter((m) => m.role !== "ouder" && m.id !== me.id);
+  const kring = met ?? (me.role === "ouder" ? "kind" : "sib");
+  const siblings = state.members.filter((m) => m.id !== me.id && m.joined !== false && (kring === "ouder" ? m.role === "ouder" : m.role !== "ouder"));
+  const [regel, setRegel] = useState<string | null>(null);
+  const metOuder = !!existing && [existing.from, existing.with].some((id) => state.members.find((m) => m.id === id)?.role === "ouder");
+  const onderwerpen = kring === "sib" && !metOuder ? TOPICS : TOPICS_OUDER;
   const [step, setStep] = useState(0);
   const [other, setOther] = useState<string>(existing ? existing.from : siblings.length === 1 ? siblings[0].id : "");
   const [topic, setTopic] = useState(existing?.topic ?? "");
@@ -45,8 +53,10 @@ export function Ruzie({ state, me, conflictId, onClose, onToast, onAfter }: Prop
     onToast(`Verstuurd. ${otherM?.name} krijgt een seintje`);
     onClose();
   };
-  const solve = (solution: string) => {
+  const solve = (solution: string, afspraak?: string) => {
     if (!existing) return;
+    // Een regel afspreken? Dan komt die bij de gezinsafspraken, zodat jullie later kunnen kijken of hij helpt.
+    if (afspraak?.trim()) actions.addAfspraak(afspraak, me.id, `ruzie:${existing.topic}`);
     actions.answerConflict(existing.id, me.id, side);
     actions.closeConflict(existing.id, solution);
     onClose();
@@ -87,7 +97,7 @@ export function Ruzie({ state, me, conflictId, onClose, onToast, onAfter }: Prop
           <div className="ff-stack-s">
             <span className="ff-eyebrow">Waar gaat het over?</span>
             <div className="ff-chips">
-              {TOPICS.map((t) => <button key={t} className="ff-chip" aria-pressed={topic === t} onClick={() => setTopic(t)}>{t}</button>)}
+              {onderwerpen.map((t) => <button key={t} className="ff-chip" aria-pressed={topic === t} onClick={() => setTopic(t)}>{t}</button>)}
             </div>
           </div>
           {physical && (
@@ -151,8 +161,22 @@ export function Ruzie({ state, me, conflictId, onClose, onToast, onAfter }: Prop
           </div>
           <p>Kies samen een oplossing. Praat even met elkaar, of laat dit scherm aan {otherM?.name} zien.</p>
           <div className="ff-stack-s">
-            {SOLUTIONS.map((s) => <button key={s} className="ff-choice" onClick={() => solve(s)}>{s}</button>)}
+            {SOLUTIONS.filter((s) => !(metOuder && s === "Een ouder helpt ons")).map((s) =>
+              s === "We spreken een regel af" ? (
+                <button key={s} className="ff-choice" aria-pressed={regel !== null} onClick={() => setRegel(regel === null ? "" : null)}>{s}</button>
+              ) : <button key={s} className="ff-choice" onClick={() => solve(s)}>{s}</button>,
+            )}
           </div>
+          {regel !== null && (
+            <div className="ff-card ff-stack-s">
+              <label className="ff-field">
+                <span className="ff-eyebrow">Welke afspraak maken jullie?</span>
+                <input value={regel} maxLength={120} onChange={(e) => setRegel(e.target.value)} placeholder="Bijv. we vragen eerst of we iets mogen lenen" />
+              </label>
+              <p className="ff-small ff-muted">De afspraak komt bij Samen verder. Over een week vraagt de app of hij helpt.</p>
+              <button className="ff-btn ff-btn-primary ff-btn-wide" disabled={!regel.trim()} onClick={() => solve("We spreken een regel af", regel)}>Afspraak bewaren</button>
+            </div>
+          )}
         </section>
       )}
     </div>

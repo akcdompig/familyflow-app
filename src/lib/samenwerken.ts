@@ -121,6 +121,10 @@ export const samenwerken = {
   setDoelen(id: string, vaardigheden: string[]) {
     wijzig((s) => ({ ...s, doelen: { ...(s.doelen ?? {}), [id]: { ...(s.doelen?.[id] ?? {}), vaardigheden: vaardigheden.slice(0, 2) } } }));
   },
+  /** Wat zou thuis beter mogen? Eén zin per gezinslid, in eigen woorden. */
+  setWens(id: string, wens: string) {
+    wijzig((s) => ({ ...s, doelen: { ...(s.doelen ?? {}), [id]: { vaardigheden: [], ...(s.doelen?.[id] ?? {}), wens: wens.trim().slice(0, 140) } } }));
+  },
   terugblik(id: string, week: string, vaardigheid: string, hoe: "goed" | "beter" | "lastig") {
     wijzig((s) => {
       const d = s.doelen?.[id] ?? { vaardigheden: [] };

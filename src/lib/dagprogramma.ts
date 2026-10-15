@@ -91,8 +91,10 @@ export function dagprogramma(s: FamilyState, id: string, nu = new Date()): Stap[
 
 /** Het eerstvolgende dat je nu kunt doen: in dit dagdeel of eerder, niet af, niet "vanzelf", niet "voor straks". */
 export function nuDoen(stappen: Stap[], nu = new Date()): Stap | undefined {
-  const tot = VOLGORDE.indexOf(dagdeel(nu));
-  return stappen.find((s) => !s.klaar && !s.vanzelf && !s.later && s.soort !== "slapen" && VOLGORDE.indexOf(s.deel) <= tot);
+  const deel = dagdeel(nu);
+  const tot = VOLGORDE.indexOf(deel);
+  // Routine en eten horen bij hun eigen dagdeel: om half zes is ontbijt of douchen niet meer "het ene ding van nu". Ze blijven wel in de lijst staan.
+  return stappen.find((s) => !s.klaar && !s.vanzelf && !s.later && s.soort !== "slapen" && !((s.soort === "routine" || s.soort === "eten") && s.deel !== deel) && VOLGORDE.indexOf(s.deel) <= tot);
 }
 
 /** Wat telt voor "je dag": alles wat je zelf afvinkt. Niet: slapen, werk/school (gaat vanzelf) en "alvast"-klussen die nog open staan. */

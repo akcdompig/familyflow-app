@@ -216,3 +216,16 @@ Naar een 10: twee weken echt gebruik, dan de minuten en verwachtingen bijstellen
 - Samen: 5 ideeën + "iets anders", filters achter "Meer ideeën".
 - Ik: één knop "Kies een groeidoel" in plaats van 10 tegels; achievements alleen gehaald + 3 bijna.
 - e2e: nieuw scenario "kind ziet een rustige app".
+
+## Ronde 6 — 3.0 "Samen verder" (na de product-, UX- en opvoedkundige audit)
+
+- Nieuwe hoofdtab Samen verder: afspraken en doelen op één plek, "hielp het?" na 7 dagen, herhaling per thema (ouders), weekoverleg, wens per gezinslid, groeidoel (kind) en weekverhaal.
+- Afsprakenlus: afspraak uit coach, ruzie of overleg → kaart op Vandaag → na 7 dagen "hielp het?" (ook op Vandaag) → bij "nee": andere aanpak, loslaten of hulp zoeken. Het overleg heeft een stap "Onze afspraken".
+- Kind en ouder praten een ruzie samen uit (beide kanten), ook vanuit de ouder; de uitnodiging gaat bij ouders voor andere meldingen.
+- Hulp: "Ik heb een opvoedvraag" met twee nieuwe situaties (huiswerk, schermregels). Tips weg uit Hulp, leerplanner naar Vandaag.
+- Toon: geen "pfoe, nog niet gedoucht?" bij anderen, klassement vervangen door "Samen vandaag".
+- Vandaag: tellers achter één knop; "Nu doen" toont geen ochtendroutine of ontbijt meer na de ochtend.
+- Welkom: duidelijke belofte en "Eerst rondkijken" als grote keuze.
+- Dagdata 9 weken bewaard (was 21 dagen): de 8-wekengrafiek klopt nu ook na drie weken.
+- Nieuw in tests: afspraken.test.ts (4) en 5 e2e-scenario's (v3).
+- Nog door een professional te beoordelen: de twee nieuwe opvoedvragen in conflicts.ts.

@@ -288,8 +288,8 @@ export const actions = {
       nieuw.fruit = Math.max(0, Math.min(10, nieuw.fruit));
       for (const k of ["snoep", "zoet"] as const) if (nieuw[k] !== undefined) nieuw[k] = Math.max(0, Math.min(20, nieuw[k] ?? 0));
       const delta = basisXp(nieuw) - basisXp(oud);
-      // Alleen de laatste 21 dagen bewaren.
-      const grens = new Date(Date.now() - 21 * 864e5).toLocaleDateString("sv-SE");
+      // De laatste 9 weken bewaren: Groei kijkt 8 weken terug en moet dan nog weten welke dagen af waren.
+      const grens = new Date(Date.now() - 63 * 864e5).toLocaleDateString("sv-SE");
       const dag = Object.fromEntries(Object.entries(s.dag ?? {}).filter(([k]) => k >= grens));
       let uit: FamilyState = { ...s, dag: { ...dag, [d]: { ...(dag[d] ?? {}), [memberId]: nieuw } }, xp: delta ? addXp(s, memberId, delta) : s.xp };
       if (!routineAf(oud) && routineAf(nieuw)) uit = metFeed(uit, memberId, "heeft de ochtendroutine gedaan 🚿", ROUTINE.filter((r) => r.gewicht > 0).length * 2 + 5);
@@ -609,7 +609,17 @@ export const actions = {
   addAfspraak(text: string, by: string, scenario?: string) {
     const a = { id: newId("a"), text: text.trim(), at: new Date().toISOString(), by, scenario };
     if (!a.text) return;
-    update((s) => ((s.afspraken ?? []).some((x) => x.text === a.text) ? s : { ...s, afspraken: [...(s.afspraken ?? []), a].slice(-50) }));
+    update((s) => ((s.afspraken ?? []).some((x) => x.text === a.text && !x.gestopt) ? s : { ...s, afspraken: [...(s.afspraken ?? []), a].slice(-50) }));
+  },
+  /** Hielp de afspraak? Iedereen in het gezin mag dat zeggen. */
+  evalueerAfspraak(id: string, by: string, oordeel: "ja" | "beetje" | "nee") {
+    const at = new Date().toISOString();
+    update((s) => ({ ...s, afspraken: (s.afspraken ?? []).map((a) => (a.id === id ? { ...a, evaluaties: [...(a.evaluaties ?? []), { at, by, oordeel }].slice(-20) } : a)) }));
+  },
+  /** Afspraak loslaten (werkt niet, of is niet meer nodig). Blijft in de geschiedenis staan. */
+  stopAfspraak(id: string) {
+    const at = new Date().toISOString();
+    update((s) => ({ ...s, afspraken: (s.afspraken ?? []).map((a) => (a.id === id ? { ...a, gestopt: at } : a)) }));
   },
   removeAfspraak(id: string) {
     update((s) => ({ ...s, afspraken: (s.afspraken ?? []).filter((x) => x.id !== id) }));
