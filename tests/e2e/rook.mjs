@@ -135,6 +135,19 @@ await scenario("v2: kind geeft snoep aan, ouder ziet het in het overzicht", v2, 
   await p.locator(".v2-voeding").scrollIntoViewIfNeeded();
 });
 
+// Nieuwere Chrome (Android): scrollTo geeft een Promise terug. Een effect mag dat niet teruggeven (fout bij Kimberly, 15 okt).
+await scenario("v2: tabbladen wisselen als scrollTo een Promise teruggeeft (Chrome Android)", v2, "18:00", async (p) => {
+  await p.evaluate(() => { const o = window.scrollTo.bind(window); window.scrollTo = (...a) => { o(...a); return Promise.resolve(); }; });
+  for (const wie of ["Mama", "Lina"]) {
+    await wissel(p, wie);
+    for (const t of [/Gezin/, /Hulp/, /^Ik/, /Vandaag/, /Gezin/]) {
+      await tab(p, t).click();
+      await p.waitForTimeout(100);
+    }
+    assert.equal(await p.locator("text=Oeps").count(), 0, `geen foutscherm bij ${wie}`);
+  }
+});
+
 // ---------- Samenwerken en eerlijk verdelen ----------
 const gezinTab = async (p, naam) => { await tab(p, /Gezin/).click(); await p.getByRole("tab", { name: naam }).click(); };
 

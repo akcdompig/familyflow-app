@@ -86,7 +86,9 @@ export function AppV2() {
     const t = window.setTimeout(() => setToast(null), 2600);
     return () => window.clearTimeout(t);
   }, [toast]);
-  useEffect(() => window.scrollTo(0, 0), [tab, pagina]);
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [tab, pagina]);
   useEffect(() => {
     const run = () => document.visibilityState === "visible" && void syncSomtoday().then((m) => m && setToast(m));
     const t = window.setTimeout(run, 1500);
