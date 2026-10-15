@@ -36,6 +36,8 @@ export interface Verdeling {
   reden: Record<string, string>;
   /** Klussen die er op een vrije dag bij kwamen (moeten nog niet, mogen alvast). */
   extra: Set<string>;
+  /** Klussen die vandaag zouden moeten, maar doorschuiven: iedereen zit vol (schooldag, werk), en het kan nog wachten. */
+  uitgesteld: Set<string>;
   verwachting: Record<string, Verwachting>;
   /** Minuten die iedereen vandaag kreeg. */
   vandaag: Record<string, number>;
@@ -151,6 +153,9 @@ function laatstVoor(s: FamilyState, key: string, d: string): string | null {
 
 /* ---------- De verdeling ---------- */
 
+/** In ruil: deze klus vandaag overslaan. */
+export const OVERSLAAN = "-";
+
 const cache = new WeakMap<FamilyState, Map<string, Verdeling>>();
 
 export function verdeling(s: FamilyState, d = iso(new Date())): Verdeling {
@@ -172,6 +177,7 @@ function bereken(s: FamilyState, d: string, zonder?: { key: string; id: string }
   const mee: Record<string, string> = {};
   const reden: Record<string, string> = {};
   const extra = new Set<string>();
+  const uitgesteld = new Set<string>();
   const dagMs = new Date(d + "T12:00:00").getTime();
 
   const kies = (k: Klus, key: string, pool: Member[]) => {
@@ -197,7 +203,7 @@ function bereken(s: FamilyState, d: string, zonder?: { key: string; id: string }
   };
 
   // 1. Wat moet er vandaag? Eerst de langste klussen, dan de korte.
-  const moet: { k: Klus; key: string; kind?: Member }[] = [];
+  const moet: { k: Klus; key: string; kind?: Member; ago: number | null }[] = [];
   const kan: { k: Klus; key: string }[] = [];
   for (const k of KLUSSEN) {
     if (k.naKoken || !klusAan(s, k)) continue; // restjes: regelt de koelkast-logica (na het eten, niet de kok)
@@ -205,7 +211,7 @@ function bereken(s: FamilyState, d: string, zonder?: { key: string; id: string }
     for (const r of rijen) {
       const l = laatstVoor(s, r.key, d);
       const ago = l ? dagenTussen(l, d) : null;
-      if (k.elke === 1 || (ago !== null && ago >= k.elke) || (r.kind && ago === null)) moet.push({ k, key: r.key, kind: r.kind });
+      if (k.elke === 1 || (ago !== null && ago >= k.elke) || (r.kind && ago === null)) moet.push({ k, key: r.key, kind: r.kind, ago });
       else if (!r.kind && (ago === null || ago >= k.elke - 1)) kan.push({ k, key: r.key });
     }
   }
@@ -220,7 +226,17 @@ function bereken(s: FamilyState, d: string, zonder?: { key: string; id: string }
     if (m.kind) {
       lid = verw[m.kind.id].doel > 0 ? m.kind : undefined;
       if (lid) reden[m.key] = "het is je eigen kamer";
-    } else lid = kies(m.k, m.key, m.k.iedereen ? alle : kids);
+    } else {
+      // Zit iedereen vandaag al vol (school, werk) en kan het nog wachten? Dan schuift het door naar een rustigere dag.
+      // Dagelijkse klussen en klussen die echt te lang blijven liggen gaan altijd door.
+      const pool = (m.k.iedereen ? alle : kids).filter((x) => verw[x.id].doel > 0 && magDoen(s, x, m.k));
+      const vol = pool.every((x) => vandaag[x.id] + minutenVan(s, m.k) > verw[x.id].doel + 5);
+      if (m.k.elke > 1 && vol && m.ago !== null && m.ago < m.k.elke * 2) {
+        uitgesteld.add(m.key);
+        continue;
+      }
+      lid = kies(m.k, m.key, m.k.iedereen ? alle : kids);
+    }
     if (!lid) continue;
     wie[m.key] = lid.id;
     vandaag[lid.id] += minutenVan(s, m.k);
@@ -245,6 +261,13 @@ function bereken(s: FamilyState, d: string, zonder?: { key: string; id: string }
   // 3. Gewisseld: samen beslist, of door een ouder.
   const besluit = (key: string) => [...(s.uitdagingen ?? [])].reverse().find((u) => u.klus === key && iso(new Date(u.at)) === d);
   for (const [key, id] of Object.entries(s.ruil?.[d] ?? {})) {
+    if (id === OVERSLAAN && wie[key]) {
+      // Vandaag overgeslagen (een ouder zei: oké, vandaag niet).
+      vandaag[wie[key]] -= minutenKey(s, key);
+      delete wie[key];
+      delete reden[key];
+      continue;
+    }
     if (!wie[key] || !alle.some((m) => m.id === id) || wie[key] === id) continue;
     if (zonder && zonder.key === key && zonder.id === id) continue;
     const min = minutenKey(s, key);
@@ -262,7 +285,7 @@ function bereken(s: FamilyState, d: string, zonder?: { key: string; id: string }
     reden[key] = "doen jullie samen";
   }
 
-  return { wie, mee, reden, extra, verwachting: verw, vandaag };
+  return { wie, mee, reden, extra, uitgesteld, verwachting: verw, vandaag };
 }
 
 /** Wie is de beste volgende voor deze klus als `zonder` hem vandaag niet kan? (Voor "lukt me niet".) */

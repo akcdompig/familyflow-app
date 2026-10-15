@@ -936,7 +936,7 @@ i.is-vak { background: var(--ff-munt-zacht); border: 1px solid var(--ff-munt-don
 .v2-vchip.is-ongezond, .v2-teller.is-ongezond { background: #ffe9d6; color: #a84a00; border-color: #f2a65a; }
 .v2-voeding-kind { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: var(--ff-wolk); border-radius: 16px; padding: 8px 10px; font: inherit; color: inherit; cursor: pointer; text-align: left; }
 .v2-ongezond-tag { margin-left: 6px; font-size: 11.5px; font-weight: 800; color: #a84a00; background: #ffe9d6; border-radius: 999px; padding: 1px 7px; }
-.v2-voeding { width: 100%; text-align: left; background: var(--ff-wolk); border-radius: 18px; padding: 12px; }
+.v2-voeding, .v2-groei-kaart { width: 100%; text-align: left; background: var(--ff-wolk); border-radius: 18px; padding: 12px; }
 .v2-vblok { display: grid; gap: 4px; }
 .v2-vregel { display: flex; align-items: center; gap: 8px; min-height: 30px; font-size: var(--ff-t-s); }
 .v2-vregel.is-goed b { color: var(--ff-munt-donker); }
@@ -954,7 +954,7 @@ i.is-vak { background: var(--ff-munt-zacht); border: 1px solid var(--ff-munt-don
 .ff-vraag-status { margin: 0; background: var(--ff-zon-zacht); border-radius: 14px; padding: 10px 12px; font-size: var(--ff-t-s); }
 .ff-vraag-status.is-antwoord { background: var(--ff-munt-zacht); }
 .ff-keuze-rij { display: flex; align-items: center; gap: 10px; width: 100%; border: 2px solid var(--ff-lijn); background: var(--ff-vlak); border-radius: 16px; padding: 10px 12px; font: inherit; color: var(--ff-tekst); cursor: pointer; min-height: var(--ff-tik); }
-.ff-manieren { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.ff-manieren { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .ff-manier { display: grid; gap: 4px; justify-items: center; text-align: center; border: 2px solid var(--ff-lijn); background: var(--ff-vlak); border-radius: 18px; padding: 12px 8px; font: inherit; color: var(--ff-tekst); cursor: pointer; }
 .ff-manier:disabled { opacity: .4; cursor: default; }
 .ff-manier-emoji { font-size: 24px; }
@@ -967,7 +967,7 @@ i.is-vak { background: var(--ff-munt-zacht); border: 1px solid var(--ff-munt-don
 .ff-spel-knoppen { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .ff-spel-knop { display: grid; justify-items: center; gap: 2px; border: 2px solid var(--ff-lijn); background: var(--ff-vlak); border-radius: 18px; padding: 12px 4px; font: inherit; color: var(--ff-tekst); cursor: pointer; font-size: 34px; }
 .ff-spel-knop:active { transform: scale(.94); }
-.ff-lot { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ff-lot { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .ff-lot-vak { display: grid; justify-items: center; gap: 4px; border: 3px solid var(--ff-lijn); border-radius: 18px; padding: 12px; background: var(--ff-vlak); transition: background .12s, border-color .12s; }
 .ff-lot-vak.is-aan { border-color: var(--ff-zon); background: var(--ff-zon-zacht); }
 .ff-lot-vak.is-gekozen { border-color: var(--ff-koraal-knop); background: var(--ff-koraal-zacht); }
@@ -988,7 +988,8 @@ i.is-vak { background: var(--ff-munt-zacht); border: 1px solid var(--ff-munt-don
 .ff-eerlijk-balk i { display: block; height: 100%; background: var(--ff-lucht); border-radius: 999px; }
 .ff-eerlijk-min { font-weight: 700; min-width: 54px; text-align: right; }
 .ff-eerlijk-vaak { grid-column: 2 / -1; margin-top: -4px; }
-.ff-afspraak-kind { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ff-afspraak-kind { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 6px 0; }
+.ff-afspraak-steppers { flex-basis: 100%; display: flex; justify-content: space-between; gap: 8px; }
 .ff-stepper { display: inline-flex; align-items: center; gap: 6px; }
 .ff-afspraak-klus { display: grid; gap: 6px; padding: 8px 0; border-top: 1px solid var(--ff-lijn); }
 .ff-afspraak-klus.is-uit { opacity: .55; }
@@ -1014,9 +1015,9 @@ i.is-vak { background: var(--ff-munt-zacht); border: 1px solid var(--ff-munt-don
 .v2-gepland-koppen > * + * { margin-left: -8px; }
 
 /* ---------- Groeidoelen ---------- */
-.v2-groei-keuze { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.v2-groei-keuze { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .v2-groei-tegel { display: flex; align-items: center; gap: 8px; text-align: left; border: 2px solid var(--ff-lijn); background: var(--ff-vlak); border-radius: 16px; padding: 10px; min-height: var(--ff-tik); font: inherit; color: var(--ff-tekst); cursor: pointer; }
-.v2-groei-tegel b { font-size: var(--ff-t-s); }
+.v2-groei-tegel b { font-size: var(--ff-t-s); overflow-wrap: anywhere; hyphens: auto; min-width: 0; }
 .v2-groei-tegel[aria-pressed="true"] { border-color: var(--ff-munt-donker); background: var(--ff-munt-zacht); }
 .v2-groei-tegel:disabled { opacity: .45; cursor: default; }
 .v2-groei { display: grid; gap: 6px; padding: 8px 0; border-top: 1px solid var(--ff-lijn); }
@@ -1024,4 +1025,4 @@ i.is-vak { background: var(--ff-munt-zacht); border: 1px solid var(--ff-munt-don
 .v2-groei-tips { margin: 0; padding-left: 18px; font-size: var(--ff-t-s); }
 .v2-groei-hoe { display: flex; flex-wrap: wrap; gap: 6px; }
 @media (prefers-reduced-motion: reduce) { .ff-spel-hand { animation: none; } .ff-schakel i { transition: none; } }
-</style></head><body><div id="root"></div><script src="/config.js"></script><script src="/assets/app-5d9084e12548.js"></script><script>if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("/sw.js");</script></body></html>
+</style></head><body><div id="root"></div><script src="/config.js"></script><script src="/assets/app-d052b25afd5d.js"></script><script>if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("/sw.js");</script></body></html>

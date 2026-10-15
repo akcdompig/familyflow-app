@@ -45,7 +45,7 @@ export function VerdelingVandaag({ state, me, lijst, onOpen }: { state: FamilySt
     <section className="ff-card ff-stack-s" aria-label="Wie doet wat vandaag">
       <b>Vandaag</b>
       {leden.map((m) => {
-        const mijn = lijst.filter((k) => k.beurt?.id === m.id || k.mee?.id === m.id).filter((k) => !k.klus.perKind || k.kind?.id === m.id);
+        const mijn = lijst.filter((k) => (k.beurt?.id === m.id || k.mee?.id === m.id) && (k.ingedeeld || (k.klus.naKoken && (k.nodig || k.vandaagGedaan))));
         const w = v.verwachting[m.id];
         const af = mijn.filter((k) => k.vandaagGedaan).length;
         if (!mijn.length && m.role === "ouder") return null;
@@ -53,7 +53,7 @@ export function VerdelingVandaag({ state, me, lijst, onOpen }: { state: FamilySt
           <div key={m.id} className="ff-verdeling-rij">
             <Kop m={m} />
             <span className="ff-grow ff-stack-xs">
-              <span><b>{m.id === me.id ? "Jij" : m.name}</b> <span className="ff-small ff-muted">{SOORT[w?.soort ?? "vrij"]} {w?.reden}{mijn.length ? ` · ${v.vandaag[m.id] ?? 0} min` : ""}</span></span>
+              <span><b>{m.id === me.id ? "Jij" : m.name}</b> <span className="ff-small ff-muted">{SOORT[w?.soort ?? "vrij"]} {w?.reden}{mijn.length ? ` · ${Math.round(mijn.reduce((a, k) => a + k.minuten / (k.mee ? 2 : 1), 0))} min` : ""}</span></span>
               {mijn.length ? (
                 <span className="ff-verdeling-klussen">
                   {mijn.map((k) => (
@@ -191,6 +191,7 @@ export function AfsprakenSheet({ open, onClose, state, me, onToast }: { open: bo
             <div key={m.id} className="ff-afspraak-kind">
               <Kop m={m} size={30} />
               <b className="ff-grow">{m.name}</b>
+              <span className="ff-afspraak-steppers">
               {(["school", "vrij"] as const).map((veld) => (
                 <span key={veld} className="ff-stepper">
                   <span className="ff-small ff-muted">{veld === "school" ? "🎒 school" : "🏠 vrij"}</span>
@@ -199,6 +200,7 @@ export function AfsprakenSheet({ open, onClose, state, me, onToast }: { open: bo
                   {isOuder && <button className="v2-plusmin" aria-label={`${m.name} ${veld} plus 5`} onClick={() => verw(m, veld, 5)}>+</button>}
                 </span>
               ))}
+              </span>
             </div>
           );
         })}

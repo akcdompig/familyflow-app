@@ -5,7 +5,7 @@
 
 import { addXp, metFeed, newId, wijzig } from "./store";
 import { todayKey } from "./tasks";
-import { volgende } from "./verdeling";
+import { OVERSLAAN, volgende } from "./verdeling";
 import type { Afspraken, Bezwaar, FamilyState, SamenMoment, Uitdaging } from "./types";
 
 const naam = (s: FamilyState, id: string) => s.members.find((m) => m.id === id)?.name ?? "iemand";
@@ -71,7 +71,8 @@ export const samenwerken = {
   antwoord(b: Bezwaar, keuze: "ok" | "ouder" | "samen" | "toch", door: string, tekst?: string) {
     wijzig((s) => {
       let uit: FamilyState = { ...s, bezwaarAntwoord: { ...(s.bezwaarAntwoord ?? {}), [b.id]: { keuze, door, at: new Date().toISOString(), ...(tekst ? { tekst } : {}) } } };
-      if (keuze === "ok") uit = { ...uit, ruil: zet(uit.ruil, b.datum, b.klus, volgende(uit, b.datum, b.klus, b.door) ?? door) };
+      // Oké, vandaag niet: iemand anders (de eerstvolgende in de verdeling), of de eigen kamer gewoon een dag later.
+      if (keuze === "ok") uit = { ...uit, ruil: zet(uit.ruil, b.datum, b.klus, b.klus.includes(":") ? OVERSLAAN : volgende(uit, b.datum, b.klus, b.door) ?? door) };
       if (keuze === "ouder") uit = { ...uit, ruil: zet(uit.ruil, b.datum, b.klus, door) };
       if (keuze === "samen") uit = { ...uit, samenDoen: zet(uit.samenDoen, b.datum, b.klus, door) };
       return uit;

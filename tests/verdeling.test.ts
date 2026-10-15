@@ -194,3 +194,15 @@ test("signaal voor ouders als het scheef groeit", () => {
   assert.match(sig!.tekst, /minuten/);
   assert.equal(scheef(gezin(), at("2026-10-15")), null);
 });
+
+test("drukke schooldag: wat kan wachten schuift door, dagelijkse klussen niet", () => {
+  const log: KlusDone[] = [{ id: "s", klus: "stofzuigen", by: "k2", at: at("2026-10-12", "15:00").toISOString() }];
+  const school = verdeling(gezin({ werk: WERK, klusLog: log }), "2026-10-15");
+  assert.ok(school.uitgesteld.has("stofzuigen"), "stofzuigen schuift door op een volle schooldag");
+  assert.ok(school.wie["vaat-uit"] && school.wie["vaat-in"], "vaatwasser gaat altijd door");
+  const vrij = verdeling(gezin({ werk: WERK, klusLog: log, vakanties: { k1: [{ naam: "Herfst", van: "2026-10-12", tot: "2026-10-18" }], k2: [{ naam: "Herfst", van: "2026-10-12", tot: "2026-10-18" }] } }), "2026-10-15");
+  assert.ok(vrij.wie["stofzuigen"], "op een vrije dag gaat het wel door");
+  // Echt te lang blijven liggen: dan toch.
+  const oud: KlusDone[] = [{ id: "s", klus: "stofzuigen", by: "k2", at: at("2026-10-05", "15:00").toISOString() }];
+  assert.ok(verdeling(gezin({ werk: WERK, klusLog: oud }), "2026-10-15").wie["stofzuigen"]);
+});

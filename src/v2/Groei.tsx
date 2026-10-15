@@ -18,14 +18,14 @@ const HOE = [
 ] as const;
 
 export function Groei({ state, lid, me, onToast, compact = false }: { state: FamilyState; lid: Member; me: Member; onToast: (m: string) => void; compact?: boolean }) {
-  const [kiezen, setKiezen] = useState(false);
   const mag = me.id === lid.id || me.role === "ouder";
   const gekozen = state.doelen?.[lid.id]?.vaardigheden ?? [];
+  const [kiezen, setKiezen] = useState(!gekozen.length && !compact && mag);
   const week = weekVan();
   const tb = state.doelen?.[lid.id]?.terugblik?.[week] ?? {};
   const zelf = me.id === lid.id;
 
-  if (kiezen || (!gekozen.length && mag && !compact)) {
+  if (kiezen) {
     return (
       <section className="ff-card ff-stack-s" aria-label="Groeidoelen kiezen">
         <b>🌱 Waar wil {zelf ? "je" : lid.name} in groeien?</b>

@@ -283,6 +283,7 @@ function Spel({ state, me, stap, setStap, onKlaar }: { state: FamilyState; me: M
         </div>
       ) : (
         <>
+          {stap.beurt === "a" && stap.laatste && <p className="ff-small ff-muted ff-center" style={{ margin: 0 }}>Geef de telefoon terug aan {me.name}.</p>}
           <p className="ff-center" style={{ margin: 0 }}><b>{wie.name}</b>, kies stiekem:</p>
           <div className="ff-spel-knoppen">
             {HANDEN.map((h) => (
@@ -291,7 +292,6 @@ function Spel({ state, me, stap, setStap, onKlaar }: { state: FamilyState; me: M
               </button>
             ))}
           </div>
-          {stap.beurt === "a" && stap.laatste && <p className="ff-small ff-muted ff-center" style={{ margin: 0 }}>Geef de telefoon terug aan {me.name}.</p>}
         </>
       )}
       <span className="ff-small ff-muted ff-center">{state.members.find((m) => m.id === stap.voorsprong) ? `⭐ ${state.members.find((m) => m.id === stap.voorsprong)!.name} begon met een voorsprong` : "Wie het eerst 2 rondes wint"}</span>

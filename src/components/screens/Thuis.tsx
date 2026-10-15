@@ -166,11 +166,11 @@ export function Klussen({ state, me, lijst, onToast }: { state: FamilyState; me:
               <b>{k.klus.perKind && k.kind ? `Kamer ${k.kind.id === me.id ? "van jou" : k.kind.name}` : k.klus.label}</b>
               <span className="ff-small ff-muted ff-block">
                 {k.minuten} min · {k.laatst ? `laatst: ${k.laatst.by === me.id ? "jij" : naam(state, k.laatst.by)}, ${dagenTekst(k.dagenGeleden!)}` : "nog niet bijgehouden"}
-                {k.klus.naKoken ? " · na het eten" : k.klus.elke > 1 ? ` · elke ${k.klus.elke} dagen` : " · elke dag"}{!k.vandaagGedaan && k.teLaat > 0 ? ` · ${k.teLaat} ${k.teLaat === 1 ? "dag" : "dagen"} te laat` : ""}{k.extra && !k.vandaagGedaan ? " · mag alvast" : ""}
+                {k.klus.naKoken ? " · na het eten" : k.klus.elke > 1 ? ` · elke ${k.klus.elke} dagen` : " · elke dag"}{!k.vandaagGedaan && k.teLaat > 0 ? ` · ${k.teLaat} ${k.teLaat === 1 ? "dag" : "dagen"} te laat` : ""}{k.extra && !k.vandaagGedaan ? " · mag alvast" : ""}{k.uitgesteld && !k.vandaagGedaan ? " · schuift door naar een rustigere dag" : ""}
               </span>
             </span>
             <span className="ff-klus-status">
-              {k.vandaagGedaan ? "✓" : k.beurt && (k.ingedeeld || k.klus.naKoken || k.nodig) ? <><Kop m={k.beurt} size={26} />{k.mee && <Kop m={k.mee} size={26} />}<span className="ff-small">{k.beurt.id === me.id ? "jij" : k.beurt.name}{k.mee ? ` + ${k.mee.id === me.id ? "jij" : k.mee.name}` : ""}</span></> : <span className="ff-small ff-muted">later</span>}
+              {k.vandaagGedaan ? "✓" : k.beurt && (k.ingedeeld || (k.klus.naKoken && k.nodig)) ? <><Kop m={k.beurt} size={26} />{k.mee && <Kop m={k.mee} size={26} />}<span className="ff-small">{k.beurt.id === me.id ? "jij" : k.beurt.name}{k.mee ? ` + ${k.mee.id === me.id ? "jij" : k.mee.name}` : ""}</span></> : <span className="ff-small ff-muted">later</span>}
             </span>
           </button>
         ))}
