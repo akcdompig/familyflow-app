@@ -7,7 +7,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const out = resolve(root, "preview/dist");
+const out = resolve(root, process.env.FF_UI === "v2" ? "preview/acceptatie" : "preview/dist");
 mkdirSync(out, { recursive: true });
 
 const result = await build({

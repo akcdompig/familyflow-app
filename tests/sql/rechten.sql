@@ -26,6 +26,7 @@ select public.create_family($${
 }$$::jsonb, 'p1');
 select public.make_invite('k1') as kian_code \gset
 select public.make_invite('k2') as khloe_code \gset
+select pg_temp.eis(length(:'kian_code') = 8, 'uitnodigingscode heeft 8 tekens');
 select pg_temp.als('00000000-0000-0000-0000-00000000000b'); select public.join_family(:'kian_code');
 select pg_temp.als('00000000-0000-0000-0000-00000000000c'); select public.join_family(:'khloe_code');
 
@@ -63,6 +64,7 @@ select pg_temp.eis((:'st'::jsonb #>> '{members,1,bedtime}') = '21:30', 'kind kan
 select pg_temp.eis((:'st'::jsonb #>> '{members,1,avatar,skin}') = 's3', 'kind kan wel zijn eigen avatar aanpassen');
 select pg_temp.eis(jsonb_array_length(:'st'::jsonb -> 'rewards') = 1, 'kind kan beloningen niet wissen');
 select pg_temp.eis((:'st'::jsonb #>> '{xp,k2}') = '20', 'kind kan punten van zus niet verlagen');
+select pg_temp.eis((:'st'::jsonb #>> '{xp,k1}')::numeric = 310, 'kind kan zichzelf hooguit 300 punten per keer geven');
 select pg_temp.eis((:'st'::jsonb -> 'checked') = '{}'::jsonb, 'kind kan zichzelf niet bevestigen namens een ouder');
 select pg_temp.eis((select count(*) from jsonb_array_elements(:'st'::jsonb -> 'tasks') t where t ->> 'id' = 't1') = 1, 'taak van zus blijft staan');
 select pg_temp.eis((select count(*) from jsonb_array_elements(:'st'::jsonb -> 'tasks') t where t ->> 'id' = 't9') = 1, 'eigen leerblokje toevoegen mag');
@@ -99,6 +101,13 @@ do $$ begin perform public.restore_family(1); raise exception 'kind kon terugzet
 select pg_temp.eis(true, 'kind kan geen versie terugzetten');
 do $$ begin perform public.save_family('"onzin"'::jsonb, 1); raise exception 'onzin geaccepteerd'; exception when others then if sqlerrm like '%onzin geaccepteerd%' then raise; end if; end $$;
 select pg_temp.eis(true, 'ongeldige stand wordt geweigerd');
+
+-- ===== Uitnodigingscodes =====
+reset role; insert into auth.users values ('00000000-0000-0000-0000-00000000000d', null);
+select pg_temp.als('00000000-0000-0000-0000-00000000000d');
+select pg_temp.eis(public.join_family(:'kian_code')::jsonb ->> 'fout' like '%al gebruikt%', 'gebruikte code werkt niet voor een andere telefoon');
+select public.join_family('FOUT' || n) from generate_series(1, 10) n;
+select pg_temp.eis(public.join_family('XXXXXXXX')::jsonb ->> 'fout' like '%Te vaak%', 'na 10 verkeerde codes even geblokkeerd (raden kan niet)');
 
 -- ===== Foutmeldingen en gezin verwijderen =====
 select public.log_error('Iets ging mis', 'stack', '2.1', '/');

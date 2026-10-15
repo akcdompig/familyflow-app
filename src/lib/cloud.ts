@@ -154,7 +154,11 @@ const rpc = <T,>(name: string, args: Record<string, unknown> = {}) => call<T>(`/
 export const whoami = () => rpc<WhoAmI | null>("whoami");
 export const createFamily = (state: FamilyState, memberId: string) => rpc<string>("create_family", { p_state: state, p_member_id: memberId });
 export const makeInvite = (memberId: string) => rpc<string>("make_invite", { p_member_id: memberId });
-export const joinFamily = (code: string) => rpc<WhoAmI>("join_family", { p_code: code });
+export async function joinFamily(code: string): Promise<WhoAmI> {
+  const r = await rpc<WhoAmI & { fout?: string }>("join_family", { p_code: code });
+  if (r?.fout) throw new Error(r.fout);
+  return r;
+}
 export const saveFamily = (state: FamilyState, rev: number) => rpc<number>("save_family", { p_state: state, p_rev: rev });
 
 /*

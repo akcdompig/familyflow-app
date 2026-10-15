@@ -39,3 +39,7 @@ jobs:
         run: git add -N dist && git diff --stat --exit-code dist || (echo "dist/ is niet opnieuw gebouwd. Draai npm run build en commit." && exit 1)
       - name: Bouwen (acceptatie)
         run: npm run build:acceptatie
+      - name: Browser installeren
+        run: npx playwright install --with-deps chromium
+      - name: End-to-end (de app doorklikken op telefoonformaat)
+        run: npm run e2e

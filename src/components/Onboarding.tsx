@@ -209,14 +209,14 @@ export function CodeInvullen({ onJoined, onBack }: { onJoined: (state: FamilySta
         <input
           className="ff-code-input"
           value={code}
-          onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6))}
-          placeholder="ABC123"
+          onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8))}
+          placeholder="ABCD2345"
           autoCapitalize="characters"
           autoComplete="one-time-code"
-          aria-label="Code van 6 tekens"
+          aria-label="Code van 8 tekens"
         />
         {err && <p className="ff-alert">{err}</p>}
-        <button className="ff-btn ff-btn-primary ff-btn-wide" disabled={code.length !== 6 || busy}>{busy ? "Even geduld…" : "Meedoen"}</button>
+        <button className="ff-btn ff-btn-primary ff-btn-wide" disabled={(code.length !== 6 && code.length !== 8) || busy}>{busy ? "Even geduld…" : "Meedoen"}</button>
       </form>
       <p className="ff-small ff-muted ff-center">De code staat in de uitnodiging van je ouder.</p>
     </div>

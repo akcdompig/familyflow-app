@@ -25,11 +25,11 @@ language sql immutable as $$
     || case when nieuw ? me then jsonb_build_object(me, nieuw -> me) else '{}'::jsonb end
 $$;
 
-/** Punten: eigen punten van het kind, bij anderen nooit omlaag. */
+/** Punten: eigen punten van het kind (hooguit 300 erbij per keer opslaan), bij anderen nooit omlaag. */
 create or replace function public.ff_punten(oud jsonb, nieuw jsonb, me text) returns jsonb
 language sql immutable as $$
   select coalesce(jsonb_object_agg(k, case
-      when k = me then coalesce(nieuw -> k, oud -> k)
+      when k = me then to_jsonb(least(coalesce((nieuw ->> k)::numeric, (oud ->> k)::numeric, 0), coalesce((oud ->> k)::numeric, 0) + 300))
       else to_jsonb(greatest(coalesce((oud ->> k)::numeric, 0), coalesce((nieuw ->> k)::numeric, 0)))
     end), '{}'::jsonb)
   from (select jsonb_object_keys(coalesce(oud, '{}')) k union select jsonb_object_keys(coalesce(nieuw, '{}'))) ks
@@ -128,6 +128,10 @@ begin
   end loop;
   uit := jsonb_set(uit, '{xp}', public.ff_punten(oud -> 'xp', nieuw -> 'xp', me));
   uit := jsonb_set(uit, '{claim}', public.ff_punten(oud -> 'claim', nieuw -> 'claim', me));
+  -- Nooit meer geclaimd dan verdiend.
+  if (uit -> 'claim') ? me then
+    uit := jsonb_set(uit, array['claim', me], to_jsonb(least((uit #>> array['claim', me])::numeric, coalesce((uit #>> array['xp', me])::numeric, 0))));
+  end if;
   uit := jsonb_set(uit, '{dag}', public.ff_per_dag(oud -> 'dag', nieuw -> 'dag', me));
   uit := jsonb_set(uit, '{done}', public.ff_done(oud -> 'done', nieuw -> 'done', me));
   uit := jsonb_set(uit, '{tasks}', public.ff_taken(oud -> 'tasks', nieuw -> 'tasks', me));
@@ -245,6 +249,65 @@ grant execute on function public.load_family() to authenticated;
 grant execute on function public.family_rev() to authenticated;
 grant execute on function public.family_history() to authenticated;
 grant execute on function public.restore_family(bigint) to authenticated;
+
+-- ---------- Uitnodigingscodes: sterker en niet te raden ----------
+alter table public.invites add column if not exists used_by uuid;
+create table if not exists public.join_pogingen (user_id uuid not null, at timestamptz not null default now(), gelukt boolean not null);
+create index if not exists join_pogingen_user on public.join_pogingen (user_id, at desc);
+alter table public.join_pogingen enable row level security;
+
+/** Code van 8 tekens uit een cryptografisch sterke bron (32 tekens, zonder 0/O/1/I). */
+create or replace function public.ff_code() returns text
+language plpgsql volatile as $$
+declare alphabet text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; b bytea := decode(replace(gen_random_uuid()::text, '-', ''), 'hex'); c text := ''; i int;
+begin
+  for i in 0..7 loop c := c || substr(alphabet, 1 + (get_byte(b, i) % 32), 1); end loop;
+  return c;
+end $$;
+
+create or replace function public.make_invite(p_member_id text) returns text
+language plpgsql security definer set search_path = public as $$
+declare fid uuid := public.my_family(); c text;
+begin
+  if fid is null or not public.i_am_parent() then raise exception 'Alleen ouders kunnen uitnodigen'; end if;
+  delete from invites where family_id = fid and member_id = p_member_id;
+  loop
+    c := public.ff_code();
+    exit when not exists (select 1 from invites where code = c);
+  end loop;
+  insert into invites (code, family_id, member_id) values (c, fid, p_member_id);
+  return c;
+end $$;
+
+/**
+  Meedoen met een code. Geeft {family_id, member_id} terug, of {fout} als het niet lukt.
+  (Een fout als resultaat in plaats van een exception, zodat de mislukte poging bewaard blijft.)
+  Hooguit 10 mislukte pogingen per uur. Een gebruikte code werkt daarna alleen nog 10 minuten voor dezelfde telefoon.
+*/
+create or replace function public.join_family(p_code text) returns json
+language plpgsql security definer set search_path = public as $$
+declare inv invites%rowtype; r text;
+begin
+  if auth.uid() is null then return json_build_object('fout', 'Niet ingelogd'); end if;
+  if (select count(*) from join_pogingen where user_id = auth.uid() and not gelukt and at > now() - interval '1 hour') >= 10 then
+    return json_build_object('fout', 'Te vaak een verkeerde code. Probeer het over een uur opnieuw');
+  end if;
+  select * into inv from invites where code = upper(trim(p_code));
+  if not found or (inv.used_at is not null and (inv.used_by is distinct from auth.uid() or inv.used_at < now() - interval '10 minutes')) then
+    insert into join_pogingen (user_id, gelukt) values (auth.uid(), false);
+    return json_build_object('fout', case when found then 'Deze code is al gebruikt. Vraag een nieuwe aan je ouder' else 'Deze code klopt niet' end);
+  end if;
+  select coalesce(m->>'role', 'kind') into r
+    from families f, jsonb_array_elements(f.state->'members') m
+    where f.id = inv.family_id and m->>'id' = inv.member_id;
+  delete from family_members where family_id = inv.family_id and member_id = inv.member_id;
+  delete from family_members where user_id = auth.uid();
+  insert into family_members (user_id, family_id, member_id, role) values (auth.uid(), inv.family_id, inv.member_id, coalesce(r, 'kind'));
+  update invites set used_at = coalesce(used_at, now()), used_by = auth.uid() where code = inv.code;
+  insert into join_pogingen (user_id, gelukt) values (auth.uid(), true);
+  delete from join_pogingen where at < now() - interval '1 day';
+  return json_build_object('family_id', inv.family_id, 'member_id', inv.member_id);
+end $$;
 
 -- ---------- 4. Foutmeldingen uit de app ----------
 create table if not exists public.client_errors (
