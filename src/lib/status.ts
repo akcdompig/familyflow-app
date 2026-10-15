@@ -37,8 +37,9 @@ export function werktNu(state: FamilyState, id: string, nu = new Date()): { werk
   for (const w of lijst) {
     if (w.soort !== "vast" || !w.van || !w.tot) continue;
     const overNacht = minuten(w.tot) < minuten(w.van);
-    const vandaagActief = w.days?.includes(wd) && binnen(nuMin, w.van, overNacht ? "23:59" : w.tot);
-    const vanGisteren = overNacht && w.days?.includes((wd + 6) % 7) && nuMin < minuten(w.tot);
+    const vrij = (d: string) => !!state.vrij?.[d]?.includes(`${id}:${w.id}`);
+    const vandaagActief = w.days?.includes(wd) && !vrij(vandaag) && binnen(nuMin, w.van, overNacht ? "23:59" : w.tot);
+    const vanGisteren = overNacht && w.days?.includes((wd + 6) % 7) && !vrij(gisteren) && nuMin < minuten(w.tot);
     if (vandaagActief || vanGisteren) return { werk: w, look: lookVoor(w) };
   }
   for (const d of state.diensten ?? []) {

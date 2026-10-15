@@ -3,7 +3,8 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { Avatar } from "@/components/avatar/Avatar";
 import { slaapt, werktNu } from "@/lib/status";
-import { DOEL, ROUTINE, dagLog, dagscore, dorst, reeks, walm } from "@/lib/dag";
+import { DAGDELEN, DOEL, ETEN, ROUTINE, begroeting, dagdeel, dagLog, dagscore, datumTijd, dorst, gegeten, reeks, tipVanNu, walm } from "@/lib/dag";
+import { honger, isGeregeld, klusStatus, kookplan, naamKlus, rommel } from "@/lib/huis";
 import { Meters } from "@/components/screens/MijnDag";
 import { Icon } from "@/components/ui/Icon";
 import { MoodFace } from "@/components/ui/MoodFace";
@@ -24,6 +25,7 @@ interface Props {
   onGoGezin: () => void;
   onCoachNu: () => void;
   onMijnDag: () => void;
+  onGoThuis: () => void;
 }
 
 function timeOfDay() {
@@ -33,7 +35,7 @@ function timeOfDay() {
   return "nacht";
 }
 
-export function Huiskamer({ state, me, onCheckIn, onOpenMember, onTalkTips, onWho, onGoTasks, onRuzie, onGoGezin, onCoachNu, onMijnDag }: Props) {
+export function Huiskamer({ state, me, onCheckIn, onOpenMember, onTalkTips, onWho, onGoTasks, onRuzie, onGoGezin, onCoachNu, onMijnDag, onGoThuis }: Props) {
   const back = state.members.filter((m) => m.role === "ouder");
   const front = state.members.filter((m) => m.role !== "ouder");
   const tod = timeOfDay();
@@ -44,21 +46,25 @@ export function Huiskamer({ state, me, onCheckIn, onOpenMember, onTalkTips, onWh
     return () => window.clearInterval(t);
   }, []);
   const ikSlaap = slaapt(state, me.id);
+  const troep = rommel(state);
+  const stof = klusStatus(state).some((k) => k.klus.id === "stofzuigen" && k.teLaat > 0);
   const iedereenSlaapt = state.members.filter((m) => m.joined !== false).every((m) => slaapt(state, m.id));
 
   return (
     <div className="ff-screen">
       <header className="ff-top">
         <div>
-          <div className="ff-eyebrow">{state.family}</div>
-          <h1 className="ff-h1">Zo gaat het thuis</h1>
+          <div className="ff-eyebrow">{datumTijd()}</div>
+          <h1 className="ff-h1">{begroeting()}, {me.name}</h1>
         </div>
         <button className="ff-who" onClick={onWho} aria-label={`Je bent ${me.name}. Wissel van gezinslid`}>
           <Avatar config={me.avatar} expression={expressionFor(mine)} size={40} headOnly animate={false} label={me.name} />
         </button>
       </header>
 
-      <section className={`ff-room ff-room-${iedereenSlaapt ? "nacht" : tod}${iedereenSlaapt ? " is-iedereen-slaapt" : ""}`} aria-label="De huiskamer met het hele gezin">
+      <div className="ff-tip" role="note"><span aria-hidden="true">💡</span><span>{tipVanNu()}</span></div>
+
+      <section className={`ff-room ff-room-${iedereenSlaapt ? "nacht" : tod}${iedereenSlaapt ? " is-iedereen-slaapt" : ""}${troep.length >= 3 ? " is-rommelig" : ""}`} aria-label="De huiskamer met het hele gezin">
         <div className="ff-room-wall" />
         <div className="ff-room-window"><div className="ff-room-sky" /><div className="ff-room-sun" /></div>
         <div className="ff-room-frame" />
@@ -67,12 +73,17 @@ export function Huiskamer({ state, me, onCheckIn, onOpenMember, onTalkTips, onWh
         <div className="ff-room-floor" />
         <div className="ff-room-sofa" />
         <div className="ff-room-rug" />
+        {stof && <div className="ff-room-stof" aria-hidden="true" />}
+        {troep.map((t, i) => (
+          <span key={i} className="ff-room-rommel" aria-hidden="true" style={ROMMEL_PLEK[i]}>{t}</span>
+        ))}
+        {troep.length > 0 && <button className="ff-rommel-knop" onClick={onGoThuis}>{troep.length >= 3 ? "Wat een troep! Opruimen?" : "Er blijft iets liggen"}</button>}
 
         <Row members={back} row="achter" state={state} me={me} onOpen={onOpenMember} />
         <Row members={front} row="voor" state={state} me={me} onOpen={onOpenMember} />
       </section>
 
-      {!ikSlaap && <JouwDag state={state} me={me} onOpen={onMijnDag} />}
+      {!ikSlaap && <JouwDag state={state} me={me} onOpen={onMijnDag} onGoThuis={onGoThuis} />}
       <Klassement state={state} me={me} onOpen={onOpenMember} />
 
       <Attention state={state} me={me} onTalkTips={onTalkTips} onCheckIn={onCheckIn} onGoTasks={onGoTasks} onRuzie={onRuzie} onGoGezin={onGoGezin} />
@@ -114,18 +125,19 @@ function Row({ members, row, state, me, onOpen }: { members: Member[]; row: "ach
         const werk = zzz ? null : werktNu(state, m.id);
         const stinkt = !zzz && m.joined !== false && walm(state, m.id);
         const dorstig = !zzz && m.joined !== false && dorst(state, m.id);
+        const hongerig = !zzz && !werk && m.joined !== false && honger(state, m.id);
         const spread = Math.min(46, 92 / members.length);
         const left = 50 + (i - (members.length - 1) / 2) * spread;
         const style = { left: `${left}%` } as CSSProperties;
         return (
           <button key={m.id} className={`ff-slot ff-slot-${row} ${m.joined === false ? "is-away" : ""}`} style={style} onClick={() => onOpen(m.id)} aria-label={`${m.name}: ${zzz ? "slaapt" : werk ? `aan het werk bij ${werk.werk.naam}` : moodLabel(c)}`}>
-            <Avatar config={m.avatar} expression={zzz ? "slaap" : expressionFor(c)} bezig={werk?.look} walm={stinkt} dorst={dorstig} energy={m.energy} size={row === "voor" ? 112 : 100} seed={i * 3 + (row === "voor" ? 2 : 0)} label={m.name} />
+            <Avatar config={m.avatar} expression={zzz ? "slaap" : expressionFor(c)} bezig={werk?.look} walm={stinkt} dorst={dorstig} honger={hongerig} energy={m.energy} size={row === "voor" ? 112 : 100} seed={i * 3 + (row === "voor" ? 2 : 0)} label={m.name} />
             <span className="ff-tag">
               <span className="ff-tag-name">
                 <span className="ff-dot" style={{ background: moodDot(c) }} />
                 {m.id === me.id ? "Jij" : m.name}
               </span>
-              <span className={`ff-tag-mood${zzz ? " is-slaap" : werk ? " is-werk" : ""}`}>{m.joined === false ? "nog niet aangemeld" : zzz ? "slaapt" : werk ? `aan het werk · ${werk.werk.naam}` : stinkt ? "pfoe, nog niet gedoucht?" : moodLabel(c)}</span>
+              <span className={`ff-tag-mood${zzz ? " is-slaap" : werk ? " is-werk" : ""}`}>{m.joined === false ? "nog niet aangemeld" : zzz ? "slaapt" : werk ? `aan het werk · ${werk.werk.naam}` : stinkt ? "pfoe, nog niet gedoucht?" : hongerig ? "heeft honger…" : moodLabel(c)}</span>
               {m.joined !== false && !zzz && <Meters state={state} id={m.id} klein />}
             </span>
             {c?.wantsTalk && <span className="ff-bubble" aria-hidden="true"><Icon name="chat" size={16} /></span>}
@@ -293,22 +305,58 @@ function Inbox({ state, me }: { state: FamilyState; me: Member }) {
   );
 }
 
-/** Jouw dag: ochtendroutine, water en fruit in één oogopslag. */
-function JouwDag({ state, me, onOpen }: { state: FamilyState; me: Member; onOpen: () => void }) {
+const ROMMEL_PLEK: CSSProperties[] = [
+  { left: "8%", bottom: "6%" }, { right: "9%", bottom: "8%" }, { left: "30%", bottom: "2%" },
+  { right: "28%", bottom: "3%" }, { left: "4%", bottom: "30%" }, { right: "4%", bottom: "31%" },
+];
+
+/** Jouw dag: wat er NU speelt. Ochtend = routine, middag = lunch, avond = eten. Plus jouw klussen. */
+function JouwDag({ state, me, onOpen, onGoThuis }: { state: FamilyState; me: Member; onOpen: () => void; onGoThuis: () => void }) {
   const log = dagLog(state, me.id);
+  const deel = dagdeel();
+  const info = DAGDELEN.find((d) => d.id === deel)!;
   const nodig = ROUTINE.filter((x) => x.gewicht > 0);
   const klaar = nodig.filter((x) => log.routine.includes(x.id)).length;
   const r = reeks(state, me.id);
-  const ochtend = new Date().getHours() < 12;
+  const momenten = ETEN.filter((e) => e.deel === deel);
+  const plan = kookplan(state);
+  const mijnKlussen = klusStatus(state).filter((k) => k.beurt?.id === me.id && !k.vandaagGedaan && k.nodig).slice(0, 3);
   return (
     <section className="ff-card ff-stack-s">
       <div className="ff-row" style={{ justifyContent: "space-between" }}>
-        <b>{ochtend && klaar < nodig.length ? "Je ochtendroutine" : "Jouw dag"}</b>
+        <b>{info.emoji} {deel === "ochtend" && klaar < nodig.length ? "Je ochtendroutine" : `Jouw ${info.label.toLowerCase()}`}</b>
         {r > 0 && <span className="ff-small">🔥 {r} {r === 1 ? "dag" : "dagen"} op rij</span>}
       </div>
       <Meters state={state} id={me.id} />
-      <p className="ff-small ff-muted">Routine {klaar}/{nodig.length} · water {log.water}/{DOEL.water} · fruit {log.fruit}/{DOEL.fruit}{log.ontbijt ? " · ontbeten" : ""}</p>
-      <button className="ff-btn ff-btn-primary ff-btn-wide" onClick={onOpen}>{klaar < nodig.length && ochtend ? "Ochtendroutine afvinken" : "Mijn dag bijwerken"}</button>
+      {deel === "ochtend" && <p className="ff-small ff-muted">Routine {klaar}/{nodig.length}{gegeten(log, "ontbijt") ? " · ontbeten" : ""}</p>}
+      {momenten.length > 0 && (
+        <div className="ff-moment-rij">
+          {momenten.map((e) => (
+            <button key={e.id} className="ff-chip ff-chip-l" aria-pressed={gegeten(log, e.id)} onClick={() => actions.toggleEten(me.id, e.id)}>
+              {e.emoji} {gegeten(log, e.id) ? `${e.label} ✓` : `${e.label}?`}
+            </button>
+          ))}
+        </div>
+      )}
+      <p className="ff-small ff-muted">Hele dag: water {log.water}/{DOEL.water} · fruit {log.fruit}/{DOEL.fruit}</p>
+      {(deel === "middag" || deel === "avond") && (
+        <button className={`ff-kook-regel${isGeregeld(plan) ? "" : " is-open"}`} onClick={onGoThuis}>
+          🍳 Vanavond: {plan.restjes ? "restjes" : plan.kok ? `${plan.kok === me.id ? "jij kookt" : `${state.members.find((m) => m.id === plan.kok)?.name ?? ""} kookt`}${plan.wat ? ` · ${plan.wat}` : ""}` : "nog niemand kookt. Wie pakt het op?"}
+        </button>
+      )}
+      {mijnKlussen.length > 0 && (
+        <div className="ff-stack-s">
+          <span className="ff-eyebrow">Jouw beurt</span>
+          {mijnKlussen.map((k) => (
+            <div key={k.key} className="ff-row ff-log-rij">
+              <span aria-hidden="true">{k.klus.emoji}</span>
+              <span className="ff-grow ff-small"><b>{naamKlus(k, me.id)}</b></span>
+              <button className="ff-btn ff-btn-ghost ff-btn-s" onClick={() => actions.klusGedaan(k.key, me.id, k.klus.xp)}>Gedaan</button>
+            </div>
+          ))}
+        </div>
+      )}
+      <button className="ff-btn ff-btn-primary ff-btn-wide" onClick={onOpen}>{deel === "ochtend" && klaar < nodig.length ? "Ochtendroutine afvinken" : "Mijn dag bijwerken"}</button>
     </section>
   );
 }

@@ -220,11 +220,48 @@ export interface FamilyState {
   werk?: Record<string, WerkItem[]>;
   diensten?: Dienst[];
   /** Dagelijkse basis per dag en lid: ochtendroutine, kleding, water, fruit, ontbijt, sport. */
-  dag?: Record<string, Record<string, { routine: string[]; kleding?: "nieuw" | "zelfde"; water: number; fruit: number; ontbijt?: boolean; sport?: boolean }>>;
+  dag?: Record<string, Record<string, { routine: string[]; kleding?: "nieuw" | "zelfde"; water: number; fruit: number; ontbijt?: boolean; sport?: boolean; eten?: string[] }>>;
+  /** Koken per dag: wie kookt, wat, restjes van gisteren, wie eet mee. */
+  koken?: Record<string, Kookplan>;
+  /** Klussen in huis: wie deed wat en wanneer. Nieuwste achteraan. */
+  klusLog?: KlusDone[];
+  /** Het gezinspotje: sparen voor iets leuks samen. Geen bank, alleen bijhouden. */
+  pot?: { doel: string; cents: number; items: PotItem[] };
+  /** Vast werk dat een keer niet doorgaat: vrij[datum] = ["lidId:werkId"]. */
+  vrij?: Record<string, string[]>;
   /** Porren: een duwtje van een gezinslid. */
   porren?: { id: string; from: string; to: string; at: string; tekst: string; gezien?: boolean }[];
   /** Wie slaapt: sleep[lid] = tijd van welterusten. Inchecken maakt je wakker. */
   sleep?: Record<string, string>;
   /** Bevestigd door een ouder: checked[datum][taakId] = id van de ouder. */
   checked?: Record<string, Record<string, string>>;
+}
+
+export interface Kookplan {
+  kok?: string;
+  wat?: string;
+  /** Restjes van gisteren. Mag hooguit één dag achter elkaar (max 2 dagen hetzelfde). */
+  restjes?: boolean;
+  /** Wie eet er mee. Leeg = nog niet gekozen, dan iedereen die thuis is. */
+  eters?: string[];
+  gasten?: number;
+}
+
+export interface KlusDone {
+  id: string;
+  klus: string;
+  by: string;
+  at: string;
+}
+
+export interface PotItem {
+  id: string;
+  cents: number;
+  soort: "statiegeld" | "beloning" | "inleg" | "uitgave";
+  reden: string;
+  /** Wie het erin deed (of bij een beloning: wie de ouder was). */
+  by: string;
+  /** Bij een beloning: voor welk kind. Bij statiegeld/inleg: wie het bijdroeg. */
+  voor?: string;
+  at: string;
 }

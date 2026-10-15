@@ -680,3 +680,53 @@ i.is-vak { background: var(--ff-munt-zacht); border: 1px solid var(--ff-munt-don
 .ff-por-kaart { background: var(--ff-wolk); border-radius: var(--ff-rond-xl); padding: 22px; display: grid; justify-items: center; gap: 10px; max-width: 340px; width: 100%; text-align: center; box-shadow: var(--ff-schaduw-m); animation: ff-por 500ms cubic-bezier(.2,1.6,.4,1); }
 @keyframes ff-por { 0% { transform: scale(.6) rotate(-6deg); } 60% { transform: scale(1.05) rotate(3deg); } 100% { transform: scale(1) rotate(0); } }
 @media (prefers-reduced-motion: reduce) { .ff-av-walm path, .ff-av-dorst, .ff-por-kaart { animation: none; } }
+
+/* ---- 1.9: dagdelen, thuis, klussen, potje, rommel, honger ---- */
+.ff-input { min-height: var(--ff-tik); border: 2px solid #e4dcd3; border-radius: var(--ff-rond-m); padding: 10px 14px; font: inherit; font-weight: 700; background: var(--ff-vlak); color: var(--ff-tekst); min-width: 0; }
+.ff-block { display: block; }
+.ff-dagtijd { display: grid; gap: 2px; }
+.ff-tip { display: flex; gap: 8px; align-items: flex-start; background: var(--ff-zon-zacht, #fff4d6); border-radius: var(--ff-rond-m); padding: 10px 12px; font-size: var(--ff-t-s); font-weight: 600; }
+.ff-dagdelen { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.ff-dagdeel { display: grid; justify-items: center; gap: 1px; padding: 8px 2px; border-radius: var(--ff-rond-m); border: 2px solid var(--ff-lijn); background: var(--ff-vlak); font: inherit; color: var(--ff-tekst); cursor: pointer; font-size: var(--ff-t-s); }
+.ff-dagdeel > span:first-child { font-size: 20px; }
+.ff-dagdeel.is-nu { border-color: var(--ff-zon); }
+.ff-dagdeel[aria-selected="true"] { background: var(--ff-nacht); border-color: var(--ff-nacht); color: #fff; }
+.ff-dagdeel[aria-selected="true"] .ff-muted { color: rgba(255,255,255,.75); }
+.ff-dag-heledag { background: var(--ff-lucht-zacht); }
+.ff-moment-rij { display: flex; flex-wrap: wrap; gap: 6px; }
+.ff-tab { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
+.ff-tab-badge { position: absolute; top: -6px; right: -2px; min-width: 18px; height: 18px; border-radius: 9px; background: var(--ff-koraal-knop); color: #fff; font-size: 11px; line-height: 18px; text-align: center; }
+.ff-dagstrip { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.ff-dagstrip-dag { display: grid; justify-items: center; gap: 0; padding: 6px 0; border-radius: var(--ff-rond-s); border: 2px solid var(--ff-lijn); background: var(--ff-vlak); font: inherit; color: var(--ff-tekst); cursor: pointer; }
+.ff-dagstrip-dag[aria-pressed="true"] { border-color: var(--ff-koraal-knop); background: var(--ff-koraal-zacht, #ffe3dc); }
+.ff-dagstrip-dag .ff-small { font-size: 10px; }
+.ff-chip:disabled { opacity: .45; cursor: not-allowed; }
+.ff-klussen { display: grid; gap: 8px; }
+.ff-klus { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: var(--ff-rond-m); border: 2px solid var(--ff-lijn); background: var(--ff-vlak); font: inherit; color: var(--ff-tekst); text-align: left; cursor: pointer; width: 100%; }
+.ff-klus.is-laat { border-color: var(--ff-koraal-knop); background: var(--ff-koraal-zacht, #ffe9e3); }
+.ff-klus.is-klaar { background: var(--ff-munt-zacht); border-color: transparent; opacity: .8; }
+.ff-klus-emoji { font-size: 26px; }
+.ff-klus-status { display: grid; justify-items: center; gap: 1px; min-width: 44px; font-weight: 800; color: var(--ff-munt-donker); }
+.ff-log-rij { align-items: center; gap: 8px; }
+.ff-week-dag { padding: 10px 12px; display: grid; gap: 6px; }
+.ff-week-dag.is-vandaag { outline: 3px solid var(--ff-zon); }
+.ff-week-rij { align-items: center; gap: 6px; flex-wrap: nowrap; }
+.ff-week-rij .ff-chips { flex: 1; }
+.ff-werk-chip { font-size: 12px; }
+.ff-werk-chip.is-vrij { text-decoration: line-through; opacity: .6; }
+.ff-werk-chip:disabled { opacity: 1; cursor: default; }
+.ff-pot { justify-items: center; text-align: center; }
+.ff-pot-varken { font-size: 54px; line-height: 1; animation: ff-pot 3s ease-in-out infinite; }
+@keyframes ff-pot { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
+.ff-pot .ff-bar { width: 100%; }
+/* Rommel in de huiskamer: klussen die blijven liggen */
+.ff-room-rommel { position: absolute; z-index: 1; font-size: 22px; pointer-events: none; filter: drop-shadow(0 2px 1px rgba(0,0,0,.15)); animation: ff-rommel-in .5s var(--ff-veer, ease-out); }
+@keyframes ff-rommel-in { from { transform: scale(0) rotate(-30deg); } to { transform: scale(1); } }
+.ff-room.is-rommelig .ff-room-wall { filter: saturate(.75) brightness(.96); }
+.ff-room-stof { position: absolute; inset: 0; z-index: 1; pointer-events: none; background-image: radial-gradient(rgba(120,100,80,.18) 1.5px, transparent 1.6px); background-size: 22px 22px; opacity: .7; }
+.ff-av-honger { animation: ff-dorst 1.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@media (prefers-reduced-motion: reduce) { .ff-pot-varken, .ff-room-rommel, .ff-av-honger { animation: none; } }
+.ff-rommel-knop { position: absolute; z-index: 3; top: 8px; left: 50%; transform: translateX(-50%); border: 0; border-radius: 999px; padding: 6px 12px; background: var(--ff-koraal-knop); color: #fff; font: inherit; font-weight: 800; font-size: 12px; box-shadow: var(--ff-schaduw-s); cursor: pointer; white-space: nowrap; }
+.ff-kook-regel { text-align: left; border: 2px solid var(--ff-lijn); background: var(--ff-wolk); border-radius: var(--ff-rond-m); padding: 10px 12px; font: inherit; font-weight: 700; font-size: var(--ff-t-s); color: var(--ff-tekst); cursor: pointer; }
+.ff-kook-regel.is-open { border-color: var(--ff-koraal-knop); background: var(--ff-koraal-zacht); }
+.ff-btn-s { min-height: 34px; padding: 4px 12px; font-size: var(--ff-t-s); }

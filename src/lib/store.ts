@@ -6,7 +6,7 @@ import { demoFamily } from "./demo";
 import { phoneTaskTitle, todayKey } from "./tasks";
 import { XP } from "./xp";
 import { basisXp, type DagLog } from "./dag";
-import type { Dienst, WerkItem, CoachRun, Quest, AvatarConfig, CalmPlan, CheckIn, Conflict, ConflictSide, FamilyState, Meeting, ProKind, Task } from "./types";
+import type { Kookplan, PotItem, Dienst, WerkItem, CoachRun, Quest, AvatarConfig, CalmPlan, CheckIn, Conflict, ConflictSide, FamilyState, Meeting, ProKind, Task } from "./types";
 
 /*
   Eén store voor demo en echt.
@@ -236,6 +236,55 @@ export const actions = {
       const grens = new Date(Date.now() - 21 * 864e5).toLocaleDateString("sv-SE");
       const dag = Object.fromEntries(Object.entries(s.dag ?? {}).filter(([k]) => k >= grens));
       return { ...s, dag: { ...dag, [d]: { ...(dag[d] ?? {}), [memberId]: nieuw } }, xp: delta && isKid(s, memberId) ? addXp(s, memberId, delta) : s.xp };
+    });
+  },
+  /** Eetmoment afvinken (ontbijt, lunch, tussendoor, avondeten). */
+  toggleEten(memberId: string, id: string) {
+    actions.updateDag(memberId, (l) => {
+      const heeft = !!l.eten?.includes(id) || (id === "ontbijt" && !!l.ontbijt);
+      const eten = heeft ? (l.eten ?? []).filter((x) => x !== id) : [...(l.eten ?? []), id];
+      return { ...l, eten, ontbijt: id === "ontbijt" ? !heeft : l.ontbijt };
+    });
+  },
+  /** Klus gedaan. Kinderen krijgen XP. Geeft het id terug, zodat je het meteen kunt terugdraaien. */
+  klusGedaan(key: string, by: string, xp: number): string {
+    const id = newId("k");
+    update((s) => ({ ...s, klusLog: [...(s.klusLog ?? []), { id, klus: key, by, at: new Date().toISOString() }].slice(-300), xp: isKid(s, by) && xp ? addXp(s, by, xp) : s.xp }));
+    return id;
+  },
+  /** Verkeerd ingevuld? Weghalen, XP gaat er weer af. */
+  klusWeg(id: string, xp: number) {
+    update((s) => {
+      const k = (s.klusLog ?? []).find((x) => x.id === id);
+      if (!k) return s;
+      return { ...s, klusLog: (s.klusLog ?? []).filter((x) => x.id !== id), xp: isKid(s, k.by) && xp ? addXp(s, k.by, -xp) : s.xp };
+    });
+  },
+  setKoken(date: string, fn: (p: Kookplan) => Kookplan) {
+    update((s) => {
+      const grens = new Date(Date.now() - 30 * 864e5).toLocaleDateString("sv-SE");
+      const koken = Object.fromEntries(Object.entries(s.koken ?? {}).filter(([k]) => k >= grens));
+      return { ...s, koken: { ...koken, [date]: fn({ ...(koken[date] ?? {}) }) } };
+    });
+  },
+  setPotDoel(doel: string, cents: number) {
+    update((s) => ({ ...s, pot: { items: [], ...(s.pot ?? {}), doel, cents } }));
+  },
+  addPot(item: Omit<PotItem, "id" | "at">) {
+    update((s) => ({ ...s, pot: { doel: "", cents: 0, ...(s.pot ?? { items: [] }), items: [...(s.pot?.items ?? []), { ...item, id: newId("e"), at: new Date().toISOString() }].slice(-500) } }));
+  },
+  removePot(id: string) {
+    update((s) => (s.pot ? { ...s, pot: { ...s.pot, items: s.pot.items.filter((x) => x.id !== id) } } : s));
+  },
+  /** Vast werk gaat een dag niet door (vrij genomen), of toch wel. */
+  toggleVrij(date: string, member: string, werkId: string) {
+    const key = `${member}:${werkId}`;
+    update((s) => {
+      const lijst = s.vrij?.[date] ?? [];
+      const nieuw = lijst.includes(key) ? lijst.filter((x) => x !== key) : [...lijst, key];
+      const grens = new Date(Date.now() - 30 * 864e5).toLocaleDateString("sv-SE");
+      const vrij = Object.fromEntries(Object.entries({ ...(s.vrij ?? {}), [date]: nieuw }).filter(([k, v]) => k >= grens && v.length));
+      return { ...s, vrij };
     });
   },
   /** Iemand porren. Hooguit één keer per 10 minuten per persoon, zodat het leuk blijft. */

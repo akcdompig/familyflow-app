@@ -17,6 +17,76 @@ export interface DagLog {
   fruit: number;
   ontbijt?: boolean;
   sport?: boolean;
+  /** Afgevinkte eetmomenten: ontbijt, lunch, tussendoor, avondeten. */
+  eten?: string[];
+}
+
+/* De dag in vier stukken, zoals thuis: ochtend, middag, avond en nacht. */
+export type Dagdeel = "ochtend" | "middag" | "avond" | "nacht";
+export const DAGDELEN: { id: Dagdeel; label: string; emoji: string; van: number; tot: number }[] = [
+  { id: "ochtend", label: "Ochtend", emoji: "🌅", van: 6, tot: 12 },
+  { id: "middag", label: "Middag", emoji: "☀️", van: 12, tot: 18 },
+  { id: "avond", label: "Avond", emoji: "🌆", van: 18, tot: 23 },
+  { id: "nacht", label: "Nacht", emoji: "🌙", van: 23, tot: 6 },
+];
+export function dagdeel(nu = new Date()): Dagdeel {
+  const h = nu.getHours();
+  if (h >= 6 && h < 12) return "ochtend";
+  if (h >= 12 && h < 18) return "middag";
+  if (h >= 18 && h < 23) return "avond";
+  return "nacht";
+}
+
+/** Eetmomenten: even afvinken, net als in de Sims. Vanaf "na" telt het als gemist. */
+export const ETEN: { id: string; label: string; emoji: string; deel: Dagdeel; na: number }[] = [
+  { id: "ontbijt", label: "Ontbijt", emoji: "🥣", deel: "ochtend", na: 11 },
+  { id: "lunch", label: "Lunch", emoji: "🥪", deel: "middag", na: 14 },
+  { id: "tussendoor", label: "Tussendoortje", emoji: "🥕", deel: "middag", na: 17 },
+  { id: "avondeten", label: "Avondeten", emoji: "🍽️", deel: "avond", na: 20 },
+];
+export const gegeten = (log: DagLog, id: string) => !!log.eten?.includes(id) || (id === "ontbijt" && !!log.ontbijt);
+
+const TIPS: Record<Dagdeel, string[]> = {
+  ochtend: [
+    "Eerst je ochtendroutine, dan pas je telefoon.",
+    "Een glas water bij het opstaan maakt je sneller wakker.",
+    "Leg je kleren voor morgen vanavond al klaar. Scheelt gedoe.",
+    "Bed even rechttrekken kost 30 seconden en je kamer ziet er meteen netter uit.",
+    "Check de vaatwasser: schoon? Even uitruimen voor je vertrekt.",
+  ],
+  middag: [
+    "Pak een stuk fruit uit de koelkast. Daar ligt het voor.",
+    "Huiswerk na de lunch is sneller klaar dan om 9 uur 's avonds.",
+    "Tijd voor water. Even een glas halen?",
+    "Vanavond eten: weet iemand al wie er kookt?",
+    "Kort stofzuigen? Om de dag houdt het huis fris.",
+  ],
+  avond: [
+    "Na het eten samen de keuken opruimen: 10 minuten, klaar.",
+    "Telefoon een uur voor bedtijd aan de lader.",
+    "Tas voor morgen al ingepakt?",
+    "Zet de vaatwasser aan voor je gaat slapen.",
+    "Even je kamer opruimen voor het slapen. Morgen blij mee.",
+  ],
+  nacht: ["Tijd om te slapen. Morgen weer een nieuwe dag.", "Goed geslapen = makkelijker opstaan. Welterusten!"],
+};
+/** Tip die elk uur wisselt, voor iedereen in het gezin hetzelfde. */
+export function tipVanNu(nu = new Date()): string {
+  const lijst = TIPS[dagdeel(nu)];
+  const i = (nu.getDate() * 24 + nu.getHours()) % lijst.length;
+  return lijst[i];
+}
+
+export function begroeting(nu = new Date()): string {
+  return { ochtend: "Goedemorgen", middag: "Goedemiddag", avond: "Goedenavond", nacht: "Slaap lekker" }[dagdeel(nu)];
+}
+
+const DAGNAAM = ["zondag", "maandag", "dinsdag", "woensdag", "donderdag", "vrijdag", "zaterdag"];
+const MAAND = ["januari", "februari", "maart", "april", "mei", "juni", "juli", "augustus", "september", "oktober", "november", "december"];
+/** "Donderdag 15 oktober · 08:15" */
+export function datumTijd(nu = new Date()): string {
+  const d = DAGNAAM[nu.getDay()];
+  return `${d.charAt(0).toUpperCase() + d.slice(1)} ${nu.getDate()} ${MAAND[nu.getMonth()]} · ${String(nu.getHours()).padStart(2, "0")}:${String(nu.getMinutes()).padStart(2, "0")}`;
 }
 
 export const ROUTINE: { id: string; label: string; emoji: string; gewicht: number }[] = [
@@ -67,9 +137,10 @@ export function hygiene(s: FamilyState, id: string, nu = new Date()): number {
 
 export function gezondheid(s: FamilyState, id: string, nu = new Date()): number {
   const log = dagLog(s, id, iso(nu));
-  const w = Math.min(1, log.water / DOEL.water) * 45;
-  const f = Math.min(1, log.fruit / DOEL.fruit) * 25;
-  return Math.round(w + f + (log.ontbijt ? 20 : 0) + (log.sport ? 10 : 0));
+  const w = Math.min(1, log.water / DOEL.water) * 35;
+  const f = Math.min(1, log.fruit / DOEL.fruit) * 20;
+  const m = (gegeten(log, "ontbijt") ? 10 : 0) + (gegeten(log, "lunch") ? 10 : 0) + (gegeten(log, "avondeten") ? 10 : 0) + (gegeten(log, "tussendoor") ? 5 : 0);
+  return Math.round(w + f + m + (log.sport ? 10 : 0));
 }
 
 /** Komt er een walmpje van je af? Pas na de deadline, of als je op dag 3 in dezelfde kleren loopt. */
@@ -89,7 +160,7 @@ export function dorst(s: FamilyState, id: string, nu = new Date()): boolean {
 export function basisXp(log: DagLog): number {
   const r = log.routine.filter((x) => ROUTINE.some((y) => y.id === x && y.gewicht > 0)).length;
   const compleet = ROUTINE.filter((y) => y.gewicht > 0).every((y) => log.routine.includes(y.id));
-  return r * 2 + (compleet ? 5 : 0) + (log.kleding ? 1 : 0) + (log.water >= DOEL.water ? 5 : 0) + (log.fruit >= DOEL.fruit ? 5 : 0) + (log.ontbijt ? 2 : 0) + (log.sport ? 3 : 0);
+  return r * 2 + (compleet ? 5 : 0) + (log.kleding ? 1 : 0) + (log.water >= DOEL.water ? 5 : 0) + (log.fruit >= DOEL.fruit ? 5 : 0) + ETEN.filter((e) => gegeten(log, e.id)).length * 2 + (log.sport ? 3 : 0);
 }
 
 /** Dagscore 0–100: hygiëne, gezondheid en taken. Voor het klassement in de huiskamer. */
@@ -107,4 +178,10 @@ export function reeks(s: FamilyState, id: string, nu = new Date()): number {
     d = addDays(d, -1);
   }
   return n;
+}
+
+/** Welke eetmomenten zijn gemist? (tijd voorbij en niet afgevinkt) */
+export function gemist(s: FamilyState, id: string, nu = new Date()): string[] {
+  const log = dagLog(s, id, iso(nu));
+  return ETEN.filter((e) => nu.getHours() >= e.na && !gegeten(log, e.id)).map((e) => e.id);
 }

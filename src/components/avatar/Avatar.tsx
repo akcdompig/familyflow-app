@@ -23,11 +23,13 @@ interface Props {
   walm?: boolean;
   /** Te weinig gedronken: een druppeltje boven het hoofd. */
   dorst?: boolean;
+  /** Er is nog niet gegeten of er kookt niemand: een knorrend buikje. */
+  honger?: boolean;
 }
 
 const INK = "#23204a";
 
-export function Avatar({ config, expression = "neutraal", energy = 0.5, size = 140, animate = true, seed = 0, label, headOnly = false, bezig, walm = false, dorst = false }: Props) {
+export function Avatar({ config, expression = "neutraal", energy = 0.5, size = 140, animate = true, seed = 0, label, headOnly = false, bezig, walm = false, dorst = false, honger = false }: Props) {
   const skin = skinColor(config.skin);
   const skinDark = shade(skin, -22);
   const hair = config.hairColor;
@@ -147,6 +149,12 @@ export function Avatar({ config, expression = "neutraal", energy = 0.5, size = 1
           <g className={animate ? "ff-av-dorst" : undefined}>
             <path d="M140 52 C134 62 132 66 132 70 a8 8 0 0 0 16 0 c0 -4 -2 -8 -8 -18 z" fill="#5cb8ff" stroke="#2f8de0" strokeWidth="1.5" />
             <text x="140" y="74" textAnchor="middle" fontSize="11" fontWeight="800" fill="#ffffff">!</text>
+          </g>
+        )}
+        {honger && expression !== "slaap" && (
+          <g className={animate ? "ff-av-honger" : undefined}>
+            <circle cx="22" cy="58" r="14" fill="#fff" stroke="#e8a24a" strokeWidth="2" />
+            <text x="22" y="64" textAnchor="middle" fontSize="16">🍽️</text>
           </g>
         )}
         {bezig && expression !== "slaap" && <Werkspullen bezig={bezig} headOnly={headOnly} animate={animate} />}

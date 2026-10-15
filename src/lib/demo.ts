@@ -15,6 +15,7 @@ const at = (h: number, m: number) => {
   return d.toISOString();
 };
 const today = () => new Date().toLocaleDateString("sv-SE");
+const day = (n: number) => new Date(Date.now() + n * 864e5).toLocaleDateString("sv-SE");
 
 /** Twee weken voorbeeld-afvinkwerk, voor "Wie doet wat". */
 function demoDone(d: string): FamilyState["done"] {
@@ -134,5 +135,28 @@ export function demoFamily(): FamilyState {
       k2: [{ id: "iemand-doet-vals", at: daysAgo(4), path: ["opkomen"], outcome: "opgelost" }],
     },
     proNotes: { school: "", zorg: "Gezin is gemotiveerd. Ochtenden gaan beter. Let op ruzies bij spelletjes." },
+    werk: {
+      p1: [{ id: "w1", naam: "Kantoor", soort: "vast", days: [1, 2, 4, 5], van: "08:00", tot: "17:00", inkomen: true }],
+      p2: [{ id: "w2", naam: "Gemeente", soort: "vast", days: [1, 2, 3, 4], van: "08:30", tot: "17:00", inkomen: true }],
+    },
+    klusLog: [
+      { id: "kl1", klus: "bedden", by: "p2", at: daysAgo(6, 10) },
+      { id: "kl2", klus: "flessen", by: "k1", at: daysAgo(9, 16) },
+      { id: "kl3", klus: "stofzuigen", by: "k2", at: daysAgo(3, 15) },
+      { id: "kl4", klus: "was", by: "k2", at: daysAgo(1, 18) },
+      { id: "kl5", klus: "vaat-in", by: "k1", at: daysAgo(1, 20) },
+      { id: "kl6", klus: "vaat-uit", by: "k2", at: daysAgo(1, 8) },
+      { id: "kl7", klus: "keuken", by: "p1", at: daysAgo(1, 20) },
+    ],
+    koken: { [day(-1)]: { kok: "p1", wat: "Nasi met kip" } },
+    pot: {
+      doel: "Bowlen met z'n allen",
+      cents: 6000,
+      items: [
+        { id: "e1", cents: 375, soort: "statiegeld", reden: "Statiegeld", by: "k1", voor: "k1", at: daysAgo(9, 16) },
+        { id: "e2", cents: 100, soort: "beloning", reden: "Goed geleerd voor een toets", by: "p2", voor: "k2", at: daysAgo(2, 19) },
+        { id: "e3", cents: 1000, soort: "inleg", reden: "Inleg", by: "p1", voor: "p1", at: daysAgo(5, 12) },
+      ],
+    },
   };
 }
