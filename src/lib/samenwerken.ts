@@ -22,7 +22,7 @@ const zet = <T,>(map: Record<string, Record<string, T>> | undefined, d: string, 
 export const samenwerken = {
   /* ---------- Afspraken (ouders) ---------- */
   setAfspraken(fn: (a: Afspraken) => Afspraken) {
-    wijzig((s) => ({ ...s, afspraken: fn({ ...(s.klusAfspraken ?? {}) }) }));
+    wijzig((s) => ({ ...s, klusAfspraken: fn({ ...(s.klusAfspraken ?? {}) }) }));
   },
   vastleggen(door: string) {
     wijzig((s) => metFeed({ ...s, klusAfspraken: { ...(s.klusAfspraken ?? {}), vastgelegd: new Date().toISOString(), door } }, door, "heeft de klusafspraken vastgelegd 📋"));
