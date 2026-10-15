@@ -1100,4 +1100,25 @@ i.is-vak { background: var(--ff-munt-zacht); border: 1px solid var(--ff-munt-don
 .v2-trend.is-omhoog { color: var(--ff-munt-donker); }
 .v2-comp-open { display: grid; gap: 3px; padding: 0 0 10px 28px; }
 @media (prefers-reduced-motion: reduce) { .v2-boom-plant, .v2-groeibalk i { animation: none; } }
-</style></head><body><div id="root"></div><script src="/config.js"></script><script src="/assets/app-38238e299532.js"></script><script>if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("/sw.js");</script></body></html>
+
+/* ---------- Weekverhaal ---------- */
+.v2-rapport-nav { display: grid; grid-template-columns: 36px 1fr 36px; align-items: center; text-align: center; gap: 4px; }
+.v2-rapport-nav .v2-week-pijl:disabled { opacity: .25; cursor: default; }
+.v2-verhaal { background: var(--ff-nacht); color: #fff; border-radius: 24px; padding: 16px 18px; display: grid; gap: 6px; }
+.v2-verhaal .ff-eyebrow { color: var(--ff-zon); }
+.v2-verhaal p { margin: 0; font-size: var(--ff-t-m); line-height: 1.45; }
+.v2-geoefend { display: grid; gap: 8px; }
+.v2-geoefend-rij { display: grid; gap: 1px; }
+.v2-geoefend-kop { font-size: var(--ff-t-s); }
+.v2-moment { display: flex; align-items: center; gap: 8px; }
+.v2-status { font-size: 11.5px; font-weight: 800; border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
+.v2-status.is-gedaan { background: var(--ff-munt-zacht); color: var(--ff-munt-donker); }
+.v2-status.is-gepland { background: var(--ff-lucht-zacht); color: var(--ff-tekst); }
+.v2-status.is-open { background: var(--ff-zon-zacht); color: var(--ff-tekst); }
+.v2-vakje.is-samen { box-shadow: inset 0 0 0 3px var(--ff-koraal); }
+.v2-vooruit { background: var(--ff-zon-zacht); }
+button.v2-groeistaaf { border: 0; background: none; font: inherit; color: inherit; cursor: pointer; padding: 0; }
+.v2-fase { font-size: 11.5px; font-weight: 700; color: var(--ff-tekst-zacht); }
+.v2-fase.is-vaker { color: var(--ff-lucht-donker, #4a5fd1); }
+.v2-fase.is-groeit { color: var(--ff-munt-donker); }
+</style></head><body><div id="root"></div><script src="/config.js"></script><script src="/assets/app-8b0f66925de4.js"></script><script>if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("/sw.js");</script></body></html>

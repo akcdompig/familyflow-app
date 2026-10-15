@@ -191,3 +191,18 @@ Totaal: 72 unit-tests, 55 database-tests, 18 browserscenario's. Alles groen.
 | **Totaal** | **8,9** |
 
 Naar een 10: twee weken echt gebruik, dan de minuten en verwachtingen bijstellen op wat het gezin écht doet, en één gesprek met de kinderen over of het eerlijk voelt.
+
+---
+
+## Ronde 4 · 15 oktober 2026 · acceptatie 2.5: weekoverzicht, weekverhaal en gezinsgroei
+
+**Wat er is gedaan**
+- Eén competentielijst (`src/lib/competenties.ts`, 10 competenties). Groeidoelen, weekverhaal en Groei gebruiken dezelfde lijst; de id's van de groeidoelen uit 2.3 blijven geldig.
+- Bewijzen (`src/lib/groei.ts`) zijn **oefenen** of **toepassen**, en **feit** (vastgelegd) of **zelf** (reflectie). Fase per competentie hangt af van herhaling over 4 weken ("aan het oefenen" → "komt vaker terug" → "gaat steeds beter"), niet van één drukke dag.
+- Weekverhaal (`src/lib/rapport.ts`): A samen ondernomen (gedaan / gepland / nog afvinken), B geoefend + verder oefenen, C/D mooie momenten en zelf aangegeven, E vooruitblik (max 2 punten, een idee om te plannen, een persoonlijk doel). Te weinig gegevens = vriendelijke melding. Geen "0 van 4".
+- Week (dag voor dag vooruit en terug), weeknavigatie in Groei, gezinsboom en 8 weken.
+- Punten: niet gekoppeld aan competenties (geen dubbele beloning). Eén bewuste wijziging: samen een ouder om hulp vragen bij een ruzie levert nu ook de 10 punten op (een respectvolle poging telt), max 1× per dag.
+
+**Bewijs:** 81 unit-tests (o.a. "één drukke week geeft geen 'gaat steeds beter'", "gepland is niet gedaan", "kind ziet alleen zichzelf"), 55 database-tests, 22 browserscenario's.
+
+**Beperkingen / vervolg:** competenties zijn ontwikkelkansen op basis van app-gebruik, geen meting. Na 2–4 weken echt gebruik de koppelingen en fases bijstellen met het gezin.

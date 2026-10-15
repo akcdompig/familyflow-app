@@ -26,19 +26,31 @@ test("bewijzen: zelfstandig, samenwerken, emotie, conflict en plannen worden her
   });
   const b = bewijzen(s, "k1", "2026-10-09", "2026-10-15");
   const soorten = new Set(b.map((x) => x.competentie));
-  for (const c of ["zelfstandig", "samenwerken", "emotie", "conflict", "plannen", "praten"]) assert.ok(soorten.has(c), `${c} herkend`);
+  for (const c of ["verantwoordelijkheid", "samenwerken", "teleurstelling", "conflicten", "plannen", "communiceren", "band"]) assert.ok(soorten.has(c), `${c} herkend`);
+  // Feiten en oefenen/toepassen zijn gescheiden.
+  assert.ok(b.some((x) => x.soort === "oefenen") && b.some((x) => x.soort === "toepassen"));
+  assert.ok(b.every((x) => x.bron === "feit"));
   // Automatisch uit Somtoday telt niet als zelf plannen.
   const auto = gezin({ tasks: [{ id: "t", title: "Leren", icon: "boek", assignee: "k1", repeat: "eenmalig", date: "2026-10-14", xp: 5, createdBy: "k1", study: { subject: "Engels", kind: "toets", deadline: "2026-10-16", part: 1, of: 2, min: 20, sid: "x" } }] });
   assert.ok(!bewijzen(auto, "k1", "2026-10-09", "2026-10-15").some((x) => x.competentie === "plannen"));
 });
 
-test("competenties: niveau 1–5 en trend t.o.v. de 4 weken ervoor", () => {
-  const log: KlusDone[] = Array.from({ length: 10 }, (_, i) => ({ id: `k${i}`, klus: "vaat-uit", by: "k1", at: at(`2026-10-${String(5 + i).padStart(2, "0")}`, "09:00").toISOString() }));
-  const c = competenties(gezin({ klusLog: log }), "k1", at("2026-10-15"));
-  const z = c.find((x) => x.c.id === "zelfstandig")!;
-  assert.ok(z.niveau >= 3 && z.niveau <= 5);
-  assert.equal(z.trend, "omhoog");
-  assert.equal(c.length, 8);
+test("competenties: één drukke week geeft geen 'gaat steeds beter', herhaling over weken wel", () => {
+  // 10 klussen in één week: komt maar in 1 van de 4 weken voor.
+  const eenWeek: KlusDone[] = Array.from({ length: 6 }, (_, i) => ({ id: `k${i}`, klus: "vaat-uit", by: "k1", at: at(`2026-10-${String(9 + i).padStart(2, "0")}`, "09:00").toISOString() }));
+  const v1 = competenties(gezin({ klusLog: eenWeek }), "k1", at("2026-10-15")).find((x) => x.c.id === "verantwoordelijkheid")!;
+  assert.ok(v1.fase === "oefenen" || v1.fase === "vaker", v1.fase);
+  assert.notEqual(v1.fase, "groeit");
+  // Elke week een paar keer, 4 weken lang: gaat steeds beter.
+  const elkeWeek: KlusDone[] = [];
+  for (let w = 0; w < 4; w++) for (let d = 0; d < 3; d++) {
+    const dt = new Date(Date.UTC(2026, 8, 18 + w * 7 + d * 2, 10)).toISOString();
+    elkeWeek.push({ id: `w${w}${d}`, klus: "vaat-uit", by: "k1", at: dt });
+  }
+  const v4 = competenties(gezin({ klusLog: elkeWeek }), "k1", at("2026-10-15")).find((x) => x.c.id === "verantwoordelijkheid")!;
+  assert.equal(v4.weken.filter(Boolean).length, 4);
+  assert.equal(v4.fase, "groeit");
+  assert.equal(competenties(gezin(), "k1", at("2026-10-15")).length, 10);
 });
 
 test("gezinsweek en boom: meer samen en meer dagen af = grotere boom", () => {

@@ -98,7 +98,7 @@ export function GezinV2({ state, me, onToast, onOuders, onOpenLid, onTips, onRuz
       )}
       {tab === "eten" && <Eten state={state} me={me} onToast={onToast} />}
       {tab === "klussen" && <Klussen state={state} me={me} lijst={klussen} onToast={onToast} />}
-      {tab === "groei" && <GroeiGezin state={state} me={me} />}
+      {tab === "groei" && <GroeiGezin state={state} me={me} onToast={onToast} />}
       {tab === "week" && (
         <div className="ff-stack">
           <WeekV2 state={state} me={me} onToast={onToast} onOpenLid={onOpenLid} />

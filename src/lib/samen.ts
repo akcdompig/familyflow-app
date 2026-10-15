@@ -5,7 +5,7 @@
   - Achteraf: hoe was het? Dat is genoeg.
   - De band zie je alleen zelf (jij en de ander), nooit een ranglijst.
 
-  Groeidoelen: 8 vaardigheden. Het kind kiest er 1 of 2, samen met een ouder.
+  Groeidoelen: de competenties uit competenties.ts. Het kind kiest er 1 of 2, samen met een ouder.
   - Per leeftijd concreet: wat kun je deze week oefenen?
   - Wat je in de app doet telt vanzelf als oefenen (samen koken = samenwerken, hulp vragen = initiatief).
   - Elke week een korte terugblik: lukte goed / ging beter / nog lastig. Geen cijfer, geen vergelijking.
@@ -14,6 +14,7 @@
 import { addDays, iso } from "./planner";
 import { maandag } from "./huis";
 import { hash } from "./verdeling";
+import { COMPETENTIES, competentie, oefentips, type Competentie } from "./competenties";
 import type { FamilyState, Member, SamenMoment } from "./types";
 
 export type Tijd = "kort" | "uur" | "middag";
@@ -60,27 +61,11 @@ export const IDEEEN: Idee[] = [
 export const TIJD: Record<Tijd, string> = { kort: "half uurtje", uur: "1–2 uur", middag: "middag of avond" };
 export const BUDGET = ["gratis", "€", "€€"];
 
-export interface Vaardigheid {
-  id: string;
-  naam: string;
-  emoji: string;
-  /** Wat je deze week kunt oefenen. Jonger dan 12 en 12+. */
-  jong: string[];
-  tiener: string[];
-}
-
-export const VAARDIGHEDEN: Vaardigheid[] = [
-  { id: "samenwerken", naam: "Samenwerken", emoji: "🤝", jong: ["Doe één klus samen met je broer of zus", "Help bij het koken: snijden of tafel dekken"], tiener: ["Kook één keer samen een maaltijd, verdeel wie wat doet", "Doe een klus samen in plaats van om de beurt"] },
-  { id: "verantwoordelijkheid", naam: "Verantwoordelijkheid", emoji: "🎯", jong: ["Doe je klus zonder dat iemand het hoeft te zeggen", "Ruim je eigen spullen op voor het slapen"], tiener: ["Doe je klussen op tijd, zonder herinnering", "Zeg het zelf als iets niet lukt, en zeg wanneer het wel lukt"] },
-  { id: "plannen", naam: "Zelf plannen", emoji: "🗓️", jong: ["Kies 's ochtends wanneer je je klus doet", "Leg je tas en kleren de avond ervoor klaar"], tiener: ["Plan je huiswerk en klussen in voor de week", "Plan zelf iets leuks samen, met dag en tijd"] },
-  { id: "communiceren", naam: "Praten en luisteren", emoji: "💬", jong: ["Vertel bij het eten één ding over je dag", "Laat iemand uitpraten voor je zelf praat"], tiener: ["Vraag aan iemand thuis hoe zijn dag was, en luister echt", "Zeg wat je dwarszit voordat het groot wordt"] },
-  { id: "teleurstelling", naam: "Omgaan met tegenvallers", emoji: "🌦️", jong: ["Verlies je een spel? Zeg 'goed gespeeld'", "Tel tot 10 als iets niet gaat zoals je wilt"], tiener: ["Verlies je? Doe de klus zonder mopperen", "Schrijf op wat tegenviel en wat je de volgende keer anders doet"] },
-  { id: "conflicten", naam: "Ruzie oplossen", emoji: "🕊️", jong: ["Zeg sorry en vraag: wat kan ik doen?", "Gebruik 'om de beurt' als jullie het niet eens zijn"], tiener: ["Kies samen een eerlijke manier als jullie het niet eens zijn", "Na een ruzie: praat het binnen een dag uit"] },
-  { id: "rekening", naam: "Rekening houden met anderen", emoji: "💛", jong: ["Vraag of iemand hulp nodig heeft", "Wees stil als iemand slaapt of leert"], tiener: ["Doe iets voor iemand zonder dat het gevraagd wordt", "Laat een ander kiezen wat jullie samen gaan doen"] },
-  { id: "initiatief", naam: "Initiatief en hulp vragen", emoji: "🙋", jong: ["Begin zelf aan je klus", "Vraag hulp als je iets niet snapt"], tiener: ["Bedenk zelf iets leuks voor het gezin", "Vraag op tijd hulp, niet pas als het te laat is"] },
-];
-export const vaardigheid = (id: string) => VAARDIGHEDEN.find((v) => v.id === id);
-export const oefeningen = (v: Vaardigheid, m?: Member) => (m?.age !== undefined && m.age < 12 ? v.jong : v.tiener);
+/** De groeidoelen gebruiken dezelfde competenties als Groei en het weekverhaal (één lijst, zie competenties.ts). */
+export type Vaardigheid = Competentie;
+export const VAARDIGHEDEN = COMPETENTIES;
+export const vaardigheid = competentie;
+export const oefeningen = (v: Vaardigheid, m?: Member) => oefentips(v, m?.age);
 
 /* ---------- Samen-momenten ---------- */
 
@@ -114,36 +99,5 @@ export function suggestie(s: FamilyState, me: Member, nu = new Date()): { met: M
 
 /** Hoeveel samen-momenten deze maand, voor het hele gezin. Alleen positief: geen doel. */
 export const dezeMaand = (s: FamilyState, nu = new Date()) => gedaanSamen(s, nu, 30).length;
-
-/* ---------- Groeidoelen: wat telt als oefenen? ---------- */
-
-/** Wat je deze week (vanaf maandag) deed dat bij deze vaardigheid hoort. Alleen positief. */
-export function geoefend(s: FamilyState, id: string, vaardigheidId: string, nu = new Date()): string[] {
-  const ma = maandag(iso(nu));
-  const dezeWeek = (at: string) => iso(new Date(at)) >= ma;
-  const uit: string[] = [];
-  for (const x of s.samen ?? []) {
-    if (!x.gedaan || !dezeWeek(x.gedaan) || !x.wie.includes(id)) continue;
-    const idee = IDEEEN.find((i) => i.id === x.soort);
-    if (idee?.vaardigheden.includes(vaardigheidId) || (!idee && vaardigheidId === "samenwerken")) uit.push(`${x.titel}`);
-    else if (vaardigheidId === "plannen" && x.door === id) uit.push(`${x.titel} gepland`);
-  }
-  const klussen = (s.klusLog ?? []).filter((k) => k.by === id && dezeWeek(k.at));
-  if (vaardigheidId === "samenwerken") for (const k of klussen.filter((k) => k.samen)) uit.push(`Klus samen gedaan`);
-  if (vaardigheidId === "verantwoordelijkheid" && klussen.length) uit.push(`${klussen.length} ${klussen.length === 1 ? "klus" : "klussen"} gedaan`);
-  for (const u of (s.uitdagingen ?? []).filter((u) => u.spelers.includes(id) && dezeWeek(u.at))) {
-    const deed = klussen.some((k) => k.klus === u.klus && iso(new Date(k.at)) === iso(new Date(u.at)));
-    if (vaardigheidId === "teleurstelling" && u.verliezer === id && deed && (u.manier === "spel" || u.manier === "loting")) uit.push("Sportief de klus gedaan na het spel");
-    if (vaardigheidId === "conflicten" && (u.manier === "beurt" || u.manier === "samen")) uit.push(u.manier === "samen" ? "Samen opgelost: allebei de helft" : "Eerlijk om de beurt gekozen");
-  }
-  for (const b of (s.bezwaren ?? []).filter((b) => b.door === id && dezeWeek(b.at))) {
-    if (vaardigheidId === "initiatief" && b.soort === "hulp") uit.push("Hulp gevraagd");
-    if (vaardigheidId === "communiceren") uit.push("Op tijd gezegd dat iets niet lukte");
-  }
-  if (vaardigheidId === "rekening") {
-    for (const d of Object.keys(s.koken ?? {})) if (d >= ma && s.koken?.[d]?.kok === id) uit.push("Gekookt voor het gezin");
-  }
-  return uit;
-}
 
 export const weekVan = (nu = new Date()) => maandag(iso(nu));

@@ -533,8 +533,9 @@ export const actions = {
       if (!c || c.status !== "wacht") return s;
       let xp = s.xp;
       // Max één keer per dag XP voor een opgeloste ruzie, zodat niemand ruzies gaat verzinnen.
-      const solvedToday = (m: string) => s.conflicts.some((x) => x.id !== id && x.status === "opgelost" && x.solvedAt && isToday(x.solvedAt) && (x.from === m || x.with === m));
-      if (!help) for (const m of [c.from, c.with]) if (!solvedToday(m)) xp = { ...xp, [m]: (xp[m] ?? 0) + XP.ruzieOpgelost };
+      const solvedToday = (m: string) => s.conflicts.some((x) => x.id !== id && x.status !== "wacht" && isToday(x.solvedAt ?? x.at) && (x.from === m || x.with === m));
+      // Ook samen een ouder om hulp vragen telt: een respectvolle poging wordt beloond, niet alleen een perfect resultaat.
+      for (const m of [c.from, c.with]) if (!solvedToday(m)) xp = { ...xp, [m]: (xp[m] ?? 0) + XP.ruzieOpgelost };
       return { ...s, xp, conflicts: s.conflicts.map((x) => (x.id === id ? { ...x, status: help ? "hulp" : "opgelost", solution, solvedAt: help ? undefined : new Date().toISOString() } : x)) };
     });
   },

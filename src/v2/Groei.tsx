@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { VAARDIGHEDEN, geoefend, oefeningen, vaardigheid, weekVan } from "@/lib/samen";
+import { VAARDIGHEDEN, oefeningen, vaardigheid, weekVan } from "@/lib/samen";
+import { bewijzen } from "@/lib/groei";
+import { iso } from "@/lib/planner";
 import { samenwerken } from "@/lib/samenwerken";
 import type { FamilyState, Member } from "@/lib/types";
 
@@ -58,7 +60,7 @@ export function Groei({ state, lid, me, onToast, compact = false }: { state: Fam
       {gekozen.map((id) => {
         const v = vaardigheid(id);
         if (!v) return null;
-        const bewijs = geoefend(state, lid.id, id);
+        const bewijs = bewijzen(state, lid.id, week, iso(new Date())).filter((b) => b.competentie === id).map((b) => b.tekst);
         return (
           <div key={id} className="v2-groei">
             <b>{v.emoji} {v.naam}</b>

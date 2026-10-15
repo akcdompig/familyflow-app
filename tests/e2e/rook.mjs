@@ -245,8 +245,8 @@ await scenario("v2: groeidoelen kiezen en terugblikken", v2, "18:00", async (p) 
   await wissel(p, "Lina");
   await tab(p, /^Ik/).click();
   await p.locator(".v2-groei-tegel", { hasText: "Samenwerken" }).click();
-  await p.locator(".v2-groei-tegel", { hasText: "Zelf plannen" }).click();
-  assert.equal(await p.locator(".v2-groei-tegel", { hasText: "Ruzie oplossen" }).isDisabled(), true, "hooguit 2");
+  await p.locator(".v2-groei-tegel", { hasText: "Plannen en organiseren" }).click();
+  assert.equal(await p.locator(".v2-groei-tegel", { hasText: "Conflicten oplossen" }).isDisabled(), true, "hooguit 2");
   await knop(p, /^Klaar$/).click();
   const groei = p.getByRole("region", { name: "Groeidoelen" });
   assert.match(await groei.innerText(), /Samenwerken/);
@@ -287,14 +287,21 @@ await scenario("v2: week — morgen samen trainen staat klaar, en zelf iets plan
   assert.equal(await p.locator(".v2-week-lid").count(), 4, "ouder ziet hoe de dag ging voor iedereen");
 });
 
-await scenario("v2: groei — ouder ziet het hele gezin, kind alleen zichzelf", v2, "18:00", async (p) => {
+await scenario("v2: groei — weekverhaal, gepland vs gedaan, en kind ziet alleen zichzelf", v2, "18:00", async (p) => {
   await wissel(p, "Papa");
   await gezinTab(p, /Groei/);
-  assert.match(await p.getByRole("region", { name: "Jullie gezin groeit" }).innerText(), /\/100/);
-  assert.equal(await p.locator(".v2-groeistaaf").count(), 8);
+  assert.ok((await p.getByRole("region", { name: "Het verhaal van de week" }).innerText()).length > 20);
+  const samen = p.getByRole("region", { name: "Samen ondernomen" });
+  assert.match(await samen.innerText(), /Trainen met Lina en Noah/);
+  assert.match(await samen.innerText(), /gepland/, "morgen trainen staat als gepland, niet als gedaan");
+  assert.ok(await p.getByRole("region", { name: "Volgende week" }).isVisible());
   assert.equal(await p.locator(".v2-weekgrid-naam").count(), 4);
-  await p.locator(".v2-comp-kop", { hasText: "Zelfstandig" }).click();
-  assert.ok((await p.locator(".v2-comp-open").innerText()).length > 10);
+  // Terug naar vorige week.
+  await p.getByRole("button", { name: "Vorige week" }).click();
+  assert.match(await p.locator(".v2-rapport-nav").innerText(), /Vorige week/);
+  assert.match(await p.getByRole("region", { name: "Samen ondernomen" }).innerText(), /gedaan/);
+  await p.locator(".v2-comp-kop", { hasText: "Samenwerken" }).click();
+  assert.match(await p.locator(".v2-comp-open").innerText(), /geoefend/);
   await wissel(p, "Noah");
   await gezinTab(p, /Groei/);
   assert.equal(await p.locator(".v2-weekgrid-naam").count(), 1, "kind ziet alleen zijn eigen week");
