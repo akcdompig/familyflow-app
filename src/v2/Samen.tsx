@@ -31,6 +31,7 @@ export function SamenTab({ state, me, onToast }: { state: FamilyState; me: Membe
   const [budget, setBudget] = useState<number | -1>(-1);
   const [energie, setEnergie] = useState<Energie | "">("");
   const [vrienden, setVrienden] = useState(false);
+  const [meer, setMeer] = useState(false);
   const anderen = state.members.filter((m) => m.id !== me.id && m.joined !== false);
   const sug = suggestie(state, me);
   const lijst = gepland(state);
@@ -84,16 +85,20 @@ export function SamenTab({ state, me, onToast }: { state: FamilyState; me: Membe
 
       <section className="ff-card ff-stack-s" aria-label="Ideeën">
         <b>Ideeën</b>
-        <div className="ff-chips">
-          {(["", "kort", "uur", "middag"] as const).map((t) => <button key={t || "alle"} className="ff-chip" aria-pressed={tijd === t} onClick={() => setTijd(t)}>{t ? TIJD[t] : "elke duur"}</button>)}
-        </div>
-        <div className="ff-chips">
-          {[-1, 0, 1, 2].map((b) => <button key={b} className="ff-chip" aria-pressed={budget === b} onClick={() => setBudget(b)}>{b < 0 ? "elk budget" : b === 0 ? "gratis" : `tot ${BUDGET[b]}`}</button>)}
-          {(["rustig", "actief"] as const).map((e) => <button key={e} className="ff-chip" aria-pressed={energie === e} onClick={() => setEnergie(energie === e ? "" : e)}>{e === "rustig" ? "😌 rustig" : "⚡ actief"}</button>)}
-          <button className="ff-chip" aria-pressed={vrienden} onClick={() => setVrienden(!vrienden)}>👫 met vrienden</button>
-        </div>
+        {meer && (
+          <>
+            <div className="ff-chips">
+              {(["", "kort", "uur", "middag"] as const).map((t) => <button key={t || "alle"} className="ff-chip" aria-pressed={tijd === t} onClick={() => setTijd(t)}>{t ? TIJD[t] : "elke duur"}</button>)}
+            </div>
+            <div className="ff-chips">
+              {[-1, 0, 1, 2].map((b) => <button key={b} className="ff-chip" aria-pressed={budget === b} onClick={() => setBudget(b)}>{b < 0 ? "elk budget" : b === 0 ? "gratis" : `tot ${BUDGET[b]}`}</button>)}
+              {(["rustig", "actief"] as const).map((e) => <button key={e} className="ff-chip" aria-pressed={energie === e} onClick={() => setEnergie(energie === e ? "" : e)}>{e === "rustig" ? "😌 rustig" : "⚡ actief"}</button>)}
+              <button className="ff-chip" aria-pressed={vrienden} onClick={() => setVrienden(!vrienden)}>👫 met vrienden</button>
+            </div>
+          </>
+        )}
         <div className="v2-ideeen">
-          {ideeen.map((i) => (
+          {(meer ? ideeen : ideeen.slice(0, 5)).map((i) => (
             <button key={i.id} className="v2-idee" onClick={() => setPlan({ idee: i })}>
               <span className="v2-samen-emoji" aria-hidden="true">{i.emoji}</span>
               <b>{i.titel}</b>
@@ -107,6 +112,7 @@ export function SamenTab({ state, me, onToast }: { state: FamilyState; me: Membe
           </button>
         </div>
         {!ideeen.length && <span className="ff-small ff-muted">Niks dat hier precies bij past. Kies "Iets anders".</span>}
+        {!meer && ideeen.length > 5 && <button className="ff-btn ff-btn-ghost ff-btn-wide" onClick={() => setMeer(true)}>Meer ideeën</button>}
       </section>
 
       {anderen.length > 0 && (

@@ -27,6 +27,8 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "eten", label: "Eten" },
   { id: "groei", label: "Groei" },
 ];
+// Kinderen (en zeker met ADHD) hebben baat bij minder keuzes: 4 tabbladen in plaats van 6.
+const KIND_TABS: Tab[] = ["nu", "klussen", "samen", "groei"];
 
 const ROMMEL_PLEK = [
   { left: "8%", bottom: "6%" }, { right: "9%", bottom: "8%" }, { left: "30%", bottom: "2%" },
@@ -58,7 +60,7 @@ export function GezinV2({ state, me, onToast, onOuders, onOpenLid, onTips, onRuz
         </div>
       </header>
       <div className="ff-seg v2-seg" role="tablist">
-        {TABS.map((t) => (
+        {TABS.filter((t) => isOuder || KIND_TABS.includes(t.id)).map((t) => (
           <button key={t.id} role="tab" aria-selected={tab === t.id} onClick={() => setTab(t.id)}>
             {t.label}{t.id === "klussen" && teLaat > 0 ? <span className="v2-badge">{teLaat}</span> : null}
           </button>
@@ -80,12 +82,12 @@ export function GezinV2({ state, me, onToast, onOuders, onOpenLid, onTips, onRuz
             <Row members={state.members.filter((m) => m.role === "ouder")} row="achter" state={state} me={me} onOpen={onOpenLid} />
             <Row members={state.members.filter((m) => m.role !== "ouder")} row="voor" state={state} me={me} onOpen={onOpenLid} />
           </section>
-          <Attention state={state} me={me} onTalkTips={onTips} onCheckIn={onCheckIn} onGoTasks={() => setTab("week")} onRuzie={onRuzie} onGoGezin={onOuders} />
+          <Attention state={state} me={me} onTalkTips={onTips} onCheckIn={onCheckIn} onGoTasks={() => setTab(isOuder ? "week" : "klussen")} onRuzie={onRuzie} onGoGezin={onOuders} />
           <Vragen state={state} me={me} onToast={onToast} />
           {isOuder && <SchermOverzicht state={state} onOpen={onOpenLid} />}
           {isOuder && <VoedingOverzicht state={state} onOpen={onOpenLid} />}
           <Inbox state={state} me={me} />
-          <NetGedaan state={state} me={me} />
+          {isOuder && <NetGedaan state={state} me={me} />}
           <Klassement state={state} me={me} onOpen={onOpenLid} />
         </>
       )}
@@ -97,7 +99,7 @@ export function GezinV2({ state, me, onToast, onOuders, onOpenLid, onTips, onRuz
         </div>
       )}
       {tab === "eten" && <Eten state={state} me={me} onToast={onToast} />}
-      {tab === "klussen" && <Klussen state={state} me={me} lijst={klussen} onToast={onToast} />}
+      {tab === "klussen" && <Klussen state={state} me={me} lijst={klussen} onToast={onToast} simpel={!isOuder} />}
       {tab === "groei" && <GroeiGezin state={state} me={me} onToast={onToast} />}
       {tab === "week" && (
         <div className="ff-stack">

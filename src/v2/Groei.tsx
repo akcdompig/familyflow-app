@@ -22,7 +22,7 @@ const HOE = [
 export function Groei({ state, lid, me, onToast, compact = false }: { state: FamilyState; lid: Member; me: Member; onToast: (m: string) => void; compact?: boolean }) {
   const mag = me.id === lid.id || me.role === "ouder";
   const gekozen = state.doelen?.[lid.id]?.vaardigheden ?? [];
-  const [kiezen, setKiezen] = useState(!gekozen.length && !compact && mag);
+  const [kiezen, setKiezen] = useState(false);
   const week = weekVan();
   const tb = state.doelen?.[lid.id]?.terugblik?.[week] ?? {};
   const zelf = me.id === lid.id;
@@ -48,7 +48,14 @@ export function Groei({ state, lid, me, onToast, compact = false }: { state: Fam
     );
   }
   if (!gekozen.length) {
-    return compact ? <span className="ff-small ff-muted">Nog geen groeidoelen gekozen.{mag ? " " : ""}{mag && <button className="ff-link ff-small" onClick={() => setKiezen(true)}>Samen kiezen</button>}</span> : null;
+    if (compact) return <span className="ff-small ff-muted">Nog geen groeidoelen gekozen.{mag ? " " : ""}{mag && <button className="ff-link ff-small" onClick={() => setKiezen(true)}>Samen kiezen</button>}</span>;
+    // Eén rustige knop in plaats van meteen 10 tegels.
+    return mag ? (
+      <section className="ff-card ff-row" aria-label="Groeidoel">
+        <span className="ff-grow"><b>🌱 Groeidoel</b><span className="ff-small ff-muted ff-block">Eén ding om te oefenen. Kies het samen.</span></span>
+        <button className="ff-btn ff-btn-ghost ff-btn-sm" onClick={() => setKiezen(true)}>Kies een groeidoel</button>
+      </section>
+    ) : null;
   }
 
   return (

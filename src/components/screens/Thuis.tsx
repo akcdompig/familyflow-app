@@ -142,7 +142,7 @@ export function Eten({ state, me, onToast }: { state: FamilyState; me: Member; o
 
 /* ---------- Klussen ---------- */
 
-export function Klussen({ state, me, lijst, onToast }: { state: FamilyState; me: Member; lijst: KlusStatus[]; onToast: (m: string) => void }) {
+export function Klussen({ state, me, lijst, onToast, simpel = false }: { state: FamilyState; me: Member; lijst: KlusStatus[]; onToast: (m: string) => void; simpel?: boolean }) {
   const [openKey, setOpenKey] = useState<string | null>(null);
   const [afspraken, setAfspraken] = useState(false);
   const open = lijst.find((k) => k.key === openKey) ?? null;
@@ -152,12 +152,8 @@ export function Klussen({ state, me, lijst, onToast }: { state: FamilyState; me:
   const volgorde = [...zicht].sort((a, b) => Number(a.vandaagGedaan) - Number(b.vandaagGedaan) || Number(!!b.ingedeeld) - Number(!!a.ingedeeld) || b.teLaat - a.teLaat || Number(b.nodig) - Number(a.nodig));
   const recent = [...(state.klusLog ?? [])].reverse().filter((r, i, all) => !r.samen || all.findIndex((x) => x.samen === r.samen) === i).slice(0, 12);
 
-  return (
-    <div className="ff-stack">
-      <AfsprakenBanner state={state} me={me} onOpen={() => setAfspraken(true)} />
-      <Vragen state={state} me={me} onToast={onToast} />
-      <VerdelingVandaag state={state} me={me} lijst={lijst} onOpen={(k) => setOpenKey(k.key)} />
-      <p className="ff-small ff-muted">Eerlijk verdeeld in tijd, niet in aantal. Blijft er iets liggen, dan wordt de huiskamer rommelig.</p>
+  const rest = (
+    <>
       <div className="ff-klussen">
         {volgorde.map((k) => (
           <button key={k.key} className={`ff-klus${k.vandaagGedaan ? " is-klaar" : k.teLaat > 0 ? " is-laat" : ""}`} onClick={() => setOpenKey(k.key)}>
@@ -195,6 +191,22 @@ export function Klussen({ state, me, lijst, onToast }: { state: FamilyState; me:
           })}
         </section>
       )}
+    </>
+  );
+
+  return (
+    <div className="ff-stack">
+      <AfsprakenBanner state={state} me={me} onOpen={() => setAfspraken(true)} />
+      <Vragen state={state} me={me} onToast={onToast} />
+      <VerdelingVandaag state={state} me={me} lijst={lijst} onOpen={(k) => setOpenKey(k.key)} />
+      <p className="ff-small ff-muted">Eerlijk verdeeld in tijd, niet in aantal. Blijft er iets liggen, dan wordt de huiskamer rommelig.</p>
+      {/* Kinderen: eerst alleen "wie doet wat vandaag". De hele lijst staat ingeklapt. */}
+      {simpel ? (
+        <details className="v2-meer-details">
+          <summary><b>Alle klussen</b> <span className="ff-small ff-muted">de hele lijst en wat laatst gedaan is</span></summary>
+          <div className="ff-stack">{rest}</div>
+        </details>
+      ) : rest}
 
       <KlusSheet state={state} me={me} klus={open} onClose={() => setOpenKey(null)} onToast={onToast} />
       <AfsprakenSheet open={afspraken} onClose={() => setAfspraken(false)} state={state} me={me} onToast={onToast} />

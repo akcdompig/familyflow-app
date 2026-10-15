@@ -244,6 +244,8 @@ await scenario("v2: ouder legt klusafspraken vast", v2, "10:00", async (p) => {
 await scenario("v2: groeidoelen kiezen en terugblikken", v2, "18:00", async (p) => {
   await wissel(p, "Lina");
   await tab(p, /^Ik/).click();
+  assert.equal(await p.locator(".v2-groei-tegel").count(), 0, "niet meteen 10 tegels");
+  await knop(p, /Kies een groeidoel/).click();
   await p.locator(".v2-groei-tegel", { hasText: "Samenwerken" }).click();
   await p.locator(".v2-groei-tegel", { hasText: "Plannen en organiseren" }).click();
   assert.equal(await p.locator(".v2-groei-tegel", { hasText: "Conflicten oplossen" }).isDisabled(), true, "hooguit 2");
@@ -271,6 +273,22 @@ await scenario("v2: schermtijd — kind ziet 'eerst je dag', ouder vult in en zi
   assert.match(await ov.innerText(), /Vandaag 4 u 36 m/);
 });
 
+// ---------- Simpel voor kinderen ----------
+await scenario("v2: kind ziet een rustige app — 4 tabbladen, korte lijsten", v2, "16:00", async (p) => {
+  await wissel(p, "Noah");
+  await tab(p, /Gezin/).click();
+  const tabs = await p.locator(".v2-seg [role=tab]").allInnerTexts();
+  assert.deepEqual(tabs.map((t) => t.replace(/\d+$/, "").trim()), ["Nu", "Samen", "Klussen", "Groei"]);
+  await p.getByRole("tab", { name: /Samen/ }).click();
+  assert.ok((await p.locator(".v2-idee").count()) <= 6, "hooguit 5 ideeën + iets anders");
+  assert.equal(await p.getByRole("button", { name: "gratis", exact: true }).count(), 0, "filters zitten achter Meer ideeën");
+  await knop(p, /Meer ideeën/).click();
+  assert.equal(await p.getByRole("button", { name: "gratis", exact: true }).count(), 1);
+  await wissel(p, "Papa");
+  await tab(p, /Gezin/).click();
+  assert.equal(await p.locator(".v2-seg [role=tab]").count(), 6, "ouders houden alles");
+});
+
 // ---------- Week en groei ----------
 await scenario("v2: week — morgen samen trainen staat klaar, en zelf iets plannen voor overmorgen", v2, "18:00", async (p) => {
   await wissel(p, "Papa");
@@ -295,6 +313,8 @@ await scenario("v2: groei — weekverhaal, gepland vs gedaan, en kind ziet allee
   assert.match(await samen.innerText(), /Trainen met Lina en Noah/);
   assert.match(await samen.innerText(), /gepland/, "morgen trainen staat als gepland, niet als gedaan");
   assert.ok(await p.getByRole("region", { name: "Volgende week" }).isVisible());
+  assert.equal(await p.locator(".v2-weekgrid-naam").first().isVisible(), false, "details staan standaard dicht");
+  await p.locator(".v2-meer-details summary", { hasText: "Meer bekijken" }).click();
   assert.equal(await p.locator(".v2-weekgrid-naam").count(), 4);
   // Terug naar vorige week.
   await p.getByRole("button", { name: "Vorige week" }).click();
@@ -304,6 +324,7 @@ await scenario("v2: groei — weekverhaal, gepland vs gedaan, en kind ziet allee
   assert.match(await p.locator(".v2-comp-open").innerText(), /geoefend/);
   await wissel(p, "Noah");
   await gezinTab(p, /Groei/);
+  await p.locator(".v2-meer-details summary", { hasText: "Meer bekijken" }).click();
   assert.equal(await p.locator(".v2-weekgrid-naam").count(), 1, "kind ziet alleen zijn eigen week");
   assert.match(await p.getByRole("region", { name: "Competenties" }).innerText(), /Waar groei jij in/);
   assert.equal(await p.getByRole("region", { name: "Competenties" }).locator(".ff-chip").count(), 0, "kind kan anderen niet bekijken");

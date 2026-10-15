@@ -26,6 +26,7 @@ export function GroeiGezin({ state, me, onToast }: { state: FamilyState; me: Mem
   const [ma, setMa] = useState(maandag(vandaag));
   const [wie, setWie] = useState(isOuder ? (leden.find((m) => m.role !== "ouder")?.id ?? me.id) : me.id);
   const [plan, setPlan] = useState(false);
+  const [alleComp, setAlleComp] = useState(false);
   const r = weekRapport(state, me, ma);
   const huidig = ma === maandag(vandaag);
   const rijen = isOuder ? leden : leden.filter((m) => m.id === me.id);
@@ -55,68 +56,6 @@ export function GroeiGezin({ state, me, onToast }: { state: FamilyState; me: Mem
         )}
       </section>
 
-      {/* A. Samen ondernomen */}
-      <section className="ff-card ff-stack-s" aria-label="Samen ondernomen">
-        <b>💞 Samen ondernomen</b>
-        {!r.samen.gedaan.length && !r.samen.gepland.length && !r.samen.nietGedaan.length && <span className="ff-small ff-muted">Deze week niks samen vastgelegd.</span>}
-        {r.samen.gedaan.map((x) => <SamenRij key={x.id} x={x} state={state} status="gedaan" me={me} />)}
-        {r.samen.gepland.map((x) => <SamenRij key={x.id} x={x} state={state} status="gepland" me={me} />)}
-        {r.samen.nietGedaan.map((x) => <SamenRij key={x.id} x={x} state={state} status="open" me={me} />)}
-      </section>
-
-      {/* B. Vaardigheden geoefend */}
-      <section className="ff-card ff-stack-s" aria-label="Vaardigheden geoefend">
-        <b>🌱 Geoefend deze week</b>
-        {r.geoefend.length ? (
-          <div className="v2-geoefend">
-            {r.geoefend.slice(0, 6).map((g) => (
-              <div key={g.c.id} className="v2-geoefend-rij">
-                <span className="v2-geoefend-kop"><span aria-hidden="true">{g.c.emoji}</span> <b>{g.c.naam}</b>{isOuder && g.wie.length ? <span className="ff-small ff-muted"> · {g.wie.join(", ")}</span> : null}</span>
-                <span className="ff-small ff-muted">{g.waar.join(" · ")}</span>
-              </div>
-            ))}
-          </div>
-        ) : <span className="ff-small ff-muted">Nog niks gezien deze week. Het komt vanzelf, door wat jullie in de app doen.</span>}
-        {r.verderOefenen.length > 0 && <span className="ff-small"><b>Verder oefenen:</b> {r.verderOefenen.map((x) => `${naam(x.lid)}: ${klein(x.c.naam)}`).join(" · ")}</span>}
-      </section>
-
-      {/* C en D. Mooie momenten en wat jullie er zelf van vonden */}
-      {(r.voorbeelden.length > 0 || r.zelf.length > 0) && (
-        <section className="ff-card ff-stack-s" aria-label="Mooie momenten">
-          <b>✨ Mooie momenten</b>
-          {r.voorbeelden.map((v, i) => (
-            <div key={i} className="v2-moment"><Kop m={v.lid} size={22} /><span className="ff-small"><b>{naam(v.lid)}</b>: {klein(v.b.tekst)} <span className="ff-muted">{dagKort(v.b.datum)}</span></span></div>
-          ))}
-          {r.zelf.length > 0 && (
-            <>
-              <span className="ff-eyebrow">Zelf aangegeven</span>
-              {r.zelf.map((z, i) => <div key={i} className="v2-moment"><Kop m={z.lid} size={22} /><span className="ff-small">{z.tekst}</span></div>)}
-            </>
-          )}
-        </section>
-      )}
-
-      {/* De week per dag */}
-      <section className="ff-card ff-stack-s" aria-label="De week per dag">
-        <b>🗓️ Dag voor dag</b>
-        <div className="v2-weekgrid" style={{ gridTemplateColumns: `minmax(64px, auto) repeat(7, minmax(0, 1fr))` }}>
-          <span />
-          {DAG.map((d) => <span key={d} className="ff-small ff-muted v2-weekgrid-kop">{d}</span>)}
-          {rijen.map((m) => (
-            <div key={m.id} className="v2-weekgrid-rij">
-              <span className="v2-weekgrid-naam"><Kop m={m} size={22} /><span className="ff-small">{naam(m)}</span></span>
-              {DAG.map((_, i) => {
-                const d = addDays(ma, i);
-                const st = d <= vandaag ? dagStand(state, m.id, d).stand : "leeg";
-                const heeftSamen = (state.samen ?? []).some((x) => x.gedaan && iso(new Date(x.gedaan)) === d && x.wie.includes(m.id));
-                return <span key={d} className={`v2-vakje is-${st}${d === vandaag ? " is-vandaag" : ""}${heeftSamen ? " is-samen" : ""}`} title={`${d}: ${st}`} aria-label={`${DAG[i]}: ${st === "af" ? "dag af" : st === "half" ? "half af" : st === "niks" ? "nog veel open" : "nog niet"}${heeftSamen ? ", samen iets gedaan" : ""}`} />;
-              })}
-            </div>
-          ))}
-        </div>
-        <span className="ff-small ff-muted">✓ dag af · ½ half · 💞 samen iets gedaan. {r.dagenAf.af ? `${r.dagenAf.af} ${r.dagenAf.af === 1 ? "dag" : "dagen"} helemaal af.` : ""}</span>
-      </section>
-
       {/* E. Volgende week */}
       <section className="ff-card ff-stack-s v2-vooruit" aria-label="Volgende week">
         <b>➡️ {huidig ? "Voor de rest van de week" : "Voor volgende week"}</b>
@@ -131,6 +70,15 @@ export function GroeiGezin({ state, me, onToast }: { state: FamilyState; me: Mem
         )}
       </section>
 
+      {/* A. Samen ondernomen */}
+      <section className="ff-card ff-stack-s" aria-label="Samen ondernomen">
+        <b>💞 Samen ondernomen</b>
+        {!r.samen.gedaan.length && !r.samen.gepland.length && !r.samen.nietGedaan.length && <span className="ff-small ff-muted">Deze week niks samen vastgelegd.</span>}
+        {r.samen.gedaan.map((x) => <SamenRij key={x.id} x={x} state={state} status="gedaan" me={me} />)}
+        {r.samen.gepland.map((x) => <SamenRij key={x.id} x={x} state={state} status="gepland" me={me} />)}
+        {r.samen.nietGedaan.map((x) => <SamenRij key={x.id} x={x} state={state} status="open" me={me} />)}
+      </section>
+
       {/* De gezinsboom over de weken */}
       <section className="v2-boom" aria-label="Jullie gezin groeit">
         <div className={`v2-boom-plant fase-${boom.fase}`} aria-hidden="true">{boom.emoji}</div>
@@ -140,30 +88,91 @@ export function GroeiGezin({ state, me, onToast }: { state: FamilyState; me: Mem
           <span className="ff-small">Groeit mee met samen-momenten, dagen af en zelf beginnen.</span>
         </div>
       </section>
-      <section className="ff-card ff-stack-s" aria-label="De laatste 8 weken">
-        <b>📈 De laatste 8 weken</b>
-        <div className="v2-groeigrafiek">
-          {weken.map((w, i) => (
-            <button key={w.maandag} className={`v2-groeistaaf${w.maandag === ma ? " is-nu" : ""}`} onClick={() => setMa(w.maandag)} aria-label={`Week van ${datum(w.maandag)} bekijken`}>
-              <span className="v2-groeibalk"><i style={{ height: `${Math.max(3, (w.score / max) * 100)}%` }} /></span>
-              <span className="ff-small ff-muted">{i === weken.length - 1 ? "nu" : datum(w.maandag)}</span>
-            </button>
-          ))}
-        </div>
-        <span className="ff-small ff-muted">Hoger = meer samen, meer dagen af en vaker zelf begonnen. Tik op een week om die terug te kijken.</span>
-      </section>
+      {/* De rest: voor wie meer wil zien. Standaard dicht, zodat het rustig blijft. */}
+      <details className="v2-meer-details">
+        <summary><b>Meer bekijken</b> <span className="ff-small ff-muted">geoefend, dag voor dag, 8 weken, groei per persoon</span></summary>
+        <div className="ff-stack">
+        {/* B. Vaardigheden geoefend */}
+        <section className="ff-card ff-stack-s" aria-label="Vaardigheden geoefend">
+          <b>🌱 Geoefend deze week</b>
+          {r.geoefend.length ? (
+            <div className="v2-geoefend">
+              {r.geoefend.slice(0, 6).map((g) => (
+                <div key={g.c.id} className="v2-geoefend-rij">
+                  <span className="v2-geoefend-kop"><span aria-hidden="true">{g.c.emoji}</span> <b>{g.c.naam}</b>{isOuder && g.wie.length ? <span className="ff-small ff-muted"> · {g.wie.join(", ")}</span> : null}</span>
+                  <span className="ff-small ff-muted">{g.waar.join(" · ")}</span>
+                </div>
+              ))}
+            </div>
+          ) : <span className="ff-small ff-muted">Nog niks gezien deze week. Het komt vanzelf, door wat jullie in de app doen.</span>}
+          {r.verderOefenen.length > 0 && <span className="ff-small"><b>Verder oefenen:</b> {r.verderOefenen.map((x) => `${naam(x.lid)}: ${klein(x.c.naam)}`).join(" · ")}</span>}
+        </section>
 
-      {/* Per persoon */}
-      <section className="ff-card ff-stack-s" aria-label="Competenties">
-        <b>🌱 {lid.id === me.id ? "Waar groei jij in" : `Waar groeit ${lid.name} in`}</b>
-        {isOuder && (
-          <div className="ff-chips">
-            {leden.map((m) => <button key={m.id} className="ff-chip" aria-pressed={wie === m.id} onClick={() => setWie(m.id)}>{m.id === me.id ? "Ik" : m.name}</button>)}
-          </div>
+        {/* C en D. Mooie momenten en wat jullie er zelf van vonden */}
+        {(r.voorbeelden.length > 0 || r.zelf.length > 0) && (
+          <section className="ff-card ff-stack-s" aria-label="Mooie momenten">
+            <b>✨ Mooie momenten</b>
+            {r.voorbeelden.map((v, i) => (
+              <div key={i} className="v2-moment"><Kop m={v.lid} size={22} /><span className="ff-small"><b>{naam(v.lid)}</b>: {klein(v.b.tekst)} <span className="ff-muted">{dagKort(v.b.datum)}</span></span></div>
+            ))}
+            {r.zelf.length > 0 && (
+              <>
+                <span className="ff-eyebrow">Zelf aangegeven</span>
+                {r.zelf.map((z, i) => <div key={i} className="v2-moment"><Kop m={z.lid} size={22} /><span className="ff-small">{z.tekst}</span></div>)}
+              </>
+            )}
+          </section>
         )}
-        <span className="ff-small ff-muted">De bolletjes zijn de laatste 4 weken. Telt vanzelf, door wat je in de app doet. Dit is geen cijfer of beoordeling.</span>
-        {comp.map((c) => <CompRij key={c.c.id} c={c} />)}
-      </section>
+
+        {/* De week per dag */}
+        <section className="ff-card ff-stack-s" aria-label="De week per dag">
+          <b>🗓️ Dag voor dag</b>
+          <div className="v2-weekgrid" style={{ gridTemplateColumns: `minmax(64px, auto) repeat(7, minmax(0, 1fr))` }}>
+            <span />
+            {DAG.map((d) => <span key={d} className="ff-small ff-muted v2-weekgrid-kop">{d}</span>)}
+            {rijen.map((m) => (
+              <div key={m.id} className="v2-weekgrid-rij">
+                <span className="v2-weekgrid-naam"><Kop m={m} size={22} /><span className="ff-small">{naam(m)}</span></span>
+                {DAG.map((_, i) => {
+                  const d = addDays(ma, i);
+                  const st = d <= vandaag ? dagStand(state, m.id, d).stand : "leeg";
+                  const heeftSamen = (state.samen ?? []).some((x) => x.gedaan && iso(new Date(x.gedaan)) === d && x.wie.includes(m.id));
+                  return <span key={d} className={`v2-vakje is-${st}${d === vandaag ? " is-vandaag" : ""}${heeftSamen ? " is-samen" : ""}`} title={`${d}: ${st}`} aria-label={`${DAG[i]}: ${st === "af" ? "dag af" : st === "half" ? "half af" : st === "niks" ? "nog veel open" : "nog niet"}${heeftSamen ? ", samen iets gedaan" : ""}`} />;
+                })}
+              </div>
+            ))}
+          </div>
+          <span className="ff-small ff-muted">✓ dag af · ½ half · 💞 samen iets gedaan. {r.dagenAf.af ? `${r.dagenAf.af} ${r.dagenAf.af === 1 ? "dag" : "dagen"} helemaal af.` : ""}</span>
+        </section>
+
+        <section className="ff-card ff-stack-s" aria-label="De laatste 8 weken">
+          <b>📈 De laatste 8 weken</b>
+          <div className="v2-groeigrafiek">
+            {weken.map((w, i) => (
+              <button key={w.maandag} className={`v2-groeistaaf${w.maandag === ma ? " is-nu" : ""}`} onClick={() => setMa(w.maandag)} aria-label={`Week van ${datum(w.maandag)} bekijken`}>
+                <span className="v2-groeibalk"><i style={{ height: `${Math.max(3, (w.score / max) * 100)}%` }} /></span>
+                <span className="ff-small ff-muted">{i === weken.length - 1 ? "nu" : datum(w.maandag)}</span>
+              </button>
+            ))}
+          </div>
+          <span className="ff-small ff-muted">Hoger = meer samen, meer dagen af en vaker zelf begonnen. Tik op een week om die terug te kijken.</span>
+        </section>
+
+        {/* Per persoon */}
+        <section className="ff-card ff-stack-s" aria-label="Competenties">
+          <b>🌱 {lid.id === me.id ? "Waar groei jij in" : `Waar groeit ${lid.name} in`}</b>
+          {isOuder && (
+            <div className="ff-chips">
+              {leden.map((m) => <button key={m.id} className="ff-chip" aria-pressed={wie === m.id} onClick={() => setWie(m.id)}>{m.id === me.id ? "Ik" : m.name}</button>)}
+            </div>
+          )}
+          <span className="ff-small ff-muted">De bolletjes zijn de laatste 4 weken. Telt vanzelf, door wat je in de app doet. Dit is geen cijfer of beoordeling.</span>
+          {(alleComp ? comp : comp.filter((c) => c.fase !== "nog-niet")).map((c) => <CompRij key={c.c.id} c={c} />)}
+          {!alleComp && <button className="ff-link ff-small" onClick={() => setAlleComp(true)}>Alle {comp.length} laten zien</button>}
+        </section>
+
+        </div>
+      </details>
 
       <PlanSheet open={plan} idee={r.vooruit.idee?.idee} met={r.vooruit.idee?.met.id} state={state} me={me} onClose={() => setPlan(false)} onToast={onToast} />
     </div>
