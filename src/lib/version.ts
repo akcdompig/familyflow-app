@@ -1,2 +1,2 @@
-export const VERSION = "2.2";
-export const VERSION_NAME = "Vandaag";
+export const VERSION = "2.3";
+export const VERSION_NAME = "Samen";
