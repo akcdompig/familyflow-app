@@ -10,6 +10,7 @@ import { expressionFor } from "@/lib/mood";
 import { actions } from "@/lib/store";
 import { geclaimd, teClaimen } from "@/lib/xp";
 import { OngezondKnop } from "./Voeding";
+import { SchermKind } from "./Scherm";
 import { KlusSheet, antwoordTekst, vraagVan } from "@/components/screens/KlusSheet";
 import { klusStatus } from "@/lib/huis";
 import type { FamilyState, Member, MoodLevel } from "@/lib/types";
@@ -148,6 +149,8 @@ export function Vandaag({ state, me, onToast, onMeerGevoel, onWie }: { state: Fa
           </div>
         </div>
       </section>
+
+      {me.role !== "ouder" && <SchermKind state={state} me={me} />}
 
       {/* Hoe voel je je: één tik */}
       <section className="v2-gevoel" aria-label="Hoe voel je je?">

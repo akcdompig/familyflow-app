@@ -123,6 +123,18 @@ select pg_temp.eis((select count(*) from jsonb_array_elements(:'st'::jsonb -> 's
 select pg_temp.eis((:'st'::jsonb #>> '{xp,k2}')::numeric <= 50 and (:'st'::jsonb #>> '{xp,p1}')::numeric = 15, 'kind kan anderen hooguit een paar punten geven (samen gedaan), niet 500');
 select pg_temp.eis((:'st'::jsonb #> '{doelen,k2,vaardigheden}') = '["plannen"]'::jsonb, 'groeidoelen van zus blijven bewaard');
 
+-- ===== Schermtijd: alleen ouders vullen in, kind ziet alleen zijn eigen =====
+select rev from public.families \gset
+select public.save_family(:'st'::jsonb || '{"schermtijd":{"k1":{"2026-10-15":{"totaal":276,"sociaal":233,"door":"p1","at":"1"}},"k2":{"2026-10-15":{"totaal":60,"door":"p1","at":"1"}}},"schermAfspraak":{"k1":{"doel":120}}}'::jsonb, :rev);
+select pg_temp.als('00000000-0000-0000-0000-00000000000b');
+select (public.load_family() ->> 'state')::jsonb as kian, (public.load_family() ->> 'rev')::int as rev \gset
+select pg_temp.eis((:'kian'::jsonb #>> '{schermtijd,k1,2026-10-15,totaal}') = '276' and not (:'kian'::jsonb -> 'schermtijd') ? 'k2', 'kind ziet zijn eigen schermtijd, niet die van zus');
+select public.save_family(jsonb_set(jsonb_set(:'kian'::jsonb, '{schermtijd,k1,2026-10-15,totaal}', '30'), '{schermAfspraak,k1,doel}', '600'), :rev);
+select pg_temp.als('00000000-0000-0000-0000-00000000000a');
+select state as st from public.families \gset
+select pg_temp.eis((:'st'::jsonb #>> '{schermtijd,k1,2026-10-15,totaal}') = '276' and (:'st'::jsonb #>> '{schermAfspraak,k1,doel}') = '120', 'kind kan zijn schermtijd en afspraak niet aanpassen');
+select pg_temp.eis((:'st'::jsonb #>> '{schermtijd,k2,2026-10-15,totaal}') = '60', 'schermtijd van zus blijft bewaard');
+
 -- ===== Ouder: alles mag, geschiedenis en terugzetten =====
 select rev from public.families \gset
 select public.save_family(jsonb_set(:'st'::jsonb, '{rewards}', '[]'), :rev);
