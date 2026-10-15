@@ -330,6 +330,8 @@ export const actions = {
     update((s) => {
       const d = todayKey();
       const at = new Date().toISOString();
+      // Twee keer afvinken (dubbel tikken, twee telefoons) geeft geen dubbele punten: vandaag al gedaan = klaar.
+      if ((s.klusLog ?? []).some((k) => k.klus === key && new Date(k.at).toLocaleDateString("sv-SE") === d)) return s;
       const v = verdeling(s, d);
       const partner = v.mee[key] ? (by === v.mee[key] ? v.wie[key] : by === v.wie[key] ? v.mee[key] : undefined) : undefined;
       const tekst = (label ? label.replace(/ \(alvast\)$/, "") : "een klus").toLowerCase();

@@ -10,7 +10,7 @@ import { todayKey } from "@/lib/tasks";
 import {
   HANDEN, beurtTussen, genoegPech, heeftVoorsprong, lotKans, magBeslissen, magDoen, verdeling, winnaar, type Hand,
 } from "@/lib/verdeling";
-import type { Bezwaar, FamilyState, Member } from "@/lib/types";
+import type { Bezwaar, FamilyState, Member, TaakGevoel } from "@/lib/types";
 
 /*
   Eén klus: wat, hoe lang, waarom jij. Gedaan afvinken, samen beslissen, of zeggen dat het vandaag niet lukt.
@@ -95,6 +95,14 @@ export function KlusSheet({ state, me, klus, onClose, onToast }: { state: Family
               )}
               {klus.laatst && <span className="ff-muted">Laatst: {naamVan(state, klus.laatst.by)}, {klus.dagenGeleden === 0 ? "vandaag" : klus.dagenGeleden === 1 ? "gisteren" : `${klus.dagenGeleden} dagen geleden`}</span>}
             </div>
+            {klus.klus.instructie && (
+              <div className="ff-klus-uitleg">
+                <span className="ff-eyebrow">Zo doe je het</span>
+                <p>{klus.klus.instructie}</p>
+                {klus.klus.begeleiding && <p className="ff-small ff-muted">Altijd samen met een ouder.</p>}
+              </div>
+            )}
+            {!isOuder && !klus.klus.perKind && <TaakGevoelKiezer state={state} me={me} klusId={klus.klus.id} />}
             {vraag && (
               <div className={`ff-vraag-status${vraag.antwoord ? " is-antwoord" : ""}`}>
                 {vraag.antwoord ? antwoordTekst(state, vraag.antwoord) : `Je vroeg: "${vraag.b.reden}". Je ouders kijken ernaar.`}
@@ -336,6 +344,26 @@ function Loting({ a, b, p, onKlaar }: { a: Member; b: Member; p: number; onKlaar
       </div>
       {!bezig && <button className="ff-btn ff-btn-primary ff-btn-wide" onClick={draai}>Draai 🎡</button>}
       {klaar && <p className="ff-center ff-h2" aria-live="polite">{klaar === a.id ? a.name : b.name}!</p>}
+    </div>
+  );
+}
+
+const GEVOEL: { id: TaakGevoel; label: string }[] = [
+  { id: "leuk", label: "😊 Vind ik leuk" },
+  { id: "leren", label: "🌱 Wil ik leren" },
+  { id: "zelf", label: "💪 Kan ik zelf" },
+  { id: "hulp", label: "🙋 Hulp nodig" },
+];
+
+/** Hoe sta jij tegenover deze taak? Optioneel. Je ouders gebruiken het bij het verdelen van de week. */
+export function TaakGevoelKiezer({ state, me, klusId }: { state: FamilyState; me: Member; klusId: string }) {
+  const nu = state.doelen?.[me.id]?.taken?.[klusId];
+  return (
+    <div className="ff-stack-xs" role="group" aria-label="Hoe vind jij deze taak?">
+      <span className="ff-small ff-muted">Hoe vind jij deze taak? Mag je overslaan.</span>
+      <div className="ff-chips">
+        {GEVOEL.map((g) => <button key={g.id} className="ff-chip" aria-pressed={nu === g.id} onClick={() => samenwerken.setTaakGevoel(me.id, klusId, nu === g.id ? null : g.id)}>{g.label}</button>)}
+      </div>
     </div>
   );
 }

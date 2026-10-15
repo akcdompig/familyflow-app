@@ -179,6 +179,8 @@ export function demoFamily(): FamilyState {
     },
     proNotes: { school: "", zorg: "Gezin is gemotiveerd. Ochtenden gaan beter. Let op ruzies bij spelletjes." },
     badgesStart: daysAgo(4),
+    // Lina deed deze week voor het eerst iets nieuws; die viering was er al, zodat de demo rustig opent.
+    badges: [{ id: "b-demo-1", who: "k2", badge: "nieuwe-vaardigheid", at: daysAgo(5), gezien: ["k2", "p1", "p2", "k1"] }],
     claim: { p1: 0, p2: 0, k1: 0, k2: 0 },
     werk: {
       p1: [{ id: "w1", naam: "Kantoor", soort: "vast", days: [1, 2, 4, 5], van: "08:00", tot: "17:00", inkomen: true }],

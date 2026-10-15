@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Avatar } from "@/components/avatar/Avatar";
 import { Sheet } from "@/components/ui/Sheet";
-import { KLUSSEN, naamKlus, type KlusStatus } from "@/lib/huis";
+import { alleKlussen, klusById, naamKlus, type KlusStatus } from "@/lib/huis";
 import { samenwerken } from "@/lib/samenwerken";
 import { todayKey } from "@/lib/tasks";
 import { eerlijk, eigenVerwachting, isVastgelegd, klusAan, magDoen, minutenVan, scheef, verdeling } from "@/lib/verdeling";
@@ -81,7 +81,7 @@ export function Vragen({ state, me, onToast }: { state: FamilyState; me: Member;
   const open = (state.bezwaren ?? []).filter((b) => !state.bezwaarAntwoord?.[b.id] && b.datum >= new Date(Date.now() - 864e5).toLocaleDateString("sv-SE"));
   if (!open.length || me.role !== "ouder") return null;
   const klusNaam = (key: string) => {
-    const k = KLUSSEN.find((x) => x.id === key.split(":")[0]);
+    const k = klusById(state, key);
     return k?.perKind ? `kamer van ${naam(state, key.split(":")[1])}` : (k?.label ?? key).toLowerCase();
   };
   const kies = (b: Bezwaar, keuze: "ok" | "ouder" | "samen" | "toch", tekst?: string) => {
@@ -130,7 +130,7 @@ export function Eerlijkheid({ state, me }: { state: FamilyState; me: Member }) {
       {sig && <p className="ff-vraag-status">{sig.tekst}</p>}
       {e.map((x) => {
         const m = state.members.find((y) => y.id === x.id)!;
-        const vaakst = x.vaakst ? KLUSSEN.find((k) => k.id === x.vaakst) : undefined;
+        const vaakst = x.vaakst ? klusById(state, x.vaakst) : undefined;
         return (
           <div key={x.id} className="ff-eerlijk-rij">
             <Kop m={m} size={24} />
@@ -145,7 +145,7 @@ export function Eerlijkheid({ state, me }: { state: FamilyState; me: Member }) {
         <>
           <span className="ff-eyebrow">Samen beslist</span>
           {besluiten.map((u) => (
-            <span key={u.id} className="ff-small">{KLUSSEN.find((k) => k.id === u.klus.split(":")[0])?.emoji} {naam(state, u.spelers[0])} en {naam(state, u.spelers[1])}: {manier[u.manier ?? "spel"]} → {u.partner ? "samen" : naam(state, u.verliezer)}</span>
+            <span key={u.id} className="ff-small">{klusById(state, u.klus)?.emoji} {naam(state, u.spelers[0])} en {naam(state, u.spelers[1])}: {manier[u.manier ?? "spel"]} → {u.partner ? "samen" : naam(state, u.verliezer)}</span>
           ))}
         </>
       )}
@@ -163,7 +163,7 @@ export function AfsprakenSheet({ open, onClose, state, me, onToast }: { open: bo
   const zetKlus = (id: string, fn: (k: KlusAfspraak) => KlusAfspraak) =>
     samenwerken.setAfspraken((a) => ({ ...a, klussen: { ...(a.klussen ?? {}), [id]: fn({ ...(a.klussen?.[id] ?? {}) }) } }));
   const wieMag = (klusId: string, m: Member) => {
-    const k = KLUSSEN.find((x) => x.id === klusId)!;
+    const k = klusById(state, klusId)!;
     const mag = magDoen(state, m, k);
     zetKlus(klusId, (a) => {
       const niet = (a.niet ?? []).filter((x) => x !== m.id);
@@ -177,7 +177,7 @@ export function AfsprakenSheet({ open, onClose, state, me, onToast }: { open: bo
   };
   const vast = isVastgelegd(state);
   return (
-    <Sheet open={open} onClose={onClose} title="Klusafspraken">
+    <Sheet open={open} onClose={onClose} title="Taken en afspraken">
       <div className="ff-stack">
         <p className={`ff-vraag-status${vast ? " is-antwoord" : ""}`}>
           {vast ? `Afgesproken. Vastgelegd door ${naam(state, state.klusAfspraken?.door)} op ${new Date(state.klusAfspraken!.vastgelegd!).toLocaleDateString("nl-NL", { day: "numeric", month: "long" })}.` : "Dit is een voorstel van de app. Pas aan wat niet klopt en leg het vast, dan weet iedereen waar hij aan toe is."}
@@ -205,20 +205,23 @@ export function AfsprakenSheet({ open, onClose, state, me, onToast }: { open: bo
           );
         })}
 
-        <b>Klussen</b>
-        <span className="ff-small ff-muted">Zet uit wat jullie anders regelen. Tik op een naam om te kiezen wie het wel of niet doet.</span>
-        {KLUSSEN.map((k) => {
+        <b>Taken</b>
+        <span className="ff-small ff-muted">Zet aan wat bij jullie gezin past, de rest uit. Tik op een naam om te kiezen wie het wel of niet doet. Leeftijd is een richtlijn: jullie kennen je kinderen het best.</span>
+        {[...alleKlussen(state)].sort((a, b) => Number(klusAan(state, b)) - Number(klusAan(state, a))).map((k, i, lijst) => {
           const aan = klusAan(state, k);
           return (
             <div key={k.id} className={`ff-afspraak-klus${aan ? "" : " is-uit"}`}>
+              {!aan && (i === 0 || klusAan(state, lijst[i - 1])) && <span className="ff-eyebrow">Bibliotheek: zet aan wat past</span>}
               <div className="ff-row">
                 <span aria-hidden="true">{k.emoji}</span>
-                <b className="ff-grow">{k.label}</b>
+                <b className="ff-grow">{k.label}{k.begeleiding ? <span className="ff-small ff-muted"> · met begeleiding</span> : null}{k.elke >= 7 ? <span className="ff-small ff-muted"> · wekelijks</span> : k.elke > 1 ? <span className="ff-small ff-muted"> · elke {k.elke} dagen</span> : null}</b>
                 {isOuder && <button className="v2-plusmin" aria-label={`${k.label} min 5 minuten`} disabled={!aan} onClick={() => zetKlus(k.id, (a) => ({ ...a, minuten: Math.max(5, minutenVan(state, k) - 5) }))}>−</button>}
                 <span className="ff-small"><b>{minutenVan(state, k)}</b> min</span>
                 {isOuder && <button className="v2-plusmin" aria-label={`${k.label} plus 5 minuten`} disabled={!aan} onClick={() => zetKlus(k.id, (a) => ({ ...a, minuten: Math.min(90, minutenVan(state, k) + 5) }))}>+</button>}
                 {isOuder && <button className="ff-schakel" role="switch" aria-checked={aan} aria-label={`${k.label} ${aan ? "aan" : "uit"}`} onClick={() => zetKlus(k.id, (a) => ({ ...a, aan: !aan }))}><i /></button>}
               </div>
+              {aan && k.instructie && <span className="ff-small ff-muted">{k.instructie}</span>}
+              {isOuder && k.eigen && <button className="ff-link ff-small" style={{ justifySelf: "start" }} onClick={() => { samenwerken.verwijderEigenTaak(k.id); onToast("Taak weggehaald"); }}>Eigen taak weghalen</button>}
               {aan && (
                 <div className="ff-chips">
                   {(k.iedereen ? leden : kids).filter((m) => !k.perKind || m.role !== "ouder").map((m) => {
@@ -235,6 +238,10 @@ export function AfsprakenSheet({ open, onClose, state, me, onToast }: { open: bo
             </div>
           );
         })}
+
+        {isOuder && <EigenTaakForm onToast={onToast} />}
+
+        {isOuder && <Afwezig state={state} onToast={onToast} />}
 
         {isOuder && (
           <>
@@ -267,3 +274,63 @@ export function AfsprakenSheet({ open, onClose, state, me, onToast }: { open: bo
 
 /** Korte tekst voor een klus in een lijst: "Vaatwasser uitruimen · 10 min". */
 export const klusRegel = (k: KlusStatus, me: string) => `${naamKlus(k, me)} · ${k.minuten} min`;
+
+const HOE_VAAK = [
+  { elke: 1, label: "Elke dag" },
+  { elke: 2, label: "Om de dag" },
+  { elke: 7, label: "Elke week" },
+];
+
+/** Een eigen taak toevoegen: naam, hoe vaak, hoe lang, vanaf welke leeftijd, wat je precies doet. Kort formulier. */
+function EigenTaakForm({ onToast }: { onToast: (m: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [t, setT] = useState({ label: "", emoji: "📌", elke: 1, minuten: 10, vanaf: 8, instructie: "", begeleiding: false, iedereen: false });
+  if (!open) return <button className="ff-btn ff-btn-ghost ff-btn-wide" onClick={() => setOpen(true)}>+ Eigen taak toevoegen</button>;
+  return (
+    <div className="ff-card ff-stack-s" aria-label="Eigen taak">
+      <b>Eigen taak</b>
+      <label className="ff-field"><span className="ff-eyebrow">Wat moet er gebeuren?</span><input value={t.label} maxLength={40} onChange={(e) => setT({ ...t, label: e.target.value })} placeholder="Bijv. hond uitlaten" /></label>
+      <div className="ff-chips">{HOE_VAAK.map((h) => <button key={h.elke} className="ff-chip" aria-pressed={t.elke === h.elke} onClick={() => setT({ ...t, elke: h.elke })}>{h.label}</button>)}</div>
+      <div className="ff-chips">{[5, 10, 15, 20, 30, 45].map((m) => <button key={m} className="ff-chip" aria-pressed={t.minuten === m} onClick={() => setT({ ...t, minuten: m })}>{m} min</button>)}</div>
+      <div className="ff-chips">{[6, 8, 10, 12, 14].map((a) => <button key={a} className="ff-chip" aria-pressed={t.vanaf === a} onClick={() => setT({ ...t, vanaf: a })}>vanaf {a}</button>)}</div>
+      <label className="ff-field"><span className="ff-eyebrow">Zo doe je het (kort, concreet)</span><input value={t.instructie} maxLength={160} onChange={(e) => setT({ ...t, instructie: e.target.value })} placeholder="Bijv. rondje park, poep opruimen, water bijvullen" /></label>
+      <div className="ff-chips">
+        <button className="ff-chip" aria-pressed={t.iedereen} onClick={() => setT({ ...t, iedereen: !t.iedereen })}>Ouders doen ook mee</button>
+        <button className="ff-chip" aria-pressed={t.begeleiding} onClick={() => setT({ ...t, begeleiding: !t.begeleiding })}>Alleen met begeleiding</button>
+      </div>
+      <div className="ff-row">
+        <button className="ff-btn ff-btn-ghost" onClick={() => setOpen(false)}>Annuleren</button>
+        <button className="ff-btn ff-btn-primary ff-grow" disabled={!t.label.trim()} onClick={() => { samenwerken.eigenTaak({ ...t, label: t.label.trim(), instructie: t.instructie.trim() || undefined, xp: t.minuten >= 20 ? 10 : 5 }); onToast(`${t.label} toegevoegd`); setOpen(false); setT({ ...t, label: "", instructie: "" }); }}>Toevoegen</button>
+      </div>
+    </div>
+  );
+}
+
+/** Afwezig voor een periode: logeren, kamp, ziek. Dan geen taken en het telt niet als achterstand. */
+function Afwezig({ state, onToast }: { state: FamilyState; onToast: (m: string) => void }) {
+  const leden = state.members.filter((m) => m.joined !== false);
+  const vandaag = todayKey();
+  const [wie, setWie] = useState<string | null>(null);
+  const [van, setVan] = useState(vandaag);
+  const [tot, setTot] = useState(vandaag);
+  return (
+    <>
+      <b>Afwezig</b>
+      <span className="ff-small ff-muted">Logeren, kamp of een week ziek? Dan krijgt die persoon geen taken.</span>
+      {leden.flatMap((m) => (state.klusAfspraken?.afwezig?.[m.id] ?? []).filter((p) => p.tot >= vandaag).map((p) => (
+        <div key={m.id + p.van} className="ff-row">
+          <span className="ff-grow ff-small"><b>{m.name}</b>: {p.van.slice(8)}/{Number(p.van.slice(5, 7))} t/m {p.tot.slice(8)}/{Number(p.tot.slice(5, 7))}{p.reden ? ` · ${p.reden}` : ""}</span>
+          <button className="ff-link ff-small" onClick={() => samenwerken.afwezig(m.id, null)}>Weg</button>
+        </div>
+      )))}
+      <div className="ff-chips">{leden.map((m) => <button key={m.id} className="ff-chip" aria-pressed={wie === m.id} onClick={() => setWie(wie === m.id ? null : m.id)}>{m.name}</button>)}</div>
+      {wie && (
+        <div className="ff-row">
+          <label className="ff-field ff-grow"><span className="ff-eyebrow">Van</span><input type="date" value={van} onChange={(e) => setVan(e.target.value)} /></label>
+          <label className="ff-field ff-grow"><span className="ff-eyebrow">Tot en met</span><input type="date" value={tot} min={van} onChange={(e) => setTot(e.target.value)} /></label>
+          <button className="ff-btn ff-btn-primary ff-btn-sm" onClick={() => { samenwerken.afwezig(wie, { van, tot: tot < van ? van : tot }); onToast("Afwezig gezet"); setWie(null); }}>Zet</button>
+        </div>
+      )}
+    </>
+  );
+}

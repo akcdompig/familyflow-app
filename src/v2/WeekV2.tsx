@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Avatar } from "@/components/avatar/Avatar";
 import { addDays, iso } from "@/lib/planner";
 import { dagStand, type DagItem } from "@/lib/groei";
-import { KLUSSEN, kookplan, maandag, werkOp } from "@/lib/huis";
+import { klusById, kookplan, maandag, werkOp } from "@/lib/huis";
 import { IDEEEN } from "@/lib/samen";
 import { samenwerken } from "@/lib/samenwerken";
 import { lookVoor } from "@/lib/status";
@@ -107,7 +107,7 @@ export function WeekV2({ state, me, onToast, onOpenLid }: { state: FamilyState; 
                   <b className="ff-small">{m.id === me.id ? "Jij" : m.name}</b>
                   {werk.map((w) => <span key={w.werk.id + w.van} className="ff-small">{lookVoor(w.werk) === "school" ? "🎒" : "💼"} {w.werk.naam} {w.van.replace(":", ".")}–{w.tot.replace(":", ".")}</span>)}
                   {klussen.length > 0 && (
-                    <span className="ff-small ff-muted">🧹 {klussen.map((key) => { const k = KLUSSEN.find((x) => x.id === key.split(":")[0]); return k ? (k.perKind ? "kamer" : k.label.split(" (")[0].toLowerCase()) : key; }).join(", ")}</span>
+                    <span className="ff-small ff-muted">🧹 {klussen.map((key) => { const k = klusById(state, key); return k ? (k.perKind ? "kamer" : k.label.split(" (")[0].toLowerCase()) : key; }).join(", ")}</span>
                   )}
                 </span>
               </div>

@@ -8,6 +8,7 @@
 import { DOEL, ROUTINE } from "./dag";
 import { addDays, iso } from "./planner";
 import type { FamilyState } from "./types";
+import { verdeling } from "./verdeling";
 
 export interface BadgeDef {
   id: string;
@@ -73,6 +74,41 @@ export const BADGES: BadgeDef[] = [
   {
     id: "samen-sterk", naam: "Samen sterk", emoji: "💞", uitleg: "3 keer iets samen gedaan in twee weken", herhaal: 14, punten: 25,
     stand: (s, id, sinds, nu) => ({ n: (s.samen ?? []).filter((x) => x.gedaan && x.wie.includes(id) && new Date(x.gedaan).getTime() > Math.max(sinds, nu.getTime() - 14 * DAG)).length, doel: 3 }),
+  },
+  {
+    id: "teamspeler", naam: "Teamspeler", emoji: "🤝", uitleg: "3 taken samen met iemand gedaan in twee weken", herhaal: 14, punten: 25,
+    stand: (s, id, sinds, nu) => ({ n: (s.klusLog ?? []).filter((k) => k.by === id && k.samen && new Date(k.at).getTime() > Math.max(sinds, nu.getTime() - 14 * DAG)).length, doel: 3 }),
+  },
+  {
+    id: "nieuwe-vaardigheid", naam: "Nieuwe vaardigheid", emoji: "🌱", uitleg: "Een taak gedaan die je nog nooit had gedaan", herhaal: 30, punten: 20,
+    stand: (s, id, sinds, nu) => {
+      const eerste = new Map<string, number>();
+      // Taken met een eigen achievement (ramen, stofzuigen, restjes) tellen hier niet: één viering per keer is genoeg.
+      for (const k of s.klusLog ?? []) if (k.by === id && !k.klus.startsWith("kamer") && !["ramen", "stofzuigen", "koelkast"].includes(k.klus)) {
+        const b = k.klus.split(":")[0];
+        const t = new Date(k.at).getTime();
+        if (!eerste.has(b) || t < eerste.get(b)!) eerste.set(b, t);
+      }
+      // Alleen echt nieuw: je deed daarvoor al minstens 5 andere taken (dus niet alles uit je eerste week).
+      const ervoor = (t: number) => (s.klusLog ?? []).filter((k) => k.by === id && new Date(k.at).getTime() < t).length;
+      return { n: [...eerste.values()].some((t) => t > Math.max(sinds, nu.getTime() - 30 * DAG) && ervoor(t) >= 5) ? 1 : 0, doel: 1 };
+    },
+  },
+  {
+    id: "betrouwbaar", naam: "Betrouwbaar", emoji: "🎯", uitleg: "7 dagen op rij al je taken gedaan", herhaal: 14, punten: 40,
+    stand: (s, id, sinds, nu) => {
+      let n = 0;
+      for (const d of dagenTerug(nu, 10).slice(1)) {
+        if (!naSinds(d, sinds)) break;
+        const v = verdeling(s, d);
+        const mijn = Object.keys(v.wie).filter((key) => v.wie[key] === id || v.mee[key] === id);
+        if (!mijn.length) continue;
+        const gedaan = mijn.every((key) => (s.klusLog ?? []).some((k) => k.klus === key && iso(new Date(k.at)) === d));
+        if (!gedaan) break;
+        n++;
+      }
+      return { n, doel: 7 };
+    },
   },
   {
     id: "spaarder", naam: "Spaarkampioen", emoji: "🐷", uitleg: "€ 5 bijgedragen aan het gezinspotje", herhaal: 30, punten: 25,

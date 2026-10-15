@@ -229,3 +229,14 @@ Naar een 10: twee weken echt gebruik, dan de minuten en verwachtingen bijstellen
 - Dagdata 9 weken bewaard (was 21 dagen): de 8-wekengrafiek klopt nu ook na drie weken.
 - Nieuw in tests: afspraken.test.ts (4) en 5 e2e-scenario's (v3).
 - Nog door een professional te beoordelen: de twee nieuwe opvoedvragen in conflicts.ts.
+
+## Ronde 7 — 3.1 "Taken" (huishoudelijke taken eerlijk verdelen)
+
+- Gezin › Klussen heet nu Taken. Ouders: één knop "Verdeel de taken" (deze week, volgende week, opnieuw vanaf morgen) met weekvoorstel, minuten per persoon, reden per taak, wisselen, bevestigen. Al bevestigde dagen worden niet stil overschreven: eerst "Dit verandert". Logboek van verdelingen en wijzigingen.
+- Bevestigde planning gaat voor de dagberekening (zelfde op elke telefoon); ruilen en samen doen op de dag zelf blijven werken.
+- Bibliotheek: 10 extra taken (tafel dekken, afruimen, woonkamer, was vouwen/opbergen, badkamer, boodschappen, lijst, helpen koken, maaltijd) standaard uit; instructie bij elke taak; eigen taken toevoegen; "alleen met begeleiding" gaat nooit vanzelf naar een kind.
+- Voorkeuren per kind (leuk, wil leren, kan zelf, hulp nodig) in de taak; tellen alleen bij het verdelen door de ouder: leuk hooguit de helft, leren 1× per week met een ouder, hulp altijd met een ouder.
+- Afwezig voor een periode. Nooit-gedane wekelijkse taken komen op een vaste dag in hun eerste cyclus (niet alles op dag 1).
+- Kinderen: "Mijn week" met de komende taken (bevestigd of voorstel), uitleg per taak.
+- Achievements: Teamspeler, Nieuwe vaardigheid, Betrouwbaar. Dubbel afvinken geeft geen dubbele punten.
+- Tests: takenplan.test.ts (10 situaties incl. 8-weken simulatie), badges en store uitgebreid, SQL-rechten (kind kan planning niet wijzigen, wel eigen voorkeur), 3 nieuwe e2e-scenario's.

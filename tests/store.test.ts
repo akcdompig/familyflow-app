@@ -46,3 +46,22 @@ test("porren: hooguit één keer per 10 minuten", () => {
   assert.equal(actions.por("p1", "k1", "Water!"), true);
   assert.equal(actions.por("p1", "k1", "Water!"), false);
 });
+
+test("een taak twee keer afvinken geeft geen dubbele punten", () => {
+  actions.klusGedaan("flessen", "k2", 10, "Flessen wegbrengen");
+  const na = xp("k2");
+  const aantal = snapshot().klusLog?.filter((k) => k.klus === "flessen").length;
+  actions.klusGedaan("flessen", "k1", 10, "Flessen wegbrengen");
+  assert.equal(xp("k2"), na);
+  assert.equal(snapshot().klusLog?.filter((k) => k.klus === "flessen").length, aantal, "geen tweede regel");
+});
+
+test("weekplanning bevestigen en één taak wijzigen: komt in het logboek", async () => {
+  const { samenwerken } = await import("@/lib/samenwerken");
+  const d = new Date(Date.now() + 2 * 864e5).toLocaleDateString("sv-SE");
+  samenwerken.bevestigPlan({ [d]: { "vaat-uit": { wie: "k1", reden: "test" } } }, "p1");
+  assert.equal(snapshot().klusAfspraken?.planning?.[d]?.["vaat-uit"].wie, "k1");
+  samenwerken.wijzigPlan(d, "vaat-uit", "k2", "p1");
+  assert.equal(snapshot().klusAfspraken?.planning?.[d]?.["vaat-uit"].wie, "k2");
+  assert.match(snapshot().klusAfspraken?.planLog?.at(-1)?.tekst ?? "", /vaatwasser uitruimen: Noah → Lina/);
+});

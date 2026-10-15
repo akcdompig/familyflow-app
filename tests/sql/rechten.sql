@@ -90,7 +90,7 @@ select pg_temp.eis((select m ->> 'read' from jsonb_array_elements(:'st'::jsonb -
 select pg_temp.als('00000000-0000-0000-0000-00000000000a');
 select state as st, rev from public.families \gset
 select public.save_family(:'st'::jsonb
-  || '{"klusAfspraken":{"vastgelegd":"2026-10-15T10:00:00Z","door":"p1","klussen":{"ramen":{"aan":false}}}}'::jsonb
+  || '{"klusAfspraken":{"vastgelegd":"2026-10-15T10:00:00Z","door":"p1","klussen":{"ramen":{"aan":false}},"planning":{"2026-10-16":{"vaat-uit":{"wie":"k1","reden":"test"}}}}}'::jsonb
   || '{"ruil":{"2026-10-15":{"afval":"k2"}}}'::jsonb
   || '{"samen":[{"id":"s1","soort":"film","titel":"Film","wie":["p1","k2"],"datum":"2026-10-16","door":"p1","at":"1"}]}'::jsonb
   || '{"bezwaren":[{"id":"b2","at":"1","datum":"2026-10-15","klus":"vaat-uit","door":"k2","soort":"lukt-niet","reden":"Toets"}]}'::jsonb
@@ -101,7 +101,8 @@ select (public.load_family() ->> 'state')::jsonb as kian, (public.load_family() 
 select pg_temp.eis(jsonb_array_length(:'kian'::jsonb -> 'bezwaren') = 0 and (:'kian'::jsonb -> 'bezwaarAntwoord') = '{}'::jsonb, 'kind ziet de vragen van zus niet');
 select pg_temp.eis(not (:'kian'::jsonb -> 'doelen') ? 'k2', 'kind ziet de groeidoelen van zus niet');
 select public.save_family(:'kian'::jsonb
-  || '{"klusAfspraken":{"klussen":{"ramen":{"aan":true}}}}'::jsonb
+  || '{"klusAfspraken":{"klussen":{"ramen":{"aan":true}},"planning":{"2026-10-16":{"vaat-uit":{"wie":"k2"}}}}}'::jsonb
+  || '{"doelen":{"k1":{"vaardigheden":[],"taken":{"vaat-uit":"leuk"}},"k2":{"vaardigheden":[],"taken":{"vaat-uit":"hulp"}}}}'::jsonb
   || '{"vrijstelling":{"2026-10-15":{"k1":"zin in niks"}}}'::jsonb
   || '{"uitdagingen":[{"id":"u1","at":"2026-10-15T15:00:00Z","klus":"vaat-in","spelers":["k1","k2"],"verliezer":"k2","manier":"spel"},{"id":"u2","at":"2026-10-15T15:00:00Z","klus":"keuken","spelers":["k2","p1"],"verliezer":"p1","manier":"spel"}]}'::jsonb
   || '{"ruil":{"2026-10-15":{"vaat-in":"k2","stofzuigen":"k2","afval":"k1"}}}'::jsonb
@@ -112,6 +113,9 @@ select public.save_family(:'kian'::jsonb
 select pg_temp.als('00000000-0000-0000-0000-00000000000a');
 select state as st from public.families \gset
 select pg_temp.eis((:'st'::jsonb #>> '{klusAfspraken,klussen,ramen,aan}') = 'false', 'kind kan de klusafspraken niet wijzigen');
+select pg_temp.eis((:'st'::jsonb #>> '{klusAfspraken,planning,2026-10-16,vaat-uit,wie}') = 'k1', 'kind kan de weekplanning niet wijzigen');
+select pg_temp.eis((:'st'::jsonb #>> '{doelen,k1,taken,vaat-uit}') = 'leuk', 'kind geeft zelf aan wat het leuk vindt');
+select pg_temp.eis(not coalesce(:'st'::jsonb #> '{doelen,k2}', '{}') ? 'taken', 'kind kan geen voorkeur voor zus invullen');
 select pg_temp.eis(not coalesce(:'st'::jsonb -> 'vrijstelling', '{}') ? '2026-10-15', 'kind kan zichzelf geen vrijstelling geven');
 select pg_temp.eis((:'st'::jsonb #>> '{ruil,2026-10-15,vaat-in}') = 'k2', 'klus wisselen na samen beslissen (waar het kind bij was) mag');
 select pg_temp.eis(not (:'st'::jsonb -> 'ruil' -> '2026-10-15') ? 'stofzuigen', 'kind kan geen klus bij een ander neerleggen zonder besluit');

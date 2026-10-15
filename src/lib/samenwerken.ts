@@ -6,7 +6,8 @@
 import { addXp, metFeed, newId, wijzig } from "./store";
 import { todayKey } from "./tasks";
 import { OVERSLAAN, volgende } from "./verdeling";
-import type { Afspraken, Bezwaar, FamilyState, SamenMoment, Uitdaging } from "./types";
+import type { Afspraken, Bezwaar, EigenTaak, FamilyState, PlanRegel, SamenMoment, TaakGevoel, Uitdaging } from "./types";
+import { klusById } from "./huis";
 
 const naam = (s: FamilyState, id: string) => s.members.find((m) => m.id === id)?.name ?? "iemand";
 const zet = <T,>(map: Record<string, Record<string, T>> | undefined, d: string, key: string, v: T | undefined) => {
@@ -19,7 +20,72 @@ const zet = <T,>(map: Record<string, Record<string, T>> | undefined, d: string, 
   return Object.keys(dag).length ? { ...rest, [d]: dag } : rest;
 };
 
+const DAGNAAM = ["zo", "ma", "di", "wo", "do", "vr", "za"];
+const dagKort = (d: string) => DAGNAAM[new Date(d + "T12:00:00").getDay()];
+/** Planning en logboek opruimen: planning 3 weken terug, logboek de laatste 60 regels. */
+const netjes = (a: Afspraken): Afspraken => {
+  const grens = new Date(Date.now() - 21 * 864e5).toLocaleDateString("sv-SE");
+  return { ...a, planning: Object.fromEntries(Object.entries(a.planning ?? {}).filter(([d]) => d >= grens)), planLog: (a.planLog ?? []).slice(-60) };
+};
+
 export const samenwerken = {
+  /** "Verdeel de taken": de ouder bevestigt een weekplanning. Wat buiten deze dagen bevestigd was, blijft staan. */
+  bevestigPlan(plan: Record<string, Record<string, PlanRegel>>, door: string) {
+    const dagen = Object.keys(plan).sort();
+    if (!dagen.length) return;
+    wijzig((s) => {
+      const a = s.klusAfspraken ?? {};
+      const at = new Date().toISOString();
+      const tekst = `heeft de taken verdeeld voor ${dagKort(dagen[0])} ${Number(dagen[0].slice(8))}/${Number(dagen[0].slice(5, 7))} t/m ${dagKort(dagen.at(-1)!)} ${Number(dagen.at(-1)!.slice(8))}/${Number(dagen.at(-1)!.slice(5, 7))}`;
+      const nieuw = netjes({ ...a, vastgelegd: a.vastgelegd ?? at, door: a.door ?? door, planning: { ...(a.planning ?? {}), ...plan }, planLog: [...(a.planLog ?? []), { at, door, tekst }] });
+      return metFeed({ ...s, klusAfspraken: nieuw }, door, `${tekst} 📋`);
+    });
+  },
+  /** Eén taak in de bevestigde planning aan iemand anders geven (afwezig, ziek, ruil). Komt in het logboek. */
+  wijzigPlan(d: string, key: string, wie: string, door: string) {
+    wijzig((s) => {
+      const a = s.klusAfspraken ?? {};
+      const dag = { ...(a.planning?.[d] ?? {}) };
+      const oud = dag[key]?.wie;
+      if (oud === wie) return s;
+      dag[key] = { wie, reden: `aangepast door ${naam(s, door).toLowerCase()}` };
+      const k = klusById(s, key);
+      const tekst = `${dagKort(d)} ${(k?.label ?? key).toLowerCase()}: ${oud ? `${naam(s, oud)} → ` : ""}${naam(s, wie)}`;
+      return { ...s, klusAfspraken: netjes({ ...a, planning: { ...(a.planning ?? {}), [d]: dag }, planLog: [...(a.planLog ?? []), { at: new Date().toISOString(), door, tekst }] }) };
+    });
+  },
+  /** Leuk, wil ik leren, kan ik zelf, hulp nodig. Leeg = geen voorkeur. Het kind zelf of een ouder. */
+  setTaakGevoel(id: string, klusId: string, g: TaakGevoel | null) {
+    wijzig((s) => {
+      const d = s.doelen?.[id] ?? { vaardigheden: [] };
+      const taken = { ...(d.taken ?? {}) };
+      if (g) taken[klusId] = g;
+      else delete taken[klusId];
+      return { ...s, doelen: { ...(s.doelen ?? {}), [id]: { ...d, taken } } };
+    });
+  },
+  /** Een eigen taak toevoegen of aanpassen. Staat meteen aan. */
+  eigenTaak(t: Omit<EigenTaak, "id"> & { id?: string }) {
+    const id = t.id ?? `eigen-${Date.now().toString(36)}`;
+    wijzig((s) => {
+      const a = s.klusAfspraken ?? {};
+      const rest = (a.eigen ?? []).filter((x) => x.id !== id);
+      return { ...s, klusAfspraken: { ...a, eigen: [...rest, { ...t, id }], klussen: { ...(a.klussen ?? {}), [id]: { ...(a.klussen?.[id] ?? {}), aan: true } } } };
+    });
+  },
+  /** Een eigen taak weghalen. De geschiedenis blijft staan; in de planning wordt hij overgeslagen. */
+  verwijderEigenTaak(id: string) {
+    wijzig((s) => ({ ...s, klusAfspraken: { ...(s.klusAfspraken ?? {}), eigen: (s.klusAfspraken?.eigen ?? []).filter((x) => x.id !== id) } }));
+  },
+  /** Afwezig van–tot (logeren, kamp). Leeg = weer gewoon. */
+  afwezig(id: string, periode: { van: string; tot: string; reden?: string } | null) {
+    wijzig((s) => {
+      const a = s.klusAfspraken ?? {};
+      const vandaag = new Date().toLocaleDateString("sv-SE");
+      const lijst = (a.afwezig?.[id] ?? []).filter((p) => p.tot >= vandaag);
+      return { ...s, klusAfspraken: { ...a, afwezig: { ...(a.afwezig ?? {}), [id]: periode ? [...lijst, periode] : [] } } };
+    });
+  },
   /* ---------- Afspraken (ouders) ---------- */
   setAfspraken(fn: (a: Afspraken) => Afspraken) {
     wijzig((s) => ({ ...s, klusAfspraken: fn({ ...(s.klusAfspraken ?? {}) }) }));

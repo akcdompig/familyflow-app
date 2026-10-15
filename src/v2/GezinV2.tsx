@@ -24,7 +24,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "nu", label: "Nu" },
   { id: "week", label: "Week" },
   { id: "samen", label: "Samen" },
-  { id: "klussen", label: "Klussen" },
+  { id: "klussen", label: "Taken" },
   { id: "eten", label: "Eten" },
 ];
 // Kinderen (en zeker met ADHD) hebben baat bij minder keuzes: 3 tabbladen. Groei staat sinds 3.0 bij Samen verder.

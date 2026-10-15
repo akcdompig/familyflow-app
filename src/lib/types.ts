@@ -270,7 +270,7 @@ export interface FamilyState {
   /** Schermtijd-afspraak per kind: hoeveel minuten per dag is het doel. */
   schermAfspraak?: Record<string, { doel: number }>;
   /** Groeidoelen per kind: welke vaardigheden, en de terugblik per week (maandag → vaardigheid → hoe ging het). */
-  doelen?: Record<string, { vaardigheden: string[]; terugblik?: Record<string, Record<string, "goed" | "beter" | "lastig">>; /** Wat zou thuis beter mogen, in eigen woorden. */ wens?: string }>;
+  doelen?: Record<string, { vaardigheden: string[]; terugblik?: Record<string, Record<string, "goed" | "beter" | "lastig">>; /** Wat zou thuis beter mogen, in eigen woorden. */ wens?: string; /** Per taak: leuk, wil ik leren, kan ik zelf, hulp nodig. */ taken?: Record<string, TaakGevoel> }>;
 }
 
 /** Een gezinsafspraak (uit de coach, een ruzie of zelf gemaakt). Na een week vraagt de app: hielp het? */
@@ -295,7 +295,38 @@ export interface Afspraken {
   klussen?: Record<string, { aan?: boolean; minuten?: number; niet?: string[]; wel?: string[] }>;
   /** Per lid: verwachte minuten op een schooldag en op een vrije dag. */
   verwachting?: Record<string, { school?: number; vrij?: number }>;
+  /** Taken die de ouders zelf toevoegden (naast de bibliotheek). */
+  eigen?: EigenTaak[];
+  /** Bevestigde weekplanning: datum → taak → wie (en eventueel samen met wie), met de reden. */
+  planning?: Record<string, Record<string, PlanRegel>>;
+  /** Wat er aan de planning veranderde, voor iedereen terug te lezen. */
+  planLog?: { at: string; door: string; tekst: string }[];
+  /** Afwezig voor een periode (logeren, kamp, ziek): dan geen taken, en het telt niet als achterstand. */
+  afwezig?: Record<string, { van: string; tot: string; reden?: string }[]>;
 }
+
+export interface PlanRegel {
+  wie: string;
+  mee?: string;
+  reden?: string;
+}
+
+export interface EigenTaak {
+  id: string;
+  label: string;
+  emoji: string;
+  /** Om de hoeveel dagen: 1 = elke dag, 7 = elke week. */
+  elke: number;
+  minuten: number;
+  vanaf: number;
+  xp: number;
+  instructie?: string;
+  begeleiding?: boolean;
+  iedereen?: boolean;
+}
+
+/** Hoe een kind tegenover een taak staat. Een voorkeur is een aanwijzing, geen vaste taak. */
+export type TaakGevoel = "leuk" | "leren" | "zelf" | "hulp";
 
 export interface Bezwaar {
   id: string;

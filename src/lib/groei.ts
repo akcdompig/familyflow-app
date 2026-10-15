@@ -14,7 +14,7 @@
 import { addDays, iso } from "./planner";
 import { ETEN, ROUTINE, dagLog, gegeten } from "./dag";
 import { dagprogramma, telt } from "./dagprogramma";
-import { KLUSSEN, maandag } from "./huis";
+import { klusById, maandag } from "./huis";
 import { IDEEEN } from "./samen";
 import { tasksFor, isDone } from "./tasks";
 import { verdeling } from "./verdeling";
@@ -58,7 +58,7 @@ export function dagLijst(s: FamilyState, id: string, d: string): DagItem[] {
   for (const [key, wie] of Object.entries(v.wie)) if (wie === id || v.mee[key] === id) keys.add(key);
   for (const key of gedaan) keys.add(key); // ook wat je extra deed
   for (const key of keys) {
-    const k = KLUSSEN.find((x) => x.id === key.split(":")[0]);
+    const k = klusById(s, key);
     items.push({ soort: "klus", titel: k ? (k.perKind ? "Eigen kamer" : k.label.split(" (")[0]) : key, emoji: k?.emoji ?? "🧹", klaar: gedaan.has(key) });
   }
   return items;
