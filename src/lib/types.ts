@@ -249,6 +249,38 @@ export interface FamilyState {
   sleep?: Record<string, string>;
   /** Bevestigd door een ouder: checked[datum][taakId] = id van de ouder. */
   checked?: Record<string, Record<string, string>>;
+  /** Klus van eigenaar gewisseld (uitdaging of door een ouder): ruil[datum][klusKey] = lidId. */
+  ruil?: Record<string, Record<string, string>>;
+  /** Uitdagingen (steen-papier-schaar): wie tegen wie, en wie de klus doet. Nieuwste achteraan. */
+  uitdagingen?: Uitdaging[];
+  /** Samen dingen doen: koken, boodschappen, film, stad, buiten. Bouwt de band op. */
+  samen?: SamenMoment[];
+}
+
+export interface Uitdaging {
+  id: string;
+  at: string;
+  klus: string;
+  spelers: [string, string];
+  verliezer: string;
+  /** Joker gebruikt door (na 2 keer op rij verloren). */
+  joker?: string;
+}
+
+export interface SamenMoment {
+  id: string;
+  soort: string;
+  titel: string;
+  /** Gezinsleden die meedoen. */
+  wie: string[];
+  /** Vrienden of vriendinnen die meedoen (vrije tekst). */
+  vrienden?: string;
+  datum: string;
+  tijd?: string;
+  door: string;
+  at: string;
+  /** Wanneer het gedaan is (ISO). Leeg = nog gepland. */
+  gedaan?: string;
 }
 
 export interface Kookplan {

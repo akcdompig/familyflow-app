@@ -10,6 +10,7 @@
 import { addDays, iso } from "./planner";
 import { dagLog, gegeten } from "./dag";
 import { lookVoor, werktNu } from "./status";
+import { verdeling } from "./verdeling";
 import type { FamilyState, Kookplan, KlusDone, Member, WerkItem } from "./types";
 
 export interface Klus {
@@ -55,12 +56,14 @@ export function laatst(s: FamilyState, key: string): KlusDone | undefined {
   return undefined;
 }
 
-export type KlusStatus = { key: string; klus: Klus; kind?: Member; laatst?: KlusDone; dagenGeleden: number | null; teLaat: number; vandaagGedaan: boolean; /** Moet vandaag (of is te laat). */ nodig: boolean; beurt?: Member };
+export type KlusStatus = { key: string; klus: Klus; kind?: Member; laatst?: KlusDone; dagenGeleden: number | null; teLaat: number; vandaagGedaan: boolean; /** Moet vandaag (of is te laat). */ nodig: boolean; beurt?: Member; /** Vandaag ingedeeld (eerlijke verdeling). */ ingedeeld?: boolean; /** Moet nog niet, maar mag alvast (vrije dag). */ extra?: boolean };
 
 /** Hoe staat elke klus ervoor? teLaat > 0 = blijft liggen. */
 export function klusStatus(s: FamilyState, nu = new Date()): KlusStatus[] {
   const vandaag = iso(nu);
   const out: KlusStatus[] = [];
+  const v = verdeling(s, vandaag);
+  const lid = (id?: string) => (id ? s.members.find((m) => m.id === id) : undefined);
   for (const k of KLUSSEN) {
     const rijen = k.perKind ? kidsVan(s).map((m) => ({ key: klusKey(k, m.id), kind: m as Member | undefined })) : [{ key: k.id, kind: undefined }];
     if (k.naKoken) {
@@ -72,7 +75,8 @@ export function klusStatus(s: FamilyState, nu = new Date()): KlusStatus[] {
       const ago = l ? dagenTussen(iso(new Date(l.at)), vandaag) : null;
       // Te laat = langer liggen dan de bedoeling. Een dagelijkse klus van gisteren moet vandaag, maar is nog niet te laat.
       const teLaat = ago === null ? 0 : Math.max(0, ago - k.elke);
-      out.push({ key: r.key, klus: k, kind: r.kind, laatst: l, dagenGeleden: ago, teLaat, nodig: ago === null || ago >= k.elke, vandaagGedaan: ago === 0, beurt: r.kind ?? beurtVoor(s, k, nu) });
+      const ingedeeld = lid(v.wie[r.key]);
+      out.push({ key: r.key, klus: k, kind: r.kind, laatst: l, dagenGeleden: ago, teLaat, nodig: ago === null || ago >= k.elke, vandaagGedaan: ago === 0, beurt: ingedeeld ?? r.kind ?? beurtVoor(s, k, nu), ingedeeld: !!ingedeeld, extra: v.extra.has(r.key) });
     }
   }
   return out;
