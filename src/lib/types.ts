@@ -219,6 +219,10 @@ export interface FamilyState {
   /** Werk per gezinslid, en losse diensten (security, heitoezicht, …). */
   werk?: Record<string, WerkItem[]>;
   diensten?: Dienst[];
+  /** Dagelijkse basis per dag en lid: ochtendroutine, kleding, water, fruit, ontbijt, sport. */
+  dag?: Record<string, Record<string, { routine: string[]; kleding?: "nieuw" | "zelfde"; water: number; fruit: number; ontbijt?: boolean; sport?: boolean }>>;
+  /** Porren: een duwtje van een gezinslid. */
+  porren?: { id: string; from: string; to: string; at: string; tekst: string; gezien?: boolean }[];
   /** Wie slaapt: sleep[lid] = tijd van welterusten. Inchecken maakt je wakker. */
   sleep?: Record<string, string>;
   /** Bevestigd door een ouder: checked[datum][taakId] = id van de ouder. */

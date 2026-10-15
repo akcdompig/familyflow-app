@@ -647,3 +647,36 @@ i.is-vak { background: var(--ff-munt-zacht); border: 1px solid var(--ff-munt-don
 .ff-tag-mood.is-slaap { color: var(--ff-lucht-donker); }
 .ff-tag-mood.is-werk { color: var(--ff-koraal-knop); font-weight: 800; }
 @media (prefers-reduced-motion: reduce) { .ff-av-zzz text, .ff-av-lift, .ff-av-scherm { animation: none; } .ff-av-zzz text { opacity: .8; } }
+
+/* Mijn dag: hygiëne en gezondheid */
+.ff-meters { display: grid; gap: 6px; }
+.ff-meter { display: grid; grid-template-columns: auto auto 1fr auto; align-items: center; gap: 8px; }
+.ff-meters.is-klein { gap: 3px; width: 100%; }
+.ff-meters.is-klein .ff-meter { grid-template-columns: auto 1fr; gap: 4px; font-size: 10px; }
+.ff-meter-bar { height: 10px; border-radius: var(--ff-rond-pil); background: var(--ff-grond); overflow: hidden; }
+.ff-meters.is-klein .ff-meter-bar { height: 5px; }
+.ff-meter-bar i { display: block; height: 100%; border-radius: inherit; transition: width 600ms cubic-bezier(.2,.8,.2,1); }
+.ff-dag-tegels { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.ff-dag-tegel { display: grid; justify-items: center; gap: 4px; padding: 12px 6px; border-radius: var(--ff-rond-m); border: 2px solid var(--ff-lijn); background: var(--ff-wolk); font: inherit; font-weight: 700; font-size: var(--ff-t-s); color: var(--ff-tekst); cursor: pointer; text-align: center; }
+.ff-dag-tegel[aria-pressed="true"] { background: var(--ff-munt-zacht); border-color: var(--ff-munt-donker); }
+.ff-dag-tegel[aria-pressed="true"] .ff-dag-emoji { transform: scale(1.15); }
+.ff-dag-emoji { font-size: 26px; transition: transform 200ms var(--ff-veer, ease); }
+.ff-dag-glazen { display: flex; flex-wrap: wrap; gap: 6px; }
+.ff-dag-glas { width: 44px; height: 44px; border-radius: var(--ff-rond-s); border: 2px solid var(--ff-lijn); background: var(--ff-wolk); font-size: 22px; cursor: pointer; filter: grayscale(1) opacity(.45); }
+.ff-dag-glas[aria-pressed="true"] { filter: none; border-color: var(--ff-lucht); background: var(--ff-lucht-zacht); }
+.ff-dag-glas.is-plus { filter: none; font-weight: 800; color: var(--ff-tekst-zacht); }
+.ff-av-walm path { animation: ff-walm 2.6s ease-in-out infinite; }
+.ff-av-walm path:nth-child(2) { animation-delay: .8s; }
+.ff-av-walm path:nth-child(3) { animation-delay: 1.5s; }
+@keyframes ff-walm { 0% { opacity: 0; transform: translateY(8px); } 40% { opacity: .9; } 100% { opacity: 0; transform: translateY(-12px); } }
+.ff-av-dorst { animation: ff-dorst 1.8s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes ff-dorst { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+.ff-tag .ff-meters.is-klein { margin-top: 3px; min-width: 64px; }
+.ff-klassement { display: grid; gap: 6px; }
+.ff-klassement-rij { display: grid; grid-template-columns: 26px 32px 1fr auto; align-items: center; gap: 8px; padding: 4px 0; background: none; border: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; width: 100%; }
+.ff-klassement-rij .ff-plek { font-size: 18px; text-align: center; font-weight: 800; }
+.ff-klassement-rij .ff-score { font-weight: 800; font-variant-numeric: tabular-nums; }
+.ff-por-pop { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; background: rgba(20, 18, 50, .45); padding: 24px max(16px, env(safe-area-inset-left, 0px)); }
+.ff-por-kaart { background: var(--ff-wolk); border-radius: var(--ff-rond-xl); padding: 22px; display: grid; justify-items: center; gap: 10px; max-width: 340px; width: 100%; text-align: center; box-shadow: var(--ff-schaduw-m); animation: ff-por 500ms cubic-bezier(.2,1.6,.4,1); }
+@keyframes ff-por { 0% { transform: scale(.6) rotate(-6deg); } 60% { transform: scale(1.05) rotate(3deg); } 100% { transform: scale(1) rotate(0); } }
+@media (prefers-reduced-motion: reduce) { .ff-av-walm path, .ff-av-dorst, .ff-por-kaart { animation: none; } }

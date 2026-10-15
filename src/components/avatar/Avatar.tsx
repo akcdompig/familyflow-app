@@ -19,11 +19,15 @@ interface Props {
   headOnly?: boolean;
   /** Aan het werk: andere spullen of kleding. */
   bezig?: Bezig;
+  /** Ochtendroutine niet gedaan: er komt een walmpje af. */
+  walm?: boolean;
+  /** Te weinig gedronken: een druppeltje boven het hoofd. */
+  dorst?: boolean;
 }
 
 const INK = "#23204a";
 
-export function Avatar({ config, expression = "neutraal", energy = 0.5, size = 140, animate = true, seed = 0, label, headOnly = false, bezig }: Props) {
+export function Avatar({ config, expression = "neutraal", energy = 0.5, size = 140, animate = true, seed = 0, label, headOnly = false, bezig, walm = false, dorst = false }: Props) {
   const skin = skinColor(config.skin);
   const skinDark = shade(skin, -22);
   const hair = config.hairColor;
@@ -132,6 +136,19 @@ export function Avatar({ config, expression = "neutraal", energy = 0.5, size = 1
             </g>
           )}
         </g>
+        {walm && expression !== "slaap" && (
+          <g className={animate ? "ff-av-walm" : undefined} stroke="#8da35a" strokeWidth="3.5" fill="none" strokeLinecap="round" opacity=".85">
+            <path d="M22 120 c-6 -8 6 -14 0 -22 c-6 -8 6 -14 0 -22" />
+            <path d="M138 120 c6 -8 -6 -14 0 -22 c6 -8 -6 -14 0 -22" />
+            <path d="M40 40 c-5 -6 5 -10 0 -16" />
+          </g>
+        )}
+        {dorst && expression !== "slaap" && (
+          <g className={animate ? "ff-av-dorst" : undefined}>
+            <path d="M140 52 C134 62 132 66 132 70 a8 8 0 0 0 16 0 c0 -4 -2 -8 -8 -18 z" fill="#5cb8ff" stroke="#2f8de0" strokeWidth="1.5" />
+            <text x="140" y="74" textAnchor="middle" fontSize="11" fontWeight="800" fill="#ffffff">!</text>
+          </g>
+        )}
         {bezig && expression !== "slaap" && <Werkspullen bezig={bezig} headOnly={headOnly} animate={animate} />}
         {expression === "slaap" && (
           <g className={animate ? "ff-av-zzz" : undefined} fill={INK} fontFamily="var(--ff-font-speels, sans-serif)" fontWeight="700">

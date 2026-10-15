@@ -24,8 +24,10 @@ import { expressionFor, moodLabel, timeLabel } from "@/lib/mood";
 import { actions, isLive, lastSyncError, useFamily } from "@/lib/store";
 import { syncSomtoday } from "@/lib/somtoday";
 import { slaapt, werktNu } from "@/lib/status";
+import { DOEL, ROUTINE, dagLog, dorst, kledingDag, walm } from "@/lib/dag";
+import { MijnDag, Meters } from "@/components/screens/MijnDag";
 import { energyOf, isDone, tasksFor } from "@/lib/tasks";
-import type { FamilyState } from "@/lib/types";
+import type { FamilyState, Member } from "@/lib/types";
 
 type Screen = "huis" | "taken" | "oefenen" | "gezin" | "ik" | "maker";
 
@@ -66,6 +68,7 @@ export function FamilyFlowApp() {
   const [coach, setCoach] = useState<string | null>(null);
   const [coachNu, setCoachNu] = useState<string | null>(null);
   const [planner, setPlanner] = useState(false);
+  const [mijnDag, setMijnDag] = useState(false);
 
   // Energie van elke avatar komt uit de taken van vandaag.
   const state: FamilyState = useMemo(() => ({ ...raw, members: raw.members.map((m) => ({ ...m, energy: energyOf(raw, m) })) }), [raw]);
@@ -170,7 +173,7 @@ export function FamilyFlowApp() {
       ) : (
         <>
       {view === "huis" && (
-        <Huiskamer state={state} me={me} onCheckIn={() => setCheckIn(true)} onOpenMember={setMember} onTalkTips={setTips} onWho={() => (live ? setScreen("ik") : setWho(true))} onGoTasks={() => setScreen("taken")} onRuzie={(id) => setRuzie(id ?? "")} onGoGezin={() => setScreen("gezin")} onCoachNu={() => setCoachNu("")} />
+        <Huiskamer state={state} me={me} onCheckIn={() => setCheckIn(true)} onOpenMember={setMember} onTalkTips={setTips} onWho={() => (live ? setScreen("ik") : setWho(true))} onGoTasks={() => setScreen("taken")} onRuzie={(id) => setRuzie(id ?? "")} onGoGezin={() => setScreen("gezin")} onCoachNu={() => setCoachNu("")} onMijnDag={() => setMijnDag(true)} />
       )}
       {view === "taken" && <Taken state={state} me={me} onToast={setToast} onPlay={setCoach} onPlanner={() => setPlanner(true)} />}
       {view === "oefenen" && <Oefenen state={state} me={me} onToast={setToast} onCalm={() => setCalm(true)} onRuzie={() => setRuzie("")} onCoach={setCoach} onCoachNu={() => setCoachNu("")} />}
@@ -197,14 +200,31 @@ export function FamilyFlowApp() {
       )}
 
       <CheckInSheet open={checkIn} onClose={closeCheckIn} me={me} current={state.checkins[me.id]} talkTo={talkTo} onDone={setToast} />
+      <MijnDag open={mijnDag} onClose={() => setMijnDag(false)} state={state} me={me} onToast={setToast} />
+      <PorPopup state={state} me={me} />
       <CalmSheet open={calm} onClose={closeCalm} me={me} plan={state.plans[me.id]} onDone={setToast} />
 
       <Sheet open={!!sel} onClose={closeMember} title={sel ? sel.name : "Gezinslid"}>
         {sel && (
           <div className="ff-member">
-            <Avatar config={sel.avatar} expression={slaapt(state, sel.id) ? "slaap" : expressionFor(selCi)} bezig={slaapt(state, sel.id) ? undefined : werktNu(state, sel.id)?.look} energy={sel.energy} size={130} seed={5} label={sel.name} />
+            <Avatar config={sel.avatar} expression={slaapt(state, sel.id) ? "slaap" : expressionFor(selCi)} bezig={slaapt(state, sel.id) ? undefined : werktNu(state, sel.id)?.look} walm={!slaapt(state, sel.id) && walm(state, sel.id)} dorst={!slaapt(state, sel.id) && dorst(state, sel.id)} energy={sel.energy} size={130} seed={5} label={sel.name} />
             <h2 className="ff-h2">{sel.id === me.id ? "Jij" : sel.name}</h2>
             <p className="ff-muted">{slaapt(state, sel.id) ? "Slaapt" : werktNu(state, sel.id) ? `Aan het werk · ${werktNu(state, sel.id)!.werk.naam}` : selCi ? `${moodLabel(selCi)} · ${timeLabel(selCi.at)}` : "Nog niet ingecheckt"}</p>
+            {sel.joined !== false && (
+              <div className="ff-stack-s" style={{ width: "100%" }}>
+                <Meters state={state} id={sel.id} />
+                <p className="ff-small ff-muted">
+                  Routine {dagLog(state, sel.id).routine.filter((x) => ROUTINE.some((r) => r.id === x && r.gewicht > 0)).length}/{ROUTINE.filter((r) => r.gewicht > 0).length} · kleding dag {kledingDag(state, sel.id)} · water {dagLog(state, sel.id).water}/{DOEL.water} · fruit {dagLog(state, sel.id).fruit}/{DOEL.fruit}
+                </p>
+                {sel.id !== me.id && !slaapt(state, sel.id) && (
+                  <div className="ff-chips">
+                    {["Ochtendroutine doen! 🚿", "Drink een glas water 💧", "Pak een stuk fruit 🍎", "Kom je helpen? 🙌", "Goed bezig! 💪"].map((t) => (
+                      <button key={t} className="ff-chip" onClick={() => setToast(actions.por(me.id, sel.id, t) ? `${sel.name} is gepord` : "Je hebt net al gepord. Wacht even")}>{t}</button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
             {canSeeDetails && selCi && selCi.topics.length > 0 && (
               <div className="ff-chips ff-center-row">
                 {selCi.topics.map((t) => (
@@ -274,6 +294,31 @@ export function FamilyFlowApp() {
       </Sheet>
 
       {toast && <div className="ff-toast" role="status">{toast.charAt(0).toUpperCase() + toast.slice(1)}</div>}
+    </div>
+  );
+}
+
+/** Gepord door een gezinslid: een popup, en de telefoon trilt waar dat kan. */
+function PorPopup({ state, me }: { state: FamilyState; me: Member }) {
+  const por = (state.porren ?? []).find((p) => p.to === me.id && !p.gezien && Date.now() - new Date(p.at).getTime() < 12 * 3600e3);
+  const van = por ? state.members.find((m) => m.id === por.from) : null;
+  useEffect(() => {
+    if (!por) return;
+    try {
+      navigator.vibrate?.([180, 90, 180, 90, 260]);
+    } catch {
+      /* trillen kan niet op elke telefoon */
+    }
+  }, [por?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (!por || !van) return null;
+  return (
+    <div className="ff-por-pop" role="alertdialog" aria-label={`${van.name} port je`}>
+      <div className="ff-por-kaart">
+        <Avatar config={van.avatar} expression="blij" size={90} label={van.name} />
+        <b className="ff-h2">{van.name} port je!</b>
+        <p style={{ margin: 0, fontSize: "1.1rem", fontWeight: 700 }}>{por.tekst}</p>
+        <button className="ff-btn ff-btn-primary ff-btn-wide" onClick={() => actions.porGezien(por.id)}>Oké, ik ga!</button>
+      </div>
     </div>
   );
 }

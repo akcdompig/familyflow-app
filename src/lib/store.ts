@@ -5,6 +5,7 @@ import * as cloud from "./cloud";
 import { demoFamily } from "./demo";
 import { phoneTaskTitle, todayKey } from "./tasks";
 import { XP } from "./xp";
+import { basisXp, type DagLog } from "./dag";
 import type { Dienst, WerkItem, CoachRun, Quest, AvatarConfig, CalmPlan, CheckIn, Conflict, ConflictSide, FamilyState, Meeting, ProKind, Task } from "./types";
 
 /*
@@ -221,6 +222,31 @@ export const actions = {
       delete sleep[memberId]; // inchecken = wakker
       return { ...s, xp, sleep, checkins: { ...s.checkins, [memberId]: { ...c, at } }, history: { ...s.history, [memberId]: hist } };
     });
+  },
+  /** Dagelijkse basis bijwerken (routine, kleding, water, fruit, ontbijt, sport). Kinderen krijgen er XP voor. */
+  updateDag(memberId: string, fn: (log: DagLog) => DagLog) {
+    const d = todayKey();
+    update((s) => {
+      const oud: DagLog = { routine: [], water: 0, fruit: 0, ...(s.dag?.[d]?.[memberId] ?? {}) };
+      const nieuw = fn({ ...oud, routine: [...oud.routine] });
+      nieuw.water = Math.max(0, Math.min(20, nieuw.water));
+      nieuw.fruit = Math.max(0, Math.min(10, nieuw.fruit));
+      const delta = basisXp(nieuw) - basisXp(oud);
+      // Alleen de laatste 21 dagen bewaren.
+      const grens = new Date(Date.now() - 21 * 864e5).toLocaleDateString("sv-SE");
+      const dag = Object.fromEntries(Object.entries(s.dag ?? {}).filter(([k]) => k >= grens));
+      return { ...s, dag: { ...dag, [d]: { ...(dag[d] ?? {}), [memberId]: nieuw } }, xp: delta && isKid(s, memberId) ? addXp(s, memberId, delta) : s.xp };
+    });
+  },
+  /** Iemand porren. Hooguit één keer per 10 minuten per persoon, zodat het leuk blijft. */
+  por(from: string, to: string, tekst: string): boolean {
+    const recent = (state.porren ?? []).some((p) => p.from === from && p.to === to && Date.now() - new Date(p.at).getTime() < 10 * 60e3);
+    if (recent) return false;
+    update((s) => ({ ...s, porren: [...(s.porren ?? []), { id: newId("p"), from, to, at: new Date().toISOString(), tekst }].slice(-50) }));
+    return true;
+  },
+  porGezien(id: string) {
+    update((s) => ({ ...s, porren: (s.porren ?? []).map((p) => (p.id === id ? { ...p, gezien: true } : p)) }));
   },
   /** Welterusten: de avatar gaat slapen tot de volgende check-in. */
   goToSleep(memberId: string) {
