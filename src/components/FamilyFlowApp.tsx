@@ -25,7 +25,7 @@ import { Sheet } from "@/components/ui/Sheet";
 import { expressionFor, moodLabel, timeLabel } from "@/lib/mood";
 import { actions, isLive, lastSyncError, useFamily } from "@/lib/store";
 import { syncSomtoday } from "@/lib/somtoday";
-import { slaapt, werktNu } from "@/lib/status";
+import { restTekst, slaapt, werktNu } from "@/lib/status";
 import { DOEL, ETEN, ROUTINE, dagLog, dorst, gegeten, kledingDag, walm } from "@/lib/dag";
 import { MijnDag, Meters } from "@/components/screens/MijnDag";
 import { energyOf, isDone, tasksFor } from "@/lib/tasks";
@@ -214,7 +214,8 @@ export function FamilyFlowApp() {
           <div className="ff-member">
             <Avatar config={sel.avatar} expression={slaapt(state, sel.id) ? "slaap" : expressionFor(selCi)} bezig={slaapt(state, sel.id) ? undefined : werktNu(state, sel.id)?.look} walm={!slaapt(state, sel.id) && walm(state, sel.id)} dorst={!slaapt(state, sel.id) && dorst(state, sel.id)} honger={!slaapt(state, sel.id) && !werktNu(state, sel.id) && honger(state, sel.id)} energy={sel.energy} size={130} seed={5} label={sel.name} />
             <h2 className="ff-h2">{sel.id === me.id ? "Jij" : sel.name}</h2>
-            <p className="ff-muted">{slaapt(state, sel.id) ? "Slaapt" : werktNu(state, sel.id) ? `Aan het werk · ${werktNu(state, sel.id)!.werk.naam}` : selCi ? `${moodLabel(selCi)} · ${timeLabel(selCi.at)}` : "Nog niet ingecheckt"}</p>
+            <p className="ff-muted">{slaapt(state, sel.id) ? "Slaapt" : werktNu(state, sel.id) ? `${werktNu(state, sel.id)!.look === "school" ? "Op school" : `Aan het werk · ${werktNu(state, sel.id)!.werk.naam}`} · ${werktNu(state, sel.id)!.van.replace(":", ".")}–${werktNu(state, sel.id)!.tot.replace(":", ".")} · ${restTekst(werktNu(state, sel.id)!.rest)}` : selCi ? `${moodLabel(selCi)} · ${timeLabel(selCi.at)}` : "Nog niet ingecheckt"}</p>
+            {!slaapt(state, sel.id) && werktNu(state, sel.id) && <span className="ff-bezig-balk" style={{ width: "100%" }}><i style={{ width: `${Math.round(werktNu(state, sel.id)!.pct * 100)}%` }} /></span>}
             {sel.joined !== false && (
               <div className="ff-stack-s" style={{ width: "100%" }}>
                 <Meters state={state} id={sel.id} />

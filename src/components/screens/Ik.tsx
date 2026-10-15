@@ -46,9 +46,9 @@ export function Ik({ state, me, onEditAvatar, onCalm, onToast }: { state: Family
 
       <Herinneringen onToast={onToast} />
 
-      {me.role !== "kind" && (
+      {(
         <button className="ff-level" onClick={() => setWerk(true)}>
-          <span className="ff-grow"><b>Werk en roosters</b><br /><span className="ff-small ff-muted">{(state.werk?.[me.id] ?? []).length ? (state.werk?.[me.id] ?? []).map((w) => w.naam).join(", ") : "Vaste baan, trainingen, diensten. Telt mee bij Wie doet wat"}</span></span>
+          <span className="ff-grow"><b>{isParent ? "Werk en roosters" : "School en bijbaan"}</b><br /><span className="ff-small ff-muted">{(state.werk?.[me.id] ?? []).length ? (state.werk?.[me.id] ?? []).map((w) => w.naam).join(", ") : isParent ? "Vaste baan, trainingen, diensten. Telt mee bij Wie doet wat" : "Je lestijden. Tijdens school sta je met je rugzak in de huiskamer"}</span></span>
         </button>
       )}
 

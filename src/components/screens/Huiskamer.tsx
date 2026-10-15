@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { Avatar } from "@/components/avatar/Avatar";
-import { slaapt, werktNu } from "@/lib/status";
+import { restTekst, slaapt, werktNu, type Bezigheid } from "@/lib/status";
 import { DAGDELEN, DOEL, ETEN, ROUTINE, begroeting, dagdeel, dagLog, dagscore, datumTijd, dorst, gegeten, reeks, tipVanNu, walm } from "@/lib/dag";
 import { honger, isGeregeld, klusStatus, kookplan, naamKlus, rommel } from "@/lib/huis";
 import { Meters } from "@/components/screens/MijnDag";
@@ -94,6 +94,7 @@ export function Huiskamer({ state, me, onCheckIn, onOpenMember, onTalkTips, onWh
 
       {!pushWeg && <Herinneringen compact onToast={onToast} onWeg={() => { setPushWeg(true); try { localStorage.setItem("familyflow:push-later", String(Date.now())); } catch { /* */ } }} />}
       {!ikSlaap && <JouwDag state={state} me={me} onOpen={onMijnDag} onGoThuis={onGoThuis} />}
+      {!ikSlaap && <KlussenVandaag state={state} me={me} onGoThuis={onGoThuis} />}
       <Klassement state={state} me={me} onOpen={onOpenMember} />
       <NetGedaan state={state} me={me} />
 
@@ -141,15 +142,15 @@ function Row({ members, row, state, me, onOpen }: { members: Member[]; row: "ach
         const left = 50 + (i - (members.length - 1) / 2) * spread;
         const style = { left: `${left}%` } as CSSProperties;
         return (
-          <button key={m.id} className={`ff-slot ff-slot-${row} ${m.joined === false ? "is-away" : ""}`} style={style} onClick={() => onOpen(m.id)} aria-label={`${m.name}: ${zzz ? "slaapt" : werk ? `aan het werk bij ${werk.werk.naam}` : moodLabel(c)}`}>
+          <button key={m.id} className={`ff-slot ff-slot-${row} ${m.joined === false ? "is-away" : ""}`} style={style} onClick={() => onOpen(m.id)} aria-label={`${m.name}: ${zzz ? "slaapt" : werk ? `${werk.look === "school" ? "op school" : `aan het werk bij ${werk.werk.naam}`}, ${restTekst(werk.rest)}` : moodLabel(c)}`}>
             <Avatar config={m.avatar} expression={zzz ? "slaap" : expressionFor(c)} bezig={werk?.look} walm={stinkt} dorst={dorstig} honger={hongerig} energy={m.energy} size={row === "voor" ? 112 : 100} seed={i * 3 + (row === "voor" ? 2 : 0)} label={m.name} />
             <span className="ff-tag">
               <span className="ff-tag-name">
                 <span className="ff-dot" style={{ background: moodDot(c) }} />
                 {m.id === me.id ? "Jij" : m.name}
               </span>
-              <span className={`ff-tag-mood${zzz ? " is-slaap" : werk ? " is-werk" : ""}`}>{m.joined === false ? "nog niet aangemeld" : zzz ? "slaapt" : werk ? `aan het werk · ${werk.werk.naam}` : stinkt ? "pfoe, nog niet gedoucht?" : hongerig ? "heeft honger…" : moodLabel(c)}</span>
-              {m.joined !== false && !zzz && <Meters state={state} id={m.id} klein />}
+              <span className={`ff-tag-mood${zzz ? " is-slaap" : werk ? " is-werk" : ""}`}>{m.joined === false ? "nog niet aangemeld" : zzz ? "slaapt" : werk ? `${werk.look === "school" ? "op school" : werk.werk.naam} · ${restTekst(werk.rest)}` : stinkt ? "pfoe, nog niet gedoucht?" : hongerig ? "heeft honger…" : moodLabel(c)}</span>
+              {werk ? <BezigBalk b={werk} klein /> : m.joined !== false && !zzz && <Meters state={state} id={m.id} klein />}
             </span>
             {c?.wantsTalk && <span className="ff-bubble" aria-hidden="true"><Icon name="chat" size={16} /></span>}
           </button>
@@ -331,13 +332,19 @@ function JouwDag({ state, me, onOpen, onGoThuis }: { state: FamilyState; me: Mem
   const r = reeks(state, me.id);
   const momenten = ETEN.filter((e) => e.deel === deel);
   const plan = kookplan(state);
-  const mijnKlussen = klusStatus(state).filter((k) => k.beurt?.id === me.id && !k.vandaagGedaan && k.nodig).slice(0, 3);
+  const bezig = werktNu(state, me.id);
   return (
     <section className="ff-card ff-stack-s">
       <div className="ff-row" style={{ justifyContent: "space-between" }}>
         <b>{info.emoji} {deel === "ochtend" && klaar < nodig.length ? "Je ochtendroutine" : `Jouw ${info.label.toLowerCase()}`}</b>
         {r > 0 && <span className="ff-small">🔥 {r} {r === 1 ? "dag" : "dagen"} op rij</span>}
       </div>
+      {bezig && (
+        <div className="ff-bezig">
+          <span><b>{bezig.look === "school" ? "🎒 Op school" : `💼 ${bezig.werk.naam}`}</b> · {bezig.van.replace(":", ".")}–{bezig.tot.replace(":", ".")} · {restTekst(bezig.rest)}</span>
+          <BezigBalk b={bezig} />
+        </div>
+      )}
       <Meters state={state} id={me.id} />
       {deel === "ochtend" && <p className="ff-small ff-muted">Routine {klaar}/{nodig.length}{gegeten(log, "ontbijt") ? " · ontbeten" : ""}</p>}
       {momenten.length > 0 && (
@@ -354,18 +361,6 @@ function JouwDag({ state, me, onOpen, onGoThuis }: { state: FamilyState; me: Mem
         <button className={`ff-kook-regel${isGeregeld(plan) ? "" : " is-open"}`} onClick={onGoThuis}>
           🍳 Vanavond: {plan.restjes ? "restjes" : plan.kok ? `${plan.kok === me.id ? "jij kookt" : `${state.members.find((m) => m.id === plan.kok)?.name ?? ""} kookt`}${plan.wat ? ` · ${plan.wat}` : ""}` : "nog niemand kookt. Wie pakt het op?"}
         </button>
-      )}
-      {mijnKlussen.length > 0 && (
-        <div className="ff-stack-s">
-          <span className="ff-eyebrow">Jouw beurt</span>
-          {mijnKlussen.map((k) => (
-            <div key={k.key} className="ff-row ff-log-rij">
-              <span aria-hidden="true">{k.klus.emoji}</span>
-              <span className="ff-grow ff-small"><b>{naamKlus(k, me.id)}</b></span>
-              <button className="ff-btn ff-btn-ghost ff-btn-s" onClick={() => actions.klusGedaan(k.key, me.id, k.klus.xp, naamKlus(k, me.id))}>Gedaan</button>
-            </div>
-          ))}
-        </div>
       )}
       <button className="ff-btn ff-btn-primary ff-btn-wide" onClick={onOpen}>{deel === "ochtend" && klaar < nodig.length ? "Ochtendroutine afvinken" : "Mijn dag bijwerken"}</button>
     </section>
@@ -424,6 +419,58 @@ function NetGedaan({ state, me }: { state: FamilyState; me: Member }) {
           </div>
         );
       })}
+    </section>
+  );
+}
+
+/** Balkje: hoe ver is het werk of de schooldag. */
+function BezigBalk({ b, klein = false }: { b: Bezigheid; klein?: boolean }) {
+  return (
+    <span className={`ff-bezig-balk${klein ? " is-klein" : ""}`} role="progressbar" aria-valuenow={Math.round(b.pct * 100)} aria-valuemin={0} aria-valuemax={100} aria-label={`${b.werk.naam} ${Math.round(b.pct * 100)}%`}>
+      <i style={{ width: `${Math.round(b.pct * 100)}%` }} />
+    </span>
+  );
+}
+
+/**
+  Klussen van vandaag: een eigen kaart, los van je dag.
+  - Bovenaan wat jij moet doen. Ben je aan het werk of op school, dan staat het "voor straks".
+  - Daaronder kort wat er voor de rest nog openstaat, met wie aan de beurt is.
+  Alleen klussen die vandaag echt moeten. Wat nooit is bijgehouden telt alleen mee als het een dagelijkse klus is.
+*/
+function KlussenVandaag({ state, me, onGoThuis }: { state: FamilyState; me: Member; onGoThuis: () => void }) {
+  const bezig = werktNu(state, me.id);
+  const open = klusStatus(state).filter((k) => !k.vandaagGedaan && k.nodig && (k.laatst || k.klus.elke === 1 || k.klus.naKoken) && (!k.klus.perKind || me.role === "ouder" || k.kind?.id === me.id));
+  if (!open.length) return null;
+  const mijn = open.filter((k) => k.beurt?.id === me.id).slice(0, 3);
+  const rest = open.filter((k) => k.beurt?.id !== me.id).slice(0, 5);
+  return (
+    <section className="ff-card ff-stack-s">
+      <div className="ff-row" style={{ justifyContent: "space-between" }}>
+        <b>🧹 Klussen vandaag</b>
+        <button className="ff-link ff-small" onClick={onGoThuis}>Alles</button>
+      </div>
+      {mijn.length > 0 && (
+        <div className="ff-stack-s">
+          <span className="ff-eyebrow">{bezig ? `Voor na ${bezig.look === "school" ? "school" : "je werk"} (${bezig.tot.replace(":", ".")})` : "Jij bent aan de beurt"}</span>
+          {mijn.map((k) => (
+            <div key={k.key} className={`ff-row ff-log-rij${bezig ? " is-straks" : ""}`}>
+              <span aria-hidden="true">{k.klus.emoji}</span>
+              <span className="ff-grow ff-small"><b>{naamKlus(k, me.id)}</b>{k.teLaat > 0 ? <span className="ff-alert"> · blijft liggen</span> : null}</span>
+              {!bezig && <button className="ff-btn ff-btn-ghost ff-btn-s" onClick={() => actions.klusGedaan(k.key, me.id, k.klus.xp, naamKlus(k, me.id))}>Gedaan</button>}
+            </div>
+          ))}
+        </div>
+      )}
+      {rest.length > 0 && (
+        <div className="ff-chips">
+          {rest.map((k) => (
+            <button key={k.key} className={`ff-chip${k.teLaat > 0 ? " is-laat" : ""}`} onClick={onGoThuis}>
+              {k.klus.emoji} {k.klus.perKind && k.kind ? `Kamer ${k.kind.name}` : k.klus.label.split(" (")[0]}{k.beurt ? ` · ${k.beurt.name}` : ""}
+            </button>
+          ))}
+        </div>
+      )}
     </section>
   );
 }

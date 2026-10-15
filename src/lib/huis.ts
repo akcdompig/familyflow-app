@@ -9,7 +9,7 @@
 
 import { addDays, iso } from "./planner";
 import { dagLog, gegeten } from "./dag";
-import { werktNu } from "./status";
+import { lookVoor, werktNu } from "./status";
 import type { FamilyState, Kookplan, KlusDone, Member, WerkItem } from "./types";
 
 export interface Klus {
@@ -25,6 +25,8 @@ export interface Klus {
   perKind?: boolean;
   /** Ook ouders draaien mee in de beurt. Anders alleen de kinderen. */
   iedereen?: boolean;
+  /** Alleen op dagen dat er gekookt is, en pas na het eten (restjes in de koelkast). */
+  naKoken?: boolean;
 }
 
 export const KLUSSEN: Klus[] = [
@@ -36,6 +38,7 @@ export const KLUSSEN: Klus[] = [
   { id: "kamer", label: "Eigen kamer netjes", emoji: "🛏️", elke: 2, xp: 5, rommel: "🧦", perKind: true },
   { id: "bedden", label: "Bedden verschonen", emoji: "🛌", elke: 7, xp: 15, rommel: "🛏️", iedereen: true },
   { id: "afval", label: "Afval buiten zetten", emoji: "🗑️", elke: 3, xp: 5, rommel: "🗑️" },
+  { id: "koelkast", label: "Restjes in de koelkast", emoji: "🧊", elke: 1, xp: 5, rommel: "🍲", iedereen: true, naKoken: true },
   { id: "flessen", label: "Flessen wegbrengen (statiegeld)", emoji: "🍾", elke: 7, xp: 10, rommel: "🍾" },
 ];
 
@@ -59,6 +62,10 @@ export function klusStatus(s: FamilyState, nu = new Date()): KlusStatus[] {
   const out: KlusStatus[] = [];
   for (const k of KLUSSEN) {
     const rijen = k.perKind ? kidsVan(s).map((m) => ({ key: klusKey(k, m.id), kind: m as Member | undefined })) : [{ key: k.id, kind: undefined }];
+    if (k.naKoken) {
+      out.push(koelkastStatus(s, k, nu));
+      continue;
+    }
     for (const r of rijen) {
       const l = laatst(s, r.key);
       const ago = l ? dagenTussen(iso(new Date(l.at)), vandaag) : null;
@@ -70,16 +77,49 @@ export function klusStatus(s: FamilyState, nu = new Date()): KlusStatus[] {
   return out;
 }
 
-/** Wie is er aan de beurt: wie het het langst niet gedaan heeft. Wie aan het werk is, slaat over. */
+/** Na het eten: restjes in de koelkast. Vergeten? Dan staat de pan de volgende ochtend nog in de huiskamer. */
+function koelkastStatus(s: FamilyState, k: Klus, nu: Date): KlusStatus {
+  const vandaag = iso(nu);
+  const gisteren = addDays(vandaag, -1);
+  const l = laatst(s, k.id);
+  const ld = l ? iso(new Date(l.at)) : "";
+  const uur = l ? new Date(l.at).getHours() : 0;
+  // Gedaan "voor die avond": vanaf 15 uur die dag, of de nacht erna voor 6 uur.
+  const gedaanVoor = (d: string) => !!l && ((ld === d && uur >= 15) || (ld === addDays(d, 1) && uur < 6));
+  const kok = (d: string) => kookplan(s, d).kok;
+  // Vanochtend alsnog weggezet telt ook.
+  const gisterenVergeten = !!kok(gisteren) && !gedaanVoor(gisteren) && !(ld === vandaag && uur < 15);
+  const naEten = nu.getHours() * 60 + nu.getMinutes() >= 19 * 60 + 30;
+  const vandaagGedaan = gedaanVoor(vandaag);
+  const nodig = gisterenVergeten || (!!kok(vandaag) && naEten && !vandaagGedaan);
+  // Niet de kok zelf: die heeft al gekookt.
+  const kokId = kok(vandaag) ?? kok(gisteren);
+  const pool = s.members.filter((m) => m.joined !== false && m.id !== kokId && !bezigTotLaat(s, m.id, nu));
+  const lastBy = (id: string) => (s.klusLog ?? []).filter((x) => x.klus === k.id && x.by === id).map((x) => new Date(x.at).getTime()).pop() ?? 0;
+  const beurt = [...pool].sort((a, b) => lastBy(a.id) - lastBy(b.id))[0];
+  return { key: k.id, klus: k, laatst: l, dagenGeleden: l ? dagenTussen(ld, vandaag) : null, teLaat: gisterenVergeten ? 1 : 0, nodig: nodig && !vandaagGedaan, vandaagGedaan: vandaagGedaan && !!kok(vandaag), beurt };
+}
+
+/** Werkt iemand tot laat (na 21.30) of de hele dag nog? Dan doet die vandaag geen klussen meer. */
+function bezigTotLaat(s: FamilyState, id: string, nu: Date) {
+  const b = werktNu(s, id, nu);
+  return !!b && nu.getHours() * 60 + nu.getMinutes() + b.rest > 21 * 60 + 30;
+}
+
+/**
+  Wie is er aan de beurt: wie het het langst niet gedaan heeft.
+  Wie nu vrij is gaat voor. Wie aan het werk of op school is, krijgt het "voor straks". Wie tot laat werkt, slaat over.
+*/
 export function beurtVoor(s: FamilyState, k: Klus, nu = new Date()): Member | undefined {
-  const pool = (k.iedereen ? s.members.filter((m) => m.joined !== false) : kidsVan(s)).filter((m) => !werktNu(s, m.id, nu));
+  const pool = (k.iedereen ? s.members.filter((m) => m.joined !== false) : kidsVan(s)).filter((m) => !bezigTotLaat(s, m.id, nu));
   if (!pool.length) return undefined;
   const lastBy = (id: string) => {
     const log = s.klusLog ?? [];
     for (let i = log.length - 1; i >= 0; i--) if (log[i].klus === k.id && log[i].by === id) return new Date(log[i].at).getTime();
     return 0;
   };
-  return [...pool].sort((a, b) => lastBy(a.id) - lastBy(b.id))[0];
+  const bezig = (id: string) => (werktNu(s, id, nu) ? 1 : 0);
+  return [...pool].sort((a, b) => bezig(a.id) - bezig(b.id) || lastBy(a.id) - lastBy(b.id))[0];
 }
 
 /** Hoeveel rommel ligt er? Voor de huiskamer: elke klus die te laat is geeft een rommeltje. */
@@ -170,7 +210,10 @@ export const isVrij = (s: FamilyState, d: string, member: string, werkId: string
 export function werkOp(s: FamilyState, member: string, d: string): { werk: WerkItem; van: string; tot: string; vrij: boolean; dienstId?: string }[] {
   const wd = new Date(d + "T12:00:00").getDay();
   const lijst = s.werk?.[member] ?? [];
-  const vast = lijst.filter((w) => w.soort === "vast" && w.days?.includes(wd) && w.van && w.tot).map((w) => ({ werk: w, van: w.van!, tot: w.tot!, vrij: isVrij(s, d, member, w.id) }));
+  const vakantie = (s.vakanties?.[member] ?? []).some((v) => d >= v.van && d <= v.tot);
+  const vast = lijst
+    .filter((w) => w.soort === "vast" && w.days?.includes(wd) && w.van && w.tot)
+    .map((w) => ({ werk: w, van: w.van!, tot: w.tot!, vrij: isVrij(s, d, member, w.id) || (vakantie && lookVoor(w) === "school") }));
   const los = (s.diensten ?? [])
     .filter((x) => x.member === member && x.date === d)
     .map((x) => ({ werk: lijst.find((w) => w.id === x.werkId) ?? { id: x.werkId, naam: "Werk", soort: "wisselend" as const }, van: x.van, tot: x.tot, vrij: false, dienstId: x.id }));

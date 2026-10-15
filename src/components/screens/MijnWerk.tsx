@@ -18,6 +18,8 @@ const SJABLONEN: { label: string; uitleg: string; item: Omit<WerkItem, "id"> }[]
   { label: "Eigen bedrijf of klussen", uitleg: "Wisselende uren", item: { naam: "", soort: "wisselend", inkomen: true } },
 ];
 
+const SCHOOL: (typeof SJABLONEN)[number] = { label: "School", uitleg: "Lestijden per dag. In de vakantie telt het vanzelf niet", item: { naam: "School", soort: "vast", days: [1, 2, 3, 4, 5], van: "08:30", tot: "15:00", look: "school" } };
+
 const perWeek = (w: WerkItem) => (w.soort === "vast" ? (w.days?.length ?? 0) * duur(w.van, w.tot) : 0);
 
 /** Werk en roosters per gezinslid. Vast werk telt vanzelf mee, losse diensten voeg je toe. */
@@ -87,7 +89,7 @@ export function MijnWerk({ state, me, onClose, onToast }: { state: FamilyState; 
           <div className="ff-stack-s">
             <span className="ff-eyebrow">Wat zie je in de huiskamer tijdens dit werk?</span>
             <div className="ff-chips">
-              {([["kantoor", "Achter de laptop"], ["sport", "Sportoutfit en dumbbell"], ["security", "Security-hesje"], ["bouw", "Bouwhelm"], ["keuken", "Koksmuts"]] as const).map(([k, l]) => (
+              {([["kantoor", "Achter de laptop"], ["school", "Rugzak en boek (school)"], ["sport", "Sportoutfit en dumbbell"], ["security", "Security-hesje"], ["bouw", "Bouwhelm"], ["keuken", "Koksmuts"]] as const).map(([k, l]) => (
                 <button key={k} className="ff-chip" aria-pressed={lookVoor(bewerk) === k} onClick={() => set({ look: k })}>{l}</button>
               ))}
             </div>
@@ -165,7 +167,7 @@ export function MijnWerk({ state, me, onClose, onToast }: { state: FamilyState; 
 
       <section className="ff-stack-s">
         <b>{lijst.length ? "Nog iets toevoegen" : "Wat voor werk is het?"}</b>
-        {SJABLONEN.map((s) => (
+        {(lid.role === "ouder" ? [...SJABLONEN, SCHOOL] : [SCHOOL, ...SJABLONEN]).map((s) => (
           <button key={s.label} className="ff-level" onClick={() => setBewerk({ ...s.item, id: nieuwId() })}>
             <span className="ff-grow"><b>{s.label}</b><br /><span className="ff-small ff-muted">{s.uitleg}</span></span>
           </button>

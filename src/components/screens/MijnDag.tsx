@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Sheet } from "@/components/ui/Sheet";
 import { DAGDELEN, DOEL, ETEN, ROUTINE, basisXp, begroeting, dagdeel, dagLog, deadlineUur, gegeten, gezondheid, hygiene, kledingDag, reeks, type Dagdeel } from "@/lib/dag";
 import { actions } from "@/lib/store";
+import { klusStatus, kookplan } from "@/lib/huis";
 import type { FamilyState, Member } from "@/lib/types";
 
 /** Twee balkjes zoals in de Sims: hygiëne en gezondheid. */
@@ -42,6 +43,7 @@ export function MijnDag({ open, onClose, state, me, onToast }: { open: boolean; 
   const nodig = ROUTINE.filter((x) => x.gewicht > 0);
   const klaar = nodig.filter((x) => log.routine.includes(x.id)).length;
   const upd = actions.updateDag.bind(null, me.id);
+  const koelkast = kookplan(state).kok ? klusStatus(state).find((k) => k.klus.naKoken) : undefined;
   const toggle = (id: string) => {
     const aan = !log.routine.includes(id);
     upd((l) => ({ ...l, routine: aan ? [...l.routine, id] : l.routine.filter((x) => x !== id) }));
@@ -128,8 +130,16 @@ export function MijnDag({ open, onClose, state, me, onToast }: { open: boolean; 
         {deel === "avond" && (
           <section className="ff-stack-s">
             <b>Avondeten</b>
-            <div className="ff-dag-tegels">{eetTegel("avondeten")}</div>
-            <p className="ff-small ff-muted">Wie er kookt en wie er mee-eet zie je bij Thuis.</p>
+            <div className="ff-dag-tegels">
+              {eetTegel("avondeten")}
+              {koelkast && (
+                <button className="ff-dag-tegel" aria-pressed={koelkast.vandaagGedaan} onClick={() => { if (!koelkast.vandaagGedaan) { actions.klusGedaan(koelkast.key, me.id, koelkast.klus.xp, koelkast.klus.label); onToast(`Restjes in de koelkast ✓ +${koelkast.klus.xp} punten`); } }}>
+                  <span className="ff-dag-emoji" aria-hidden="true">🧊</span>
+                  <span>Restjes in de koelkast</span>
+                </button>
+              )}
+            </div>
+            <p className="ff-small ff-muted">Wie er kookt en wie er mee-eet zie je bij Thuis. Is er gekookt? Zet de restjes na het eten in de koelkast.</p>
           </section>
         )}
 

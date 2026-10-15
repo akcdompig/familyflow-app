@@ -337,6 +337,16 @@ function Werkspullen({ bezig, headOnly, animate }: { bezig: Bezig; headOnly: boo
           {!headOnly && <path d="M38 170 H122 M36 186 H124" stroke="#f4f4f4" strokeWidth="5" />}
         </g>
       );
+    case "school":
+      // Rugzak en een boek
+      return headOnly ? null : (
+        <g>
+          <path d="M30 150 C30 136 40 130 50 132 L54 196 L34 196 C30 186 30 170 30 150 Z" fill="#5b6bff" stroke="#3b47c4" strokeWidth="2" />
+          <path d="M60 156 L100 156 L100 186 L60 186 Z" fill="#ffd23f" stroke="#d9a800" strokeWidth="2" />
+          <path d="M80 156 V186" stroke="#d9a800" strokeWidth="2" />
+          <path d="M66 164 H76 M66 170 H76 M84 164 H94 M84 170 H94" stroke="#a87f00" strokeWidth="1.5" strokeLinecap="round" />
+        </g>
+      );
     case "keuken":
       return (
         <g>

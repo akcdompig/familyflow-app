@@ -140,19 +140,19 @@ type State = any;
 const ROUTINE = ["douchen", "tanden", "deo", "haar", "lotion"];
 
 /** Kies de herinnering die nu het meest telt. */
-function tekstVoor(st: State, id: string, nl: ReturnType<typeof nuNL>): string {
+function tekstVoor(st: State, id: string, nl: ReturnType<typeof nuNL>, opWerk = false): string {
   const log = st.dag?.[nl.datum]?.[id] ?? { routine: [], water: 0, fruit: 0 };
   const eten: string[] = log.eten ?? [];
   const gegeten = (x: string) => eten.includes(x) || (x === "ontbijt" && log.ontbijt);
   const routineAf = ROUTINE.every((r) => (log.routine ?? []).includes(r));
   const waterVerwacht = Math.max(0, Math.min(6, Math.floor((nl.uur - 7) / 2)));
-  if (nl.uur < 12 && !routineAf) return "Je ochtendroutine staat nog open 🚿 Even afvinken?";
+  if (!opWerk && nl.uur < 12 && !routineAf) return "Je ochtendroutine staat nog open 🚿 Even afvinken?";
   if (nl.uur < 11 && !gegeten("ontbijt")) return "Al ontbeten? 🥣 Een broodje of smoothie telt ook.";
   if (nl.uur >= 13 && nl.uur < 17 && !gegeten("lunch")) return "Heb je al geluncht? 🥪";
   if ((log.water ?? 0) < waterVerwacht) return `Tijd voor een glas water 💧 Je zit op ${log.water ?? 0} van de 6.`;
   if (nl.uur >= 15 && (log.fruit ?? 0) < 2) return "Pak een stuk fruit uit de koelkast 🍎";
   if (nl.uur >= 19 && !gegeten("avondeten")) return "Avondeten gehad? Vink het even af 🍽️";
-  return "Even inchecken? Laat zien dat je bezig bent 💪";
+  return opWerk ? "Drink tussendoor een glas water en vink het even af 💧" : "Even inchecken? Laat zien dat je bezig bent 💪";
 }
 
 /** "Lina is al lekker bezig": wie heeft de laatste 2 uur iets gedaan? */
@@ -181,6 +181,44 @@ function laatstActief(st: State, id: string): number {
   return Math.max(a, c);
 }
 
+/**
+  Is iemand nu aan het werk of op school (volgens de vaste tijden en diensten in de app)?
+  Geeft ook terug hoe laat het werk vandaag klaar was, zodat de 2 uur pas daarna gaan tellen.
+*/
+function werkStand(st: State, id: string, nl: ReturnType<typeof nuNL>): { bezig: boolean; school: boolean; klaarOm: number | null } {
+  const lijst = st.werk?.[id] ?? [];
+  // deno-lint-ignore no-explicit-any
+  const isSchool = (w: any) => w.look === "school" || /school|roc|college|lyceum|mbo|klas|stage/i.test(w.naam ?? "");
+  const blokken: { van: number; tot: number; school: boolean }[] = [];
+  for (const w of lijst) {
+    if (w.soort !== "vast" || !w.days?.includes(nl.wd) || !w.van || !w.tot) continue;
+    if ((st.vrij?.[nl.datum] ?? []).includes(`${id}:${w.id}`)) continue;
+    if (isSchool(w) && inVakantie(st, id, nl.datum)) continue;
+    blokken.push({ van: mins(w.van), tot: mins(w.tot), school: isSchool(w) });
+  }
+  // deno-lint-ignore no-explicit-any
+  for (const d of st.diensten ?? []) if (d.member === id && d.date === nl.datum) blokken.push({ van: mins(d.van), tot: mins(d.tot), school: false });
+  let bezig = false;
+  let school = false;
+  let klaarOm: number | null = null;
+  for (const b of blokken) {
+    const tot = b.tot <= b.van ? 1440 : b.tot;
+    if (nl.min >= b.van && nl.min < tot) {
+      bezig = true;
+      school = school || b.school;
+    } else if (nl.min >= tot) klaarOm = Math.max(klaarOm ?? 0, tot);
+  }
+  return { bezig, school, klaarOm };
+}
+
+/** Restjes al in de koelkast? Vanaf kwart voor 9 's avonds, als er vandaag gekookt is. */
+function koelkastNodig(st: State, nl: ReturnType<typeof nuNL>): boolean {
+  if (!st.koken?.[nl.datum]?.kok) return false;
+  if (nl.min < 20 * 60 + 45 || nl.min > 22 * 60 + 30) return false;
+  // deno-lint-ignore no-explicit-any
+  return !(st.klusLog ?? []).some((k: any) => k.klus === "koelkast" && nuNL(new Date(k.at)).datum === nl.datum && nuNL(new Date(k.at)).uur >= 15);
+}
+
 /** Wat moet deze telefoon nu krijgen? null = niks. */
 function beslis(st: State, s: Sub, nu: Date): { titel: string; tekst: string; soort: string } | null {
   // deno-lint-ignore no-explicit-any
@@ -191,15 +229,22 @@ function beslis(st: State, s: Sub, nu: Date): { titel: string; tekst: string; so
   const bed = mins(m.bedtime, kind ? 22 * 60 : 23 * 60);
   // Nooit 's nachts of vlak voor bedtijd.
   if (nl.min < 7 * 60 || nl.min > bed - 30) return null;
-  // Kinderen op een schooldag: niet onder schooltijd.
+  const werk = werkStand(st, m.id, nl);
+  // Op school: geen meldingen. Staan er geen lestijden in de app, dan doordeweeks 8.15–15.00.
+  const heeftSchooltijden = (st.werk?.[m.id] ?? []).some((w: { look?: string; naam?: string }) => w.look === "school" || /school|roc|college/i.test(w.naam ?? ""));
   const schooldag = kind && nl.wd >= 1 && nl.wd <= 5 && !inVakantie(st, m.id, nl.datum);
-  if (schooldag && nl.min >= 8 * 60 + 15 && nl.min < 15 * 60) return null;
+  if (werk.school || (schooldag && !heeftSchooltijden && nl.min >= 8 * 60 + 15 && nl.min < 15 * 60)) return null;
 
   const laatst = laatstActief(st, m.id);
   const vandaagActief = laatst > 0 && nuNL(new Date(laatst)).datum === nl.datum;
   const sindsMelding = s.last_sent ? (nu.getTime() - new Date(s.last_sent).getTime()) / 60e3 : Infinity;
   const vandaagGemeld = !!s.last_sent && nuNL(new Date(s.last_sent)).datum === nl.datum;
   const naam = m.name;
+
+  // 0) Restjes in de koelkast: één keer per avond, voor wie thuis is (niet de kok, niet wie werkt).
+  if (koelkastNodig(st, nl) && !werk.bezig && st.koken[nl.datum].kok !== m.id && !(vandaagGemeld && s.last_kind === "koelkast")) {
+    return { titel: "Restjes al in de koelkast? 🧊", tekst: "Er is vanavond gekookt. Zet de restjes even weg voor het slapen, dan kunnen we morgen restjes eten.", soort: "koelkast" };
+  }
 
   // 1) Wekmelding voor kinderen: om 9 uur nog niks gedaan (niet op schooldagen). Daarna elk uur, niet pas na 2 uur.
   if (kind && !schooldag && !vandaagActief && nl.min >= 9 * 60) {
@@ -214,11 +259,13 @@ function beslis(st: State, s: Sub, nu: Date): { titel: string; tekst: string; so
     if (vandaagGemeld && sindsMelding < STIL_MIN) return null;
     return { titel: `Hoi ${naam}, hoe was school?`, tekst: `Je bent vandaag nog niet in de app geweest. Check even in.${wieIsBezig(st, m.id)}`, soort: "na-school" };
   }
-  // 2) Al 2 uur stil, terwijl je vandaag wel al bezig was.
+  // 2) Al 2 uur stil, terwijl je vandaag wel al bezig was. Was je aan het werk, dan tellen de 2 uur vanaf het einde van je werk.
   if (!vandaagActief) return null;
-  const stil = (nu.getTime() - laatst) / 60e3;
+  const vanaf = werk.klaarOm !== null ? Math.max(laatst, nu.getTime() - (nl.min - werk.klaarOm) * 60e3) : laatst;
+  const stil = (nu.getTime() - vanaf) / 60e3;
   if (stil < STIL_MIN || sindsMelding < STIL_MIN) return null;
-  return { titel: `Hoi ${naam}, alles goed?`, tekst: tekstVoor(st, m.id, nl) + wieIsBezig(st, m.id), soort: "stil" };
+  // Tijdens werk alleen de gezondheid (water, fruit, lunch). Klussen kunnen dan toch niet.
+  return { titel: werk.bezig ? `${naam}, even pauze?` : `Hoi ${naam}, alles goed?`, tekst: tekstVoor(st, m.id, nl, werk.bezig) + (werk.bezig ? "" : wieIsBezig(st, m.id)), soort: "stil" };
 }
 
 async function ronde() {

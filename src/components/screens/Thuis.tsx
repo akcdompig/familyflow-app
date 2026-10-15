@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Avatar } from "@/components/avatar/Avatar";
 import { Sheet } from "@/components/ui/Sheet";
 import { addDays, iso } from "@/lib/planner";
+import { restTekst, werktNu } from "@/lib/status";
 import { actions } from "@/lib/store";
 import { timeLabel } from "@/lib/mood";
 import {
@@ -83,6 +84,12 @@ function Eten({ state, me, onToast }: { state: FamilyState; me: Member; onToast:
       <section className={`ff-card ff-stack-s${!isGeregeld(p) && dag === vandaag && new Date().getHours() >= 15 ? " ff-attn ff-attn-koraal" : ""}`}>
         <b>{dag === vandaag ? "Vanavond" : `${dagKort(dag)} ${new Date(dag + "T12:00:00").getDate()}`}: {p.restjes ? "restjes van gisteren" : p.kok ? `${naam(state, p.kok)} kookt` : "nog niemand kookt"}</b>
         {p.wat && <p style={{ margin: 0 }}>🍲 {p.wat}</p>}
+        {dag === vandaag && p.kok && new Date().getHours() >= 19 && (() => {
+          const k = klusStatus(state).find((x) => x.klus.naKoken);
+          return k?.vandaagGedaan ? <p className="ff-small">🧊 Restjes staan in de koelkast{k.laatst ? ` (${k.laatst.by === me.id ? "jij" : naam(state, k.laatst.by)})` : ""}</p> : (
+            <button className="ff-btn ff-btn-ghost ff-btn-wide" onClick={() => { if (k) { actions.klusGedaan(k.key, me.id, k.klus.xp, k.klus.label); onToast(`Restjes in de koelkast ✓ +${k.klus.xp} punten`); } }}>🧊 Restjes staan in de koelkast</button>
+          );
+        })()}
         {!isGeregeld(p) && dag === vandaag && <p className="ff-small ff-muted">Kookt er niemand, dan krijgt de rest honger. Dat zie je in de huiskamer.</p>}
 
         <span className="ff-eyebrow">Wie kookt?</span>
@@ -159,7 +166,7 @@ function Klussen({ state, me, lijst, onToast }: { state: FamilyState; me: Member
               <b>{k.klus.perKind && k.kind ? `Kamer ${k.kind.id === me.id ? "van jou" : k.kind.name}` : k.klus.label}</b>
               <span className="ff-small ff-muted ff-block">
                 {k.laatst ? `Laatst: ${k.laatst.by === me.id ? "jij" : naam(state, k.laatst.by)}, ${dagenTekst(k.dagenGeleden!)}` : "Nog niet bijgehouden"}
-                {k.klus.elke > 1 ? ` · elke ${k.klus.elke} dagen` : " · elke dag"}{!k.vandaagGedaan && k.teLaat > 0 ? ` · ${k.teLaat} ${k.teLaat === 1 ? "dag" : "dagen"} te laat` : ""}
+                {k.klus.naKoken ? " · na het eten, als er gekookt is" : k.klus.elke > 1 ? ` · elke ${k.klus.elke} dagen` : " · elke dag"}{!k.vandaagGedaan && k.teLaat > 0 ? ` · ${k.teLaat} ${k.teLaat === 1 ? "dag" : "dagen"} te laat` : ""}
               </span>
             </span>
             <span className="ff-klus-status">
@@ -239,6 +246,7 @@ function Week({ state, me }: { state: FamilyState; me: Member }) {
           <div className="ff-stack-s">
             {leden.map((m) => {
               const werk = werkOp(state, m.id, d);
+              const nu = d === vandaag ? werktNu(state, m.id) : null;
               const v = m.role !== "ouder" ? vak(m.id, d) : undefined;
               if (!werk.length && !v) return null;
               const magKlikken = me.role === "ouder" || m.id === me.id;
@@ -251,12 +259,12 @@ function Week({ state, me }: { state: FamilyState; me: Member }) {
                     {werk.map((w) => (
                       <button
                         key={w.werk.id + w.van}
-                        className={`ff-chip ff-werk-chip${w.vrij ? " is-vrij" : ""}`}
+                        className={`ff-chip ff-werk-chip${w.vrij ? " is-vrij" : ""}${nu && nu.werk.id === w.werk.id ? " is-nu" : ""}`}
                         disabled={!magKlikken || !!w.dienstId}
                         onClick={() => actions.toggleVrij(d, m.id, w.werk.id)}
                         aria-label={`${w.werk.naam} ${w.van}–${w.tot}${w.vrij ? ", vrij genomen" : ""}`}
                       >
-                        {w.vrij ? "🌴 vrij · " : ""}{w.werk.naam} {w.van.replace(":", ".")}–{w.tot.replace(":", ".")}
+                        {w.vrij ? "🌴 vrij · " : nu && nu.werk.id === w.werk.id ? "⏳ bezig · " : ""}{w.werk.naam} {w.van.replace(":", ".")}–{w.tot.replace(":", ".")}{nu && nu.werk.id === w.werk.id ? ` · ${restTekst(nu.rest)}` : ""}
                       </button>
                     ))}
                   </span>

@@ -162,7 +162,7 @@ export interface WerkItem {
 }
 
 /** Wat de avatar aan het doen is tijdens werk. */
-export type Bezig = "kantoor" | "sport" | "security" | "bouw" | "keuken";
+export type Bezig = "kantoor" | "sport" | "security" | "bouw" | "keuken" | "school";
 export interface Dienst {
   id: string;
   member: string;

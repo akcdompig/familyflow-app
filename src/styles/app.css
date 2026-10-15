@@ -732,3 +732,10 @@ i.is-vak { background: var(--ff-munt-zacht); border: 1px solid var(--ff-munt-don
 .ff-btn-s { min-height: 34px; padding: 4px 12px; font-size: var(--ff-t-s); }
 .ff-feed-rij { align-items: center; gap: 8px; }
 .ff-feed-punten { font-weight: 800; font-size: var(--ff-t-s); color: var(--ff-munt-donker); background: var(--ff-munt-zacht); border-radius: 999px; padding: 2px 8px; }
+.ff-bezig { display: grid; gap: 6px; background: var(--ff-lucht-zacht); border-radius: var(--ff-rond-m); padding: 10px 12px; font-size: var(--ff-t-s); }
+.ff-bezig-balk { display: block; height: 8px; border-radius: 999px; background: rgba(35,32,74,.12); overflow: hidden; }
+.ff-bezig-balk.is-klein { height: 5px; margin-top: 3px; min-width: 64px; }
+.ff-bezig-balk i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--ff-lucht, #8fa6ff), var(--ff-koraal-knop)); transition: width .6s ease; }
+.ff-log-rij.is-straks { opacity: .7; }
+.ff-chip.is-laat { border-color: var(--ff-koraal-knop); background: var(--ff-koraal-zacht); }
+.ff-werk-chip.is-nu { border-color: var(--ff-koraal-knop); background: var(--ff-koraal-zacht); font-weight: 800; }

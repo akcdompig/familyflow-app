@@ -138,6 +138,8 @@ export function demoFamily(): FamilyState {
     werk: {
       p1: [{ id: "w1", naam: "Kantoor", soort: "vast", days: [1, 2, 4, 5], van: "08:00", tot: "17:00", inkomen: true }],
       p2: [{ id: "w2", naam: "Gemeente", soort: "vast", days: [1, 2, 3, 4], van: "08:30", tot: "17:00", inkomen: true }],
+      k1: [{ id: "w3", naam: "School", soort: "vast", days: [1, 2, 3, 4, 5], van: "08:30", tot: "15:00", look: "school" }],
+      k2: [{ id: "w4", naam: "ROC", soort: "vast", days: [1, 2, 4], van: "09:00", tot: "13:00", look: "school" }],
     },
     klusLog: [
       { id: "kl1", klus: "bedden", by: "p2", at: daysAgo(6, 10) },
