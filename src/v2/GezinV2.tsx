@@ -12,14 +12,17 @@ import { actions } from "@/lib/store";
 import { isDone, tasksFor } from "@/lib/tasks";
 import type { FamilyState, Member } from "@/lib/types";
 import { VoedingOverzicht } from "./Voeding";
+import { SamenTab } from "./Samen";
+import { Vragen } from "@/components/screens/Verdeling";
 
-type Tab = "nu" | "eten" | "klussen" | "potje" | "plan";
+type Tab = "nu" | "samen" | "eten" | "klussen" | "potje" | "plan";
 const TABS: { id: Tab; label: string }[] = [
   { id: "nu", label: "Nu" },
+  { id: "samen", label: "Samen" },
   { id: "eten", label: "Eten" },
   { id: "klussen", label: "Klussen" },
   { id: "potje", label: "Potje" },
-  { id: "plan", label: "Planning" },
+  { id: "plan", label: "Plan" },
 ];
 
 const ROMMEL_PLEK = [
@@ -75,12 +78,14 @@ export function GezinV2({ state, me, onToast, onOuders, onOpenLid, onTips, onRuz
             <Row members={state.members.filter((m) => m.role !== "ouder")} row="voor" state={state} me={me} onOpen={onOpenLid} />
           </section>
           <Attention state={state} me={me} onTalkTips={onTips} onCheckIn={onCheckIn} onGoTasks={() => setTab("plan")} onRuzie={onRuzie} onGoGezin={onOuders} />
+          <Vragen state={state} me={me} onToast={onToast} />
           {isOuder && <VoedingOverzicht state={state} onOpen={onOpenLid} />}
           <Inbox state={state} me={me} />
           <NetGedaan state={state} me={me} />
           <Klassement state={state} me={me} onOpen={onOpenLid} />
         </>
       )}
+      {tab === "samen" && <SamenTab state={state} me={me} onToast={onToast} />}
       {tab === "eten" && <Eten state={state} me={me} onToast={onToast} />}
       {tab === "klussen" && <Klussen state={state} me={me} lijst={klussen} onToast={onToast} />}
       {tab === "potje" && <Potje state={state} me={me} onToast={onToast} />}

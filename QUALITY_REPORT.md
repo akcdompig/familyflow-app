@@ -147,3 +147,47 @@ Cijfers worden alleen verhoogd met bewijs, en verlaagd als nieuwe bevindingen da
 |---|---|---|---|---|---|---|---|---|---|---|
 | 15-10-2026 nulmeting | 6,5 | 5,5 | 4 | 7 | 7 | 6,5 | 3 | 8 | 4 | **5,7** |
 | 15-10-2026 ronde 1 | 8 | 7,5 | 8,5 | 7 | 8 | 7,5 | 9 | 8,5 | 7 | **7,9** |
+
+---
+
+## Ronde 3 · 15 oktober 2026 · versie 2.3: samenwerken, verbinden en eerlijk verdelen
+
+### Wat er is gebouwd
+| Onderdeel | Waar | Bewijs |
+|---|---|---|
+| Eerlijke verdeling in **minuten** (niet in aantal), elke dag één vaste verdeling | `src/lib/verdeling.ts` | 15 unit-tests, waaronder een simulatie van 14 dagen: niemand doet meer dan 1,5× de ander (naar verwachting) |
+| Verwachting per dag: school < weekend < vrij; +10 min als beide ouders werken; werkende ouder ±5 min | `verwachting()` | test "verwachting" |
+| Vol op een schooldag? Wat kan wachten schuift door; dagelijks en echt te laat gaat altijd door | `uitgesteld` | test "drukke schooldag" |
+| Vrije dag: hooguit één klus extra, nooit boven de verwachting | stap 2 in `bereken()` | test "vrije dag" |
+| Niet steeds dezelfde de vaatwasser (zelfde klus telt mee, langst niet gedaan gaat voor) | `kies()` | test "niet steeds dezelfde" |
+| Afspraken: voorstel vs. vastgelegd, klussen aan/uit, minuten, wie wel/niet, leeftijd, verwachting per kind, vrijstelling | `AfsprakenSheet`, `klusAfspraken` | e2e "ouder legt afspraken vast", DB-test "kind kan afspraken niet wijzigen" |
+| Waarom jij? Bij elke klus | `reden` | e2e "verdeling met minuten en waarom" |
+| Samen beslissen: steen-papier-schaar, eerlijke loting, om de beurt, samen doen; vrijwillig, met neutrale uitweg | `KlusSheet` | e2e "samen beslissen" |
+| Pech-bescherming: na 2× pech voorsprong; na 3× vandaag geen spel/loting meer; max 3 per dag; geen winnaar/verliezer in Net gedaan | `pech`, `heeftVoorsprong`, `genoegPech` | unit-test + e2e controleert dat "verloor/won" nergens staat |
+| Lukt me niet / hulp vragen → ouder: oké / samen / ik doe het / toch (met uitleg) | `Vragen`, `samenwerken.antwoord` | e2e "lukt me niet", DB-test "kind kan geen antwoord van een ouder maken" |
+| Samen: 22 ideeën met filters (tijd, budget, energie, vrienden), plannen, terugblik, band alleen voor jezelf | `src/v2/Samen.tsx`, `src/lib/samen.ts` | e2e "samen plannen, doen en terugkijken" |
+| Groeidoelen: 8 vaardigheden, per leeftijd concreet, oefenen telt vanzelf, weekterugblik zonder cijfer | `src/v2/Groei.tsx` | e2e "groeidoelen" |
+| Database: kind kan geen klus bij een ander neerleggen zonder besluit waar het bij was, geen besluit verzinnen, anderen hooguit 30 punten geven | `ff_ruil`, `ff_uitdagingen`, `ff_samen`, `ff_punten_max` | 13 nieuwe DB-tests (55 totaal) |
+
+Totaal: 72 unit-tests, 55 database-tests, 18 browserscenario's. Alles groen.
+
+### Pedagogische onderbouwing: wat is onderbouwd, wat is keuze, wat moeten we testen
+- **Onderbouwd:** meehelpen in huis bij de leeftijd passend draagt bij aan zelfstandigheid en verantwoordelijkheid; voorspelbare, eerlijke en uitlegbare regels verminderen ruzie tussen broers en zussen; vergelijken en publiek verlies schaadt motivatie (daarom geen ranglijst, geen verliesstatistiek, band alleen voor jezelf).
+- **Ontwerpkeuze:** minuten als maat; 15/25 minuten als standaard; 2 weken als geheugen; voorsprong na 2× pech; één extra klus op een vrije dag.
+- **Nog te testen in het gezin (2 weken):** wordt het spel leuk of een bron van ruzie (zie "Samen beslist" bij Eerlijk verdeeld); kloppen de minuten; voelt een vrije dag niet als straf; gebruiken de kinderen "lukt me niet" eerlijk.
+
+### Risico's die bewust open blijven
+- Steen-papier-schaar op één telefoon vertrouwt erop dat de ander niet kijkt. Het is een spel, geen beveiliging; de uitkomst staat in de geschiedenis voor ouders.
+- Een kind kan in de app een samen-moment als gedaan markeren. Daar staan maximaal 10 punten per deelnemer tegenover en ouders zien het in Net gedaan.
+
+### Score (alle rollen)
+| Rol | Score |
+|---|---|
+| Product architect (geen parallel systeem, hergebruik klusLog/punten/dagprogramma) | 9 |
+| Pedagoog (vrijwillig, herstel, ouder blijft verantwoordelijk) | 9 |
+| Ontwikkelingspsycholoog (geen vergelijking, pech-bescherming, "nog lastig" is oké) | 8,5 |
+| UX (elke dag één lijst met waarom, eenmalig afspraken-scherm) | 8,5 |
+| QA (simulatie, DB-regels, browserscenario's) | 9,5 |
+| **Totaal** | **8,9** |
+
+Naar een 10: twee weken echt gebruik, dan de minuten en verwachtingen bijstellen op wat het gezin écht doet, en één gesprek met de kinderen over of het eerlijk voelt.

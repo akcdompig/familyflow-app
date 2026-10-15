@@ -31,6 +31,9 @@ export interface Stap {
   task?: Task;
   klusKey?: string;
   klusXp?: number;
+  /** Klus: hoeveel minuten ongeveer, en met wie samen. */
+  minuten?: number;
+  samenMet?: string;
   /** Klus "voor straks": je werkt of zit op school. */
   later?: boolean;
 }
@@ -70,10 +73,11 @@ export function dagprogramma(s: FamilyState, id: string, nu = new Date()): Stap[
   // Klussen waar jij aan de beurt bent (alleen wat vandaag echt moet), plus wat je vandaag al deed.
   const bezigNu = werkTaken(s, id, nu).some((w) => w.status === "bezig");
   for (const k of klusStatus(s, nu)) {
-    if (k.beurt?.id !== id && !(k.vandaagGedaan && k.laatst?.by === id)) continue;
-    if (!k.vandaagGedaan && !(k.nodig && (k.laatst || k.klus.elke === 1 || k.klus.naKoken))) continue;
+    if (k.beurt?.id !== id && k.mee?.id !== id && !(k.vandaagGedaan && k.laatst?.by === id)) continue;
+    // Ingedeeld in de eerlijke verdeling van vandaag (ook "alvast" op een vrije dag), of de restjes na het eten.
+    if (!k.vandaagGedaan && !k.ingedeeld && !(k.klus.naKoken && k.nodig)) continue;
     if (k.klus.naKoken && !kookplan(s).kok && !k.teLaat) continue;
-    stappen.push({ id: `klus:${k.key}`, deel: KLUS_DEEL[k.klus.id] ?? "middag", titel: naamKlus(k, id), emoji: k.klus.emoji, soort: "klus", klaar: k.vandaagGedaan, punten: k.klus.xp, klusKey: k.key, klusXp: k.klus.xp, later: bezigNu && !k.vandaagGedaan });
+    stappen.push({ id: `klus:${k.key}`, deel: KLUS_DEEL[k.klus.id] ?? "middag", titel: naamKlus(k, id) + (k.extra && !k.vandaagGedaan ? " (alvast)" : ""), emoji: k.klus.emoji, soort: "klus", klaar: k.vandaagGedaan, punten: k.klus.xp, klusKey: k.key, klusXp: k.klus.xp, minuten: k.minuten, samenMet: k.mee?.id === id ? k.beurt?.name : k.mee?.name, later: bezigNu && !k.vandaagGedaan });
   }
 
   // Nacht: op tijd slapen.

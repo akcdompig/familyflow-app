@@ -7,6 +7,7 @@ import { phoneTaskTitle, todayKey } from "./tasks";
 import { XP } from "./xp";
 import { DOEL, ROUTINE, basisXp, type DagLog } from "./dag";
 import { nieuweBadges } from "./badges";
+import { verdeling } from "./verdeling";
 const routineAf = (l: DagLog) => ROUTINE.filter((r) => r.gewicht > 0).every((r) => l.routine.includes(r.id));
 import type { Kookplan, PotItem, Dienst, WerkItem, CoachRun, Quest, AvatarConfig, CalmPlan, CheckIn, Conflict, ConflictSide, FamilyState, Meeting, ProKind, Task } from "./types";
 
@@ -254,6 +255,10 @@ const metFeed = (s: FamilyState, who: string, tekst: string, punten = 0): Family
   const feed = (s.feed ?? []).filter((f) => new Date(f.at).toDateString() === vandaag || Date.now() - new Date(f.at).getTime() < 864e5);
   return { ...s, feed: [...feed, { id: newId("f"), who, tekst, punten, at: new Date().toISOString() }].slice(-40) };
 };
+/** Voor de losse actie-bestanden (samenwerken.ts): dezelfde update, met badges, stempel en opslaan. */
+export const wijzig = (fn: Fn) => update(fn);
+export const stand = () => state;
+export { addXp, newId, metFeed };
 const isKid = (s: FamilyState, id: string) => !!s.members.find((m) => m.id === id) && s.members.find((m) => m.id === id)!.role !== "ouder";
 
 export const actions = {
@@ -316,17 +321,40 @@ export const actions = {
     });
   },
   /** Klus gedaan. Kinderen krijgen XP. Geeft het id terug, zodat je het meteen kunt terugdraaien. */
+  /**
+    Klus gedaan. Samen gedaan (afgesproken via "samen doen")? Dan allebei de helft van de punten en de tijd.
+    Kreeg je de klus via samen beslissen en doe je hem gewoon? Dan 3 punten extra: netjes.
+  */
   klusGedaan(key: string, by: string, xp: number, label = ""): string {
     const id = newId("k");
-    update((s) => metFeed({ ...s, klusLog: [...(s.klusLog ?? []), { id, klus: key, by, at: new Date().toISOString() }].slice(-300), xp: xp ? addXp(s, by, xp) : s.xp }, by, label ? `heeft gedaan: ${label.toLowerCase()} ✓` : "heeft een klus gedaan ✓", xp));
+    update((s) => {
+      const d = todayKey();
+      const at = new Date().toISOString();
+      const v = verdeling(s, d);
+      const partner = v.mee[key] ? (by === v.mee[key] ? v.wie[key] : by === v.wie[key] ? v.mee[key] : undefined) : undefined;
+      const tekst = (label ? label.replace(/ \(alvast\)$/, "") : "een klus").toLowerCase();
+      if (partner) {
+        const half = Math.ceil(xp / 2);
+        const groep = newId("g");
+        const s1 = { ...s, klusLog: [...(s.klusLog ?? []), { id, klus: key, by, at, samen: groep }, { id: newId("k"), klus: key, by: partner, at, samen: groep }].slice(-300) };
+        const s2 = { ...s1, xp: addXp({ ...s1, xp: addXp(s1, by, half) }, partner, half) };
+        return metFeed(s2, by, `en ${s.members.find((m) => m.id === partner)?.name ?? "iemand"} deden samen: ${tekst} 🤝`, half);
+      }
+      const netjes = (s.uitdagingen ?? []).some((u) => u.klus === key && u.verliezer === by && (u.manier === "spel" || u.manier === "loting" || !u.manier) && new Date(u.at).toDateString() === new Date().toDateString());
+      const totaal = xp + (netjes ? 3 : 0);
+      return metFeed({ ...s, klusLog: [...(s.klusLog ?? []), { id, klus: key, by, at }].slice(-300), xp: totaal ? addXp(s, by, totaal) : s.xp }, by, `heeft gedaan: ${tekst} ✓${netjes ? " Netjes 💪" : ""}`, totaal);
+    });
     return id;
   },
-  /** Verkeerd ingevuld? Weghalen, XP gaat er weer af. */
+  /** Verkeerd ingevuld? Weghalen, XP gaat er weer af (bij samen: bij allebei). */
   klusWeg(id: string, xp: number) {
     update((s) => {
       const k = (s.klusLog ?? []).find((x) => x.id === id);
       if (!k) return s;
-      return { ...s, klusLog: (s.klusLog ?? []).filter((x) => x.id !== id), xp: xp ? addXp(s, k.by, -xp) : s.xp };
+      const weg = (s.klusLog ?? []).filter((x) => x.id === id || (k.samen && x.samen === k.samen));
+      let uit: FamilyState = { ...s, klusLog: (s.klusLog ?? []).filter((x) => !weg.includes(x)) };
+      for (const w of weg) uit = { ...uit, xp: xp ? addXp(uit, w.by, -(k.samen ? Math.ceil(xp / 2) : xp)) : uit.xp };
+      return uit;
     });
   },
   setKoken(date: string, fn: (p: Kookplan) => Kookplan) {

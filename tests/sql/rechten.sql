@@ -86,6 +86,43 @@ select pg_temp.eis((:'st'::jsonb #> '{checkins,k1,topics}') = '["School"]'::json
 select pg_temp.eis((select m ->> 'read' from jsonb_array_elements(:'st'::jsonb -> 'messages') m where m ->> 'id' = 'm2') = 'true', 'kind kan een bericht aan zichzelf als gelezen markeren');
 select pg_temp.eis((select m ->> 'read' from jsonb_array_elements(:'st'::jsonb -> 'messages') m where m ->> 'id' = 'm1') = 'false', 'bericht aan ouders blijft ongelezen');
 
+-- ===== Samenwerken: afspraken, samen beslissen, vragen, samen-momenten =====
+select pg_temp.als('00000000-0000-0000-0000-00000000000a');
+select state as st, rev from public.families \gset
+select public.save_family(:'st'::jsonb
+  || '{"klusAfspraken":{"vastgelegd":"2026-10-15T10:00:00Z","door":"p1","klussen":{"ramen":{"aan":false}}}}'::jsonb
+  || '{"ruil":{"2026-10-15":{"afval":"k2"}}}'::jsonb
+  || '{"samen":[{"id":"s1","soort":"film","titel":"Film","wie":["p1","k2"],"datum":"2026-10-16","door":"p1","at":"1"}]}'::jsonb
+  || '{"bezwaren":[{"id":"b2","at":"1","datum":"2026-10-15","klus":"vaat-uit","door":"k2","soort":"lukt-niet","reden":"Toets"}]}'::jsonb
+  || '{"bezwaarAntwoord":{"b2":{"keuze":"toch","door":"p1","at":"2"}}}'::jsonb
+  || '{"doelen":{"k2":{"vaardigheden":["plannen"]}}}'::jsonb, :rev);
+select pg_temp.als('00000000-0000-0000-0000-00000000000b');
+select (public.load_family() ->> 'state')::jsonb as kian, (public.load_family() ->> 'rev')::int as rev \gset
+select pg_temp.eis(jsonb_array_length(:'kian'::jsonb -> 'bezwaren') = 0 and (:'kian'::jsonb -> 'bezwaarAntwoord') = '{}'::jsonb, 'kind ziet de vragen van zus niet');
+select pg_temp.eis(not (:'kian'::jsonb -> 'doelen') ? 'k2', 'kind ziet de groeidoelen van zus niet');
+select public.save_family(:'kian'::jsonb
+  || '{"klusAfspraken":{"klussen":{"ramen":{"aan":true}}}}'::jsonb
+  || '{"vrijstelling":{"2026-10-15":{"k1":"zin in niks"}}}'::jsonb
+  || '{"uitdagingen":[{"id":"u1","at":"2026-10-15T15:00:00Z","klus":"vaat-in","spelers":["k1","k2"],"verliezer":"k2","manier":"spel"},{"id":"u2","at":"2026-10-15T15:00:00Z","klus":"keuken","spelers":["k2","p1"],"verliezer":"p1","manier":"spel"}]}'::jsonb
+  || '{"ruil":{"2026-10-15":{"vaat-in":"k2","stofzuigen":"k2","afval":"k1"}}}'::jsonb
+  || '{"bezwaren":[{"id":"b1","at":"2","datum":"2026-10-15","klus":"vaat-in","door":"k1","soort":"hulp","reden":"Weet niet hoe"}]}'::jsonb
+  || '{"bezwaarAntwoord":{"b1":{"keuze":"ok","door":"p1","at":"3"}}}'::jsonb
+  || '{"samen":[{"id":"s2","soort":"koken","titel":"Koken","wie":["k1","p1"],"datum":"2026-10-16","door":"k1","at":"2"}]}'::jsonb
+  || jsonb_build_object('xp', (:'kian'::jsonb -> 'xp') || '{"k2": 500, "p1": 15}'::jsonb), :rev);
+select pg_temp.als('00000000-0000-0000-0000-00000000000a');
+select state as st from public.families \gset
+select pg_temp.eis((:'st'::jsonb #>> '{klusAfspraken,klussen,ramen,aan}') = 'false', 'kind kan de klusafspraken niet wijzigen');
+select pg_temp.eis(not coalesce(:'st'::jsonb -> 'vrijstelling', '{}') ? '2026-10-15', 'kind kan zichzelf geen vrijstelling geven');
+select pg_temp.eis((:'st'::jsonb #>> '{ruil,2026-10-15,vaat-in}') = 'k2', 'klus wisselen na samen beslissen (waar het kind bij was) mag');
+select pg_temp.eis(not (:'st'::jsonb -> 'ruil' -> '2026-10-15') ? 'stofzuigen', 'kind kan geen klus bij een ander neerleggen zonder besluit');
+select pg_temp.eis((:'st'::jsonb #>> '{ruil,2026-10-15,afval}') = 'k2', 'kind kan een indeling van de ouder niet terugdraaien');
+select pg_temp.eis((select count(*) from jsonb_array_elements(:'st'::jsonb -> 'uitdagingen') u where u ->> 'id' = 'u2') = 0, 'kind kan geen besluit verzinnen waar het niet bij was');
+select pg_temp.eis((select count(*) from jsonb_array_elements(:'st'::jsonb -> 'bezwaren') b) = 2, 'vraag van het kind komt aan, vraag van zus blijft staan');
+select pg_temp.eis(not (:'st'::jsonb -> 'bezwaarAntwoord') ? 'b1' and (:'st'::jsonb -> 'bezwaarAntwoord') ? 'b2', 'kind kan zelf geen antwoord van een ouder maken (en wist dat van zus niet)');
+select pg_temp.eis((select count(*) from jsonb_array_elements(:'st'::jsonb -> 'samen')) = 2, 'kind plant iets samen, plan van zus en papa blijft staan');
+select pg_temp.eis((:'st'::jsonb #>> '{xp,k2}')::numeric <= 50 and (:'st'::jsonb #>> '{xp,p1}')::numeric = 15, 'kind kan anderen hooguit een paar punten geven (samen gedaan), niet 500');
+select pg_temp.eis((:'st'::jsonb #> '{doelen,k2,vaardigheden}') = '["plannen"]'::jsonb, 'groeidoelen van zus blijven bewaard');
+
 -- ===== Ouder: alles mag, geschiedenis en terugzetten =====
 select rev from public.families \gset
 select public.save_family(jsonb_set(:'st'::jsonb, '{rewards}', '[]'), :rev);
