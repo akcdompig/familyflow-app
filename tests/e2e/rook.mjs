@@ -101,6 +101,16 @@ await scenario("v2: alle tabbladen openen zonder fouten", v2, "10:00", async (p)
     await p.waitForTimeout(150);
   }
 });
+await scenario("v2: ring op Vandaag telt hetzelfde als Gezin › Week", v2, "16:00", async (p) => {
+  await wissel(p, "Lina");
+  const ring = (await p.locator(".v2-ring").getAttribute("aria-label")).match(/(\d+) van (\d+)/).slice(1).join("/");
+  await wissel(p, "Papa");
+  await tab(p, /Gezin/).click();
+  await p.getByRole("tab", { name: /^Week$/ }).click();
+  const kop = (await p.locator(".v2-dagrij", { hasText: "Lina" }).locator(".v2-week-lid b").innerText()).match(/(\d+) van (\d+)/).slice(1).join("/");
+  assert.equal(kop, ring);
+});
+
 await scenario("v2: Nu doen werkt de ochtend stap voor stap af", v2, "08:15", async (p) => {
   await wissel(p, "Lina");
   const eerst = await p.locator(".v2-nu-titel").innerText();
@@ -303,6 +313,14 @@ await scenario("v2: week — morgen samen trainen staat klaar, en zelf iets plan
   assert.match(await p.getByRole("region", { name: "Samen op deze dag" }).innerText(), /Naar de stad/);
   await p.getByRole("tab", { name: /^Dinsdag/ }).click();
   assert.equal(await p.locator(".v2-week-lid").count(), 4, "ouder ziet hoe de dag ging voor iedereen");
+  // Tik op iemand: precies zien wat er gedaan is, met dezelfde telling.
+  const rij = p.locator(".v2-dagrij", { hasText: "Mama" });
+  const kop = await rij.locator(".v2-week-lid b").innerText();
+  const [af, totaal] = kop.match(/(\d+) van (\d+)/).slice(1).map(Number);
+  await rij.locator(".v2-week-lid").click();
+  assert.equal(await rij.locator(".v2-dagitem").count(), totaal, "evenveel items als de telling");
+  assert.equal(await rij.locator(".v2-dagitem.is-klaar").count(), af, "evenveel vinkjes als gedaan");
+  assert.match(await rij.innerText(), /routine/i);
 });
 
 await scenario("v2: groei — weekverhaal, gepland vs gedaan, en kind ziet alleen zichzelf", v2, "18:00", async (p) => {

@@ -36,6 +36,8 @@ export interface Stap {
   samenMet?: string;
   /** Klus "voor straks": je werkt of zit op school. */
   later?: boolean;
+  /** Klus die je alvast mag doen (vrije dag). Telt pas mee als je hem gedaan hebt. */
+  extra?: boolean;
 }
 
 const VOLGORDE: Dagdeel[] = ["ochtend", "middag", "avond", "nacht"];
@@ -77,7 +79,7 @@ export function dagprogramma(s: FamilyState, id: string, nu = new Date()): Stap[
     // Ingedeeld in de eerlijke verdeling van vandaag (ook "alvast" op een vrije dag), of de restjes na het eten.
     if (!k.vandaagGedaan && !k.ingedeeld && !(k.klus.naKoken && k.nodig)) continue;
     if (k.klus.naKoken && !kookplan(s).kok && !k.teLaat) continue;
-    stappen.push({ id: `klus:${k.key}`, deel: KLUS_DEEL[k.klus.id] ?? "middag", titel: naamKlus(k, id) + (k.extra && !k.vandaagGedaan ? " (alvast)" : ""), emoji: k.klus.emoji, soort: "klus", klaar: k.vandaagGedaan, punten: k.klus.xp, klusKey: k.key, klusXp: k.klus.xp, minuten: k.minuten, samenMet: k.mee?.id === id ? k.beurt?.name : k.mee?.name, later: bezigNu && !k.vandaagGedaan });
+    stappen.push({ id: `klus:${k.key}`, deel: KLUS_DEEL[k.klus.id] ?? "middag", titel: naamKlus(k, id) + (k.extra && !k.vandaagGedaan ? " (alvast)" : ""), emoji: k.klus.emoji, soort: "klus", klaar: k.vandaagGedaan, punten: k.klus.xp, klusKey: k.key, klusXp: k.klus.xp, minuten: k.minuten, samenMet: k.mee?.id === id ? k.beurt?.name : k.mee?.name, later: bezigNu && !k.vandaagGedaan, extra: !!k.extra && !k.vandaagGedaan });
   }
 
   // Nacht: op tijd slapen.
@@ -93,7 +95,9 @@ export function nuDoen(stappen: Stap[], nu = new Date()): Stap | undefined {
   return stappen.find((s) => !s.klaar && !s.vanzelf && !s.later && s.soort !== "slapen" && VOLGORDE.indexOf(s.deel) <= tot);
 }
 
+/** Wat telt voor "je dag": alles wat je zelf afvinkt. Niet: slapen, werk/school (gaat vanzelf) en "alvast"-klussen die nog open staan. */
+export const telt = (st: Stap) => st.soort !== "slapen" && !st.vanzelf && !st.extra;
 export const voortgang = (stappen: Stap[]) => {
-  const tellen = stappen.filter((s) => s.soort !== "slapen");
+  const tellen = stappen.filter(telt);
   return { klaar: tellen.filter((s) => s.klaar).length, totaal: tellen.length };
 };
