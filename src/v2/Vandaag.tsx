@@ -150,19 +150,7 @@ export function Vandaag({ state, me, onToast, onMeerGevoel, onWie }: { state: Fa
         </div>
       </section>
 
-      {me.role !== "ouder" && <SchermKind state={state} me={me} />}
-
-      {/* Hoe voel je je: één tik */}
-      <section className="v2-gevoel" aria-label="Hoe voel je je?">
-        <span className="ff-small"><b>{vandaagIn ? "Je voelt je" : "Hoe voel je je?"}</b></span>
-        <div className="v2-gevoel-rij">
-          {MOODS.map((x) => (
-            <button key={x.m} className="v2-face" aria-pressed={vandaagIn && ci?.mood === x.m && !ci.rest} aria-label={x.l} onClick={() => { actions.checkIn(me.id, { mood: x.m, rest: false, topics: [], wantsTalk: false }); if (x.m <= 2) onMeerGevoel(); else onToast(vandaagIn ? "Bijgewerkt" : "Ingecheckt ✓"); }}>{x.e}</button>
-          ))}
-          <button className="v2-face is-meer" onClick={onMeerGevoel} aria-label="Meer: rust, praten">⋯</button>
-        </div>
-      </section>
-
+      {/* Eerst: het ene ding dat nu moet. Pas daarna gevoel en schermtijd. */}
       {/* Aan het werk of op school: dat is nu je "ding". Daarna gaat het lijstje verder. */}
       {bezigStap && (
         <section className="v2-nu is-bezig">
@@ -192,6 +180,19 @@ export function Vandaag({ state, me, onToast, onMeerGevoel, onWie }: { state: Fa
           </div>
         </section>
       )}
+
+      {/* Hoe voel je je: één tik */}
+      <section className="v2-gevoel" aria-label="Hoe voel je je?">
+        <span className="ff-small"><b>{vandaagIn ? "Je voelt je" : "Hoe voel je je?"}</b></span>
+        <div className="v2-gevoel-rij">
+          {MOODS.map((x) => (
+            <button key={x.m} className="v2-face" aria-pressed={vandaagIn && ci?.mood === x.m && !ci.rest} aria-label={x.l} onClick={() => { actions.checkIn(me.id, { mood: x.m, rest: false, topics: [], wantsTalk: false }); if (x.m <= 2) onMeerGevoel(); else onToast(vandaagIn ? "Bijgewerkt" : "Ingecheckt ✓"); }}>{x.e}</button>
+          ))}
+          <button className="v2-face is-meer" onClick={onMeerGevoel} aria-label="Meer: rust, praten">⋯</button>
+        </div>
+      </section>
+
+      {me.role !== "ouder" && <SchermKind state={state} me={me} />}
 
       {/* De hele dag, per dagdeel */}
       <div className="v2-dag">

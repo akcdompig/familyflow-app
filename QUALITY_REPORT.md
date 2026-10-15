@@ -206,3 +206,13 @@ Naar een 10: twee weken echt gebruik, dan de minuten en verwachtingen bijstellen
 **Bewijs:** 81 unit-tests (o.a. "één drukke week geeft geen 'gaat steeds beter'", "gepland is niet gedaan", "kind ziet alleen zichzelf"), 55 database-tests, 22 browserscenario's.
 
 **Beperkingen / vervolg:** competenties zijn ontwikkelkansen op basis van app-gebruik, geen meting. Na 2–4 weken echt gebruik de koppelingen en fases bijstellen met het gezin.
+
+## Ronde 5 — 2.6 "Rustig" (zorgcoach + product design, ADHD)
+
+- Kinderen: Gezin heeft 4 tabbladen (Nu, Samen, Klussen, Groei); ouders houden er 6.
+- Vandaag: "Nu doen" staat direct onder de ring, daarna gevoel en schermtijd.
+- Klussen (kind): alleen "wie doet wat vandaag"; de hele lijst staat ingeklapt onder "Alle klussen".
+- Groei: verhaal, vooruit, samen en de boom. De rest staat achter "Meer bekijken"; competenties alleen als er iets gezien is.
+- Samen: 5 ideeën + "iets anders", filters achter "Meer ideeën".
+- Ik: één knop "Kies een groeidoel" in plaats van 10 tegels; achievements alleen gehaald + 3 bijna.
+- e2e: nieuw scenario "kind ziet een rustige app".

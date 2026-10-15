@@ -17,6 +17,7 @@ export function IkV2({ state, me, onToast, onAvatar, onWerk, onMeer, onOuders, o
   const xp = geclaimd(state, me.id);
   const lp = levelProgress(xp);
   const kist = teClaimen(state, me.id);
+  const [alleBadges, setAlleBadges] = useState(false);
   const [claim, setClaim] = useState<{ van: number; n: number } | null>(null);
   const mijnBadges = (state.badges ?? []).filter((b) => b.who === me.id);
   const voortgang = bijna(state, me.id);
@@ -51,9 +52,9 @@ export function IkV2({ state, me, onToast, onAvatar, onWerk, onMeer, onOuders, o
 
       <section className="ff-card ff-stack-s">
         <b>🏆 Mijn achievements</b>
-        <span className="ff-small ff-muted">Tik op een achievement om te zien wat je moet doen.</span>
         <div className="v2-badges">
-          {BADGES.map((b) => {
+          {/* Rustig: alleen wat je hebt en wat bijna lukt. De rest pas als je erom vraagt. */}
+          {(alleBadges ? BADGES : BADGES.filter((b) => mijnBadges.some((x) => x.badge === b.id) || voortgang.slice(0, 3).some((x) => x.def.id === b.id))).map((b) => {
             const n = mijnBadges.filter((x) => x.badge === b.id).length;
             const v = voortgang.find((x) => x.def.id === b.id);
             return (
@@ -66,6 +67,7 @@ export function IkV2({ state, me, onToast, onAvatar, onWerk, onMeer, onOuders, o
             );
           })}
         </div>
+        {!alleBadges && <button className="ff-link ff-small" onClick={() => setAlleBadges(true)}>Alle achievements bekijken</button>}
       </section>
 
       <Groei state={state} lid={me} me={me} onToast={onToast} />
