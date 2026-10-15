@@ -335,7 +335,7 @@ export const actions = {
   addPot(item: Omit<PotItem, "id" | "at">) {
     const tekst = item.soort === "beloning" ? `kreeg een beloning in het potje: ${item.reden.toLowerCase()} 🐷` : item.soort === "statiegeld" ? "bracht statiegeld naar het potje 🍾" : "";
     update((s) => {
-      const uit: FamilyState = { ...s, pot: { doel: "", cents: 0, ...(s.pot ?? { items: [] }), items: [...(s.pot?.items ?? []), { ...item, id: newId("e"), at: new Date().toISOString() }].slice(-500) } };
+      const uit: FamilyState = { ...s, pot: { doel: s.pot?.doel ?? "", cents: s.pot?.cents ?? 0, items: [...(s.pot?.items ?? []), { ...item, id: newId("e"), at: new Date().toISOString() }].slice(-500) } };
       return tekst ? metFeed(uit, item.voor ?? item.by, tekst) : uit;
     });
   },
