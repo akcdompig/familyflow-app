@@ -17,7 +17,7 @@ import type { Bezwaar, FamilyState, Member } from "@/lib/types";
 */
 
 const Kop = ({ m, size = 28 }: { m: Member; size?: number }) => <Avatar config={m.avatar} expression="neutraal" headOnly size={size} animate={false} label="" />;
-type KlusAfspraak = NonNullable<NonNullable<FamilyState["afspraken"]>["klussen"]>[string];
+type KlusAfspraak = NonNullable<NonNullable<FamilyState["klusAfspraken"]>["klussen"]>[string];
 const naam = (s: FamilyState, id?: string) => s.members.find((m) => m.id === id)?.name ?? "";
 const SOORT: Record<string, string> = { school: "🎒", vrij: "🏠", weekend: "🌤️", vakantie: "🏖️", werk: "💼", vrijstelling: "🛋️" };
 
@@ -29,7 +29,7 @@ export function AfsprakenBanner({ state, me, onOpen }: { state: FamilyState; me:
       <span aria-hidden="true">{vast ? "📋" : "💡"}</span>
       <span className="ff-grow">
         <b>{vast ? "Afgesproken" : "Voorstel van de app"}</b>
-        <span className="ff-small ff-block">{vast ? `Vastgelegd door ${naam(state, state.afspraken?.door)}` : isOuder ? "Bekijk en leg de afspraken vast" : "Je ouders hebben nog niks vastgelegd"}</span>
+        <span className="ff-small ff-block">{vast ? `Vastgelegd door ${naam(state, state.klusAfspraken?.door)}` : isOuder ? "Bekijk en leg de afspraken vast" : "Je ouders hebben nog niks vastgelegd"}</span>
       </span>
       <span aria-hidden="true">›</span>
     </button>
@@ -180,7 +180,7 @@ export function AfsprakenSheet({ open, onClose, state, me, onToast }: { open: bo
     <Sheet open={open} onClose={onClose} title="Klusafspraken">
       <div className="ff-stack">
         <p className={`ff-vraag-status${vast ? " is-antwoord" : ""}`}>
-          {vast ? `Afgesproken. Vastgelegd door ${naam(state, state.afspraken?.door)} op ${new Date(state.afspraken!.vastgelegd!).toLocaleDateString("nl-NL", { day: "numeric", month: "long" })}.` : "Dit is een voorstel van de app. Pas aan wat niet klopt en leg het vast, dan weet iedereen waar hij aan toe is."}
+          {vast ? `Afgesproken. Vastgelegd door ${naam(state, state.klusAfspraken?.door)} op ${new Date(state.klusAfspraken!.vastgelegd!).toLocaleDateString("nl-NL", { day: "numeric", month: "long" })}.` : "Dit is een voorstel van de app. Pas aan wat niet klopt en leg het vast, dan weet iedereen waar hij aan toe is."}
         </p>
 
         <b>Hoeveel per dag?</b>
@@ -221,7 +221,7 @@ export function AfsprakenSheet({ open, onClose, state, me, onToast }: { open: bo
                 <div className="ff-chips">
                   {(k.iedereen ? leden : kids).filter((m) => !k.perKind || m.role !== "ouder").map((m) => {
                     const mag = magDoen(state, m, k);
-                    const teJong = m.role !== "ouder" && m.age !== undefined && m.age < k.vanaf && !state.afspraken?.klussen?.[k.id]?.wel?.includes(m.id);
+                    const teJong = m.role !== "ouder" && m.age !== undefined && m.age < k.vanaf && !state.klusAfspraken?.klussen?.[k.id]?.wel?.includes(m.id);
                     return (
                       <button key={m.id} className="ff-chip" aria-pressed={mag} disabled={!isOuder} onClick={() => wieMag(k.id, m)} title={teJong ? `Voorstel: vanaf ${k.vanaf} jaar` : undefined}>
                         {m.name}{teJong ? ` (vanaf ${k.vanaf})` : ""}

@@ -22,10 +22,10 @@ const zet = <T,>(map: Record<string, Record<string, T>> | undefined, d: string, 
 export const samenwerken = {
   /* ---------- Afspraken (ouders) ---------- */
   setAfspraken(fn: (a: Afspraken) => Afspraken) {
-    wijzig((s) => ({ ...s, afspraken: fn({ ...(s.afspraken ?? {}) }) }));
+    wijzig((s) => ({ ...s, afspraken: fn({ ...(s.klusAfspraken ?? {}) }) }));
   },
   vastleggen(door: string) {
-    wijzig((s) => metFeed({ ...s, afspraken: { ...(s.afspraken ?? {}), vastgelegd: new Date().toISOString(), door } }, door, "heeft de klusafspraken vastgelegd 📋"));
+    wijzig((s) => metFeed({ ...s, klusAfspraken: { ...(s.klusAfspraken ?? {}), vastgelegd: new Date().toISOString(), door } }, door, "heeft de klusafspraken vastgelegd 📋"));
   },
   /** Vandaag geen klussen voor dit lid (ziek, toets, toernooi). Leeg = weer gewoon. */
   vrijstelling(id: string, reden: string | null, d = todayKey()) {

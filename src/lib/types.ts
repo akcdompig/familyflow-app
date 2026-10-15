@@ -258,7 +258,7 @@ export interface FamilyState {
   /** Samen dingen doen: koken, boodschappen, film, stad, buiten. Bouwt de band op. */
   samen?: SamenMoment[];
   /** Afspraken over klussen, door ouders vastgelegd. Zonder afspraken geldt het voorstel van de app. */
-  afspraken?: Afspraken;
+  klusAfspraken?: Afspraken;
   /** Vandaag geen klussen (ziek, toets, toernooi): vrijstelling[datum][lidId] = reden. */
   vrijstelling?: Record<string, Record<string, string>>;
   /** "Dit lukt me vandaag niet" of "ik wil hulp": een vraag aan de ouders. */

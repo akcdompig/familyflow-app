@@ -69,7 +69,7 @@ export function klusStatus(s: FamilyState, nu = new Date()): KlusStatus[] {
   const v = verdeling(s, vandaag);
   const lid = (id?: string) => (id ? s.members.find((m) => m.id === id) : undefined);
   for (const k of KLUSSEN) {
-    if (s.afspraken?.klussen?.[k.id]?.aan === false) continue;
+    if (s.klusAfspraken?.klussen?.[k.id]?.aan === false) continue;
     const rijen = k.perKind ? kidsVan(s).map((m) => ({ key: klusKey(k, m.id), kind: m as Member | undefined })) : [{ key: k.id, kind: undefined }];
     if (k.naKoken) {
       out.push(koelkastStatus(s, k, nu));

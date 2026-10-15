@@ -57,16 +57,16 @@ export function hash(t: string) {
 
 /* ---------- Afspraken (of het voorstel) ---------- */
 
-export const isVastgelegd = (s: FamilyState) => !!s.afspraken?.vastgelegd;
-export const klusAan = (s: FamilyState, k: Klus) => s.afspraken?.klussen?.[k.id]?.aan ?? true;
-export const minutenVan = (s: FamilyState, k: Klus) => s.afspraken?.klussen?.[k.id]?.minuten ?? k.minuten;
+export const isVastgelegd = (s: FamilyState) => !!s.klusAfspraken?.vastgelegd;
+export const klusAan = (s: FamilyState, k: Klus) => s.klusAfspraken?.klussen?.[k.id]?.aan ?? true;
+export const minutenVan = (s: FamilyState, k: Klus) => s.klusAfspraken?.klussen?.[k.id]?.minuten ?? k.minuten;
 export const minutenKey = (s: FamilyState, key: string) => {
   const k = klusVan(key);
   return k ? minutenVan(s, k) : 10;
 };
 /** Mag dit lid deze klus doen? Afspraak gaat voor; anders: ouders altijd, kinderen vanaf de voorgestelde leeftijd. */
 export function magDoen(s: FamilyState, m: Member, k: Klus): boolean {
-  const a = s.afspraken?.klussen?.[k.id];
+  const a = s.klusAfspraken?.klussen?.[k.id];
   if (a?.niet?.includes(m.id)) return false;
   if (a?.wel?.includes(m.id)) return true;
   if (!isKind(m)) return true;
@@ -78,7 +78,7 @@ export function standaardVerwachting(m: Member) {
   return { school: jong ? 10 : 15, vrij: jong ? 20 : 25 };
 }
 export function eigenVerwachting(s: FamilyState, m: Member) {
-  return { ...standaardVerwachting(m), ...stripUndef(s.afspraken?.verwachting?.[m.id]) };
+  return { ...standaardVerwachting(m), ...stripUndef(s.klusAfspraken?.verwachting?.[m.id]) };
 }
 function stripUndef<T extends object>(o?: T): Partial<T> {
   return Object.fromEntries(Object.entries(o ?? {}).filter(([, v]) => v !== undefined && v !== null)) as Partial<T>;

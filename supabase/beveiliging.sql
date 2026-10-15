@@ -102,14 +102,63 @@ language sql immutable as $$
   ) y
 $$;
 
+/** Punten van anderen: nooit omlaag, en hooguit `max` erbij per keer (samen iets gedaan = een paar punten voor de ander). */
+create or replace function public.ff_punten_max(oud jsonb, nieuw jsonb, me text, max_ander numeric) returns jsonb
+language sql immutable set search_path = public as $$
+  select coalesce(jsonb_object_agg(k, case
+      when k = me then to_jsonb(least(coalesce((nieuw ->> k)::numeric, (oud ->> k)::numeric, 0), coalesce((oud ->> k)::numeric, 0) + 300))
+      else to_jsonb(least(greatest(coalesce((oud ->> k)::numeric, 0), coalesce((nieuw ->> k)::numeric, 0)), coalesce((oud ->> k)::numeric, 0) + max_ander))
+    end), '{}'::jsonb)
+  from (select jsonb_object_keys(coalesce(oud, '{}')) k union select jsonb_object_keys(coalesce(nieuw, '{}'))) ks
+$$;
+
+/** Samen beslist: alleen nieuwe besluiten waar ik zelf bij was erbij, oude blijven staan. Hooguit de laatste 100. */
+create or replace function public.ff_uitdagingen(oud jsonb, nieuw jsonb, me text) returns jsonb
+language sql immutable set search_path = public as $$
+  with alles as (
+    select o as x, ord from jsonb_array_elements(coalesce(oud, '[]')) with ordinality t(o, ord)
+    union all
+    select n, 100000 + ord from jsonb_array_elements(coalesce(nieuw, '[]')) with ordinality t(n, ord)
+      where n -> 'spelers' ? me and not exists (select 1 from jsonb_array_elements(coalesce(oud, '[]')) o where o ->> 'id' = n ->> 'id')
+  ), genummerd as (select x, ord, row_number() over (order by ord desc) r from alles)
+  select coalesce(jsonb_agg(x order by ord), '[]'::jsonb) from genummerd where r <= 100
+$$;
+
+/**
+  Klus wisselen (ruil) of samen doen (samenDoen): een kind mag dat alleen als er een besluit is waar het zelf bij was,
+  voor die klus, met precies die uitkomst. Zo kan een kind niet stiekem een klus bij een ander neerleggen.
+*/
+create or replace function public.ff_ruil(oud jsonb, nieuw jsonb, me text, besluiten jsonb, veld text) returns jsonb
+language sql immutable set search_path = public as $$
+  select coalesce(oud, '{}'::jsonb) || coalesce((
+    select jsonb_object_agg(d, coalesce(oud -> d, '{}'::jsonb) || coalesce((
+      select jsonb_object_agg(kv.key, kv.value) from jsonb_each(nieuw -> d) kv
+      where (oud -> d -> kv.key) is distinct from kv.value
+        and exists (select 1 from jsonb_array_elements(coalesce(besluiten, '[]')) u
+                    where u ->> 'klus' = kv.key and u -> 'spelers' ? me and u ->> veld = kv.value #>> '{}')
+    ), '{}'::jsonb))
+    from jsonb_object_keys(coalesce(nieuw, '{}')) d where jsonb_typeof(nieuw -> d) = 'object'
+  ), '{}'::jsonb)
+$$;
+
+/** Samen-momenten: wat ik plande of waar ik bij ben mag ik wijzigen; de rest blijft zoals het was. */
+create or replace function public.ff_samen(oud jsonb, nieuw jsonb, me text) returns jsonb
+language sql immutable set search_path = public as $$
+  select coalesce(jsonb_agg(x order by x ->> 'at'), '[]'::jsonb) from (
+    select o as x from jsonb_array_elements(coalesce(oud, '[]')) o where not (o -> 'wie' ? me) and o ->> 'door' is distinct from me
+    union all
+    select n from jsonb_array_elements(coalesce(nieuw, '[]')) n where n -> 'wie' ? me or n ->> 'door' = me
+  ) y
+$$;
+
 /** Wat een kind opslaat, samengevoegd met de bestaande stand volgens de rechten van een kind. */
 create or replace function public.ff_kind_merge(oud jsonb, nieuw jsonb, me text) returns jsonb
 language plpgsql immutable as $$
 declare
   uit jsonb := nieuw;
   k text;
-  ouder_velden text[] := array['family', 'rewards', 'pros', 'consent', 'proNotes', 'goals', 'allesAan', 'startedAt', 'meetings', 'pet', 'checked', 'badgesStart', 'version'];
-  per_lid text[] := array['checkins', 'history', 'plans', 'coach', 'played', 'werk', 'somtoday', 'vakanties', 'rooster', 'interesses', 'reading', 'actief', 'sleep'];
+  ouder_velden text[] := array['family', 'rewards', 'pros', 'consent', 'proNotes', 'goals', 'allesAan', 'startedAt', 'meetings', 'pet', 'checked', 'badgesStart', 'version', 'klusAfspraken', 'vrijstelling', 'bezwaarAntwoord'];
+  per_lid text[] := array['checkins', 'history', 'plans', 'coach', 'played', 'werk', 'somtoday', 'vakanties', 'rooster', 'interesses', 'reading', 'actief', 'sleep', 'doelen'];
 begin
   -- Ouder-instellingen: altijd de bestaande waarde.
   foreach k in array ouder_velden loop
@@ -126,8 +175,8 @@ begin
   foreach k in array per_lid loop
     uit := jsonb_set(uit, array[k], public.ff_eigen(oud -> k, nieuw -> k, me));
   end loop;
-  uit := jsonb_set(uit, '{xp}', public.ff_punten(oud -> 'xp', nieuw -> 'xp', me));
-  uit := jsonb_set(uit, '{claim}', public.ff_punten(oud -> 'claim', nieuw -> 'claim', me));
+  uit := jsonb_set(uit, '{xp}', public.ff_punten_max(oud -> 'xp', nieuw -> 'xp', me, 30));
+  uit := jsonb_set(uit, '{claim}', public.ff_punten_max(oud -> 'claim', nieuw -> 'claim', me, 0));
   -- Nooit meer geclaimd dan verdiend.
   if (uit -> 'claim') ? me then
     uit := jsonb_set(uit, array['claim', me], to_jsonb(least((uit #>> array['claim', me])::numeric, coalesce((uit #>> array['xp', me])::numeric, 0))));
@@ -142,6 +191,12 @@ begin
   uit := jsonb_set(uit, '{feedback}', public.ff_lijst(oud -> 'feedback', nieuw -> 'feedback', me, 'by'));
   uit := jsonb_set(uit, '{messages}', public.ff_berichten(oud -> 'messages', nieuw -> 'messages', me));
   uit := jsonb_set(uit, '{badges}', public.ff_badges(oud -> 'badges', nieuw -> 'badges'));
+  -- Samenwerken: vragen aan ouders (eigen), samen-momenten, samen beslissen en wat daaruit volgt.
+  uit := jsonb_set(uit, '{bezwaren}', public.ff_lijst(oud -> 'bezwaren', nieuw -> 'bezwaren', me, 'door'));
+  uit := jsonb_set(uit, '{samen}', public.ff_samen(oud -> 'samen', nieuw -> 'samen', me));
+  uit := jsonb_set(uit, '{uitdagingen}', public.ff_uitdagingen(oud -> 'uitdagingen', nieuw -> 'uitdagingen', me));
+  uit := jsonb_set(uit, '{ruil}', public.ff_ruil(oud -> 'ruil', nieuw -> 'ruil', me, uit -> 'uitdagingen', 'verliezer'));
+  uit := jsonb_set(uit, '{samenDoen}', public.ff_ruil(oud -> 'samenDoen', nieuw -> 'samenDoen', me, uit -> 'uitdagingen', 'partner'));
   return uit;
 end $$;
 
@@ -161,6 +216,10 @@ language sql immutable as $$
       'calm', (select coalesce(jsonb_agg(c), '[]'::jsonb) from jsonb_array_elements(coalesce(st -> 'calm', '[]')) c where c ->> 'member' = me),
       'feedback', (select coalesce(jsonb_agg(c), '[]'::jsonb) from jsonb_array_elements(coalesce(st -> 'feedback', '[]')) c where c ->> 'by' = me),
       'messages', (select coalesce(jsonb_agg(c), '[]'::jsonb) from jsonb_array_elements(coalesce(st -> 'messages', '[]')) c where c ->> 'to' in (me, 'gezin')),
+      'bezwaren', (select coalesce(jsonb_agg(c), '[]'::jsonb) from jsonb_array_elements(coalesce(st -> 'bezwaren', '[]')) c where c ->> 'door' = me),
+      'bezwaarAntwoord', (select coalesce(jsonb_object_agg(e.key, e.value), '{}'::jsonb) from jsonb_each(coalesce(st -> 'bezwaarAntwoord', '{}')) e
+                          where exists (select 1 from jsonb_array_elements(coalesce(st -> 'bezwaren', '[]')) c where c ->> 'id' = e.key and c ->> 'door' = me)),
+      'doelen', public.ff_eigen('{}', coalesce(st -> 'doelen', '{}'), me),
       'proNotes', '{"school": "", "zorg": ""}'::jsonb
     )
 $$;

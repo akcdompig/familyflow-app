@@ -124,10 +124,10 @@ test("afspraken: klus uit, niet voor dit kind, leeftijd, en vrijstelling", () =>
   assert.ok(!magDoen(s0, jong, ramen), "ramen pas vanaf 12 (voorstel)");
   assert.ok(magDoen(s0, jong, vaat));
   // Uit: niemand krijgt hem.
-  const uit = gezin({ afspraken: { klussen: { "vaat-uit": { aan: false } } } });
+  const uit = gezin({ klusAfspraken: { klussen: { "vaat-uit": { aan: false } } } });
   assert.equal(verdeling(uit, "2026-10-15").wie["vaat-uit"], undefined);
   // Niet voor k1: dan k2.
-  const niet = gezin({ afspraken: { klussen: { "vaat-uit": { niet: ["k1"] } } } });
+  const niet = gezin({ klusAfspraken: { klussen: { "vaat-uit": { niet: ["k1"] } } } });
   assert.equal(verdeling(niet, "2026-10-15").wie["vaat-uit"], "k2");
   // Vrijstelling: vandaag niks, ook geen eigen kamer.
   const vrij = gezin({ vrijstelling: { "2026-10-15": { k1: "ziek" } } });
@@ -137,9 +137,9 @@ test("afspraken: klus uit, niet voor dit kind, leeftijd, en vrijstelling", () =>
 });
 
 test("afspraken: eigen verwachting per kind telt", () => {
-  const school = gezin({ werk: WERK, afspraken: { verwachting: { k1: { school: 5, vrij: 40 } } } });
+  const school = gezin({ werk: WERK, klusAfspraken: { verwachting: { k1: { school: 5, vrij: 40 } } } });
   assert.equal(verwachting(school, lid(school, "k1"), "2026-10-15").doel, 5);
-  const vrij = gezin({ afspraken: { verwachting: { k1: { school: 5, vrij: 40 } } } });
+  const vrij = gezin({ klusAfspraken: { verwachting: { k1: { school: 5, vrij: 40 } } } });
   assert.equal(verwachting(vrij, lid(vrij, "k1"), "2026-10-15").doel, 40);
   assert.equal(verwachting(vrij, lid(vrij, "k1"), "2026-10-17").doel, 30, "weekend: 80% van vrij");
 });
