@@ -1,6 +1,7 @@
 "use client";
 
 import { MijnWerk } from "@/components/screens/MijnWerk";
+import { Privacy } from "@/components/screens/Privacy";
 import { Herinneringen } from "@/components/screens/Herinneringen";
 import { Interesses } from "@/components/screens/CoachTip";
 import { Avatar } from "@/components/avatar/Avatar";
@@ -24,12 +25,14 @@ export function Ik({ state, me, onEditAvatar, onCalm, onToast }: { state: Family
   const plan = state.plans[me.id] ?? EMPTY;
   const kids = state.members.filter((m) => m.role !== "ouder");
   const [werk, setWerk] = useState(false);
+  const [privacy, setPrivacy] = useState(false);
 
   const toggle = (key: "signals" | "helps" | "needs", v: string) => {
     const list = plan[key].includes(v) ? plan[key].filter((x) => x !== v) : [...plan[key], v];
     actions.savePlan(me.id, { ...plan, [key]: list });
   };
 
+  if (privacy) return <Privacy state={state} me={me} onToast={onToast} onTerug={() => setPrivacy(false)} />;
   if (werk) return <MijnWerk state={state} me={me} onClose={() => setWerk(false)} onToast={onToast} />;
 
   return (
@@ -46,6 +49,10 @@ export function Ik({ state, me, onEditAvatar, onCalm, onToast }: { state: Family
       </section>
 
       <Herinneringen onToast={onToast} />
+
+      <button className="ff-level" onClick={() => setPrivacy(true)}>
+        <span className="ff-grow"><b>🔒 Privacy en gegevens</b><br /><span className="ff-small ff-muted">Wie ziet wat, gegevens downloaden{isParent ? ", versie terugzetten, gezin verwijderen" : ""}</span></span>
+      </button>
 
       <section className="ff-card ff-stack-s">
         <b>🎯 Mijn coach</b>

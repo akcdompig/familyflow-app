@@ -1,6 +1,6 @@
 // FamilyFlow service worker: app opent ook met slechte verbinding.
 // Gezinsgegevens gaan altijd rechtstreeks naar Supabase en worden hier niet bewaard.
-const CACHE = "familyflow-v2";
+const CACHE = "familyflow-v3";
 try { importScripts("/config.js"); } catch (e) { /* zonder config geen herinneringen */ }
 const SHELL = ["/", "/config.js", "/manifest.webmanifest", "/icon-192.png", "/icon-512.png", "/apple-touch-icon.png"];
 
@@ -18,6 +18,11 @@ self.addEventListener("fetch", (e) => {
   if (!sameOrigin && !fonts) return;
   if (fonts) {
     e.respondWith(caches.match(e.request).then((hit) => hit || fetch(e.request).then((res) => { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(e.request, copy)); return res; })));
+    return;
+  }
+  // App-bestanden met een hash veranderen nooit: uit de cache als ze er zijn.
+  if (url.pathname.startsWith("/assets/")) {
+    e.respondWith(caches.match(e.request).then((hit) => hit || fetch(e.request).then((res) => { if (res.ok) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(e.request, copy)); } return res; })));
     return;
   }
   // Eerst het netwerk (altijd de nieuwste versie), anders uit de cache.

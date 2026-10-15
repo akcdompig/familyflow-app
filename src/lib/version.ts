@@ -1,2 +1,2 @@
-export const VERSION = "1.13";
-export const VERSION_NAME = "Achievements en coach";
+export const VERSION = "2.1";
+export const VERSION_NAME = "Veilig en getest";

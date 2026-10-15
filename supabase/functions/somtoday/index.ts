@@ -32,8 +32,61 @@ class Fout extends Error {
   }
 }
 
+// ---------- Klok-taken (pg_cron) ----------
+/** Alleen de klok mag onderhoud starten: die stuurt de geheime sleutel uit app_secrets mee. */
+async function vereisKlok(req: Request) {
+  let geheim: string | undefined;
+  try {
+    geheim = (await dbRuw("app_secrets?name=eq.cron&select=value"))?.[0]?.value;
+  } catch {
+    return; // tabel bestaat nog niet (beveiliging.sql nog niet gedraaid): zoals vroeger
+  }
+  if (geheim && req.headers.get("x-cron-secret") !== geheim) throw new Fout("Niet toegestaan", 401);
+}
+
+// ---------- Versleuteling van de Somtoday-tokens ----------
+// Met het geheim SOMTODAY_SLEUTEL (32 bytes, base64) worden de tokens versleuteld opgeslagen (AES-GCM).
+// Zonder dat geheim werkt alles zoals vroeger. Oude, onversleutelde tokens blijven leesbaar.
+const VELDEN = ["refresh_token", "access_token"];
+let aesKey: { raw: string; key: Promise<CryptoKey> } | null = null;
+function aesSleutel(): Promise<CryptoKey> | null {
+  const raw = Deno.env.get("SOMTODAY_SLEUTEL");
+  if (!raw) return null;
+  if (aesKey?.raw !== raw) aesKey = { raw, key: crypto.subtle.importKey("raw", Uint8Array.from(atob(raw), (c) => c.charCodeAt(0)), "AES-GCM", false, ["encrypt", "decrypt"]) };
+  return aesKey.key;
+}
+const b64 = (u: Uint8Array) => btoa(String.fromCharCode(...u));
+const unb64 = (t: string) => Uint8Array.from(atob(t), (c) => c.charCodeAt(0));
+export async function versleutel(v: unknown): Promise<unknown> {
+  const k = aesSleutel();
+  if (!k || typeof v !== "string" || v.startsWith("enc1:")) return v;
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv }, await k, new TextEncoder().encode(v)));
+  return `enc1:${b64(iv)}:${b64(ct)}`;
+}
+export async function ontsleutel(v: unknown): Promise<unknown> {
+  if (typeof v !== "string" || !v.startsWith("enc1:")) return v;
+  const k = aesSleutel();
+  if (!k) throw new Fout("De sleutel voor Somtoday ontbreekt op de server (SOMTODAY_SLEUTEL)", 500);
+  const [, iv, ct] = v.split(":");
+  return new TextDecoder().decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(iv) }, await k, unb64(ct)));
+}
+async function velden(obj: unknown, fn: (v: unknown) => Promise<unknown>): Promise<unknown> {
+  if (Array.isArray(obj)) return Promise.all(obj.map((o) => velden(o, fn)));
+  if (!obj || typeof obj !== "object") return obj;
+  const uit: Record<string, unknown> = { ...(obj as Record<string, unknown>) };
+  for (const v of VELDEN) if (v in uit) uit[v] = await fn(uit[v]);
+  return uit;
+}
+
 // ---------- Supabase (service role) ----------
+/** Database-aanroep. Tokens in somtoday_links gaan versleuteld heen en komen ontsleuteld terug. */
 async function db(path: string, init: RequestInit = {}) {
+  if (!path.startsWith("somtoday_links")) return dbRuw(path, init);
+  const body = typeof init.body === "string" ? JSON.stringify(await velden(JSON.parse(init.body), versleutel)) : init.body;
+  return velden(await dbRuw(path, { ...init, body }), ontsleutel);
+}
+async function dbRuw(path: string, init: RequestInit = {}) {
   const res = await fetch(`${SB_URL}/rest/v1/${path}`, {
     ...init,
     headers: { apikey: SB_SERVICE, Authorization: `Bearer ${SB_SERVICE}`, "Content-Type": "application/json", Prefer: "return=representation", ...(init.headers ?? {}) },
@@ -448,7 +501,10 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   try {
     const body = await req.json().catch(() => ({}));
-    if (body.action === "onderhoud") return json(await onderhoud());
+    if (body.action === "onderhoud") {
+      await vereisKlok(req);
+      return json(await onderhoud());
+    }
     const wie = await wieBenIk(req);
     const fam = wie.family_id;
     const sleutel = (m: string) => `family_id=eq.${fam}&member_id=eq.${encodeURIComponent(m)}`;

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Component, useEffect, useState, type ReactNode } from "react";
+import { meldFout, startFoutlog } from "@/lib/foutlog";
 import { FamilyFlowApp as AppV1 } from "@/components/FamilyFlowApp";
 import { AppV2 } from "@/v2/AppV2";
 
@@ -16,8 +17,39 @@ import type { FamilyState } from "@/lib/types";
 
 type Phase = "laden" | "welkom" | "ouder" | "gezin" | "code" | "app" | "fout";
 
-/** Startpunt: demo, of de echte app met aanmelden. */
+/** Vangt een fout in een scherm op: vriendelijke melding in plaats van een wit scherm, en de fout wordt vastgelegd. */
+class Vangnet extends Component<{ children: ReactNode }, { fout: boolean }> {
+  state = { fout: false };
+  static getDerivedStateFromError() {
+    return { fout: true };
+  }
+  componentDidCatch(e: unknown) {
+    meldFout(e, "scherm");
+  }
+  render() {
+    if (!this.state.fout) return this.props.children;
+    return (
+      <div className="ff-app">
+        <div className="ff-card ff-stack" style={{ marginTop: 40, textAlign: "center" }}>
+          <b className="ff-h2">Oeps, hier ging iets mis</b>
+          <p className="ff-muted">Je gegevens zijn veilig. Probeer het opnieuw.</p>
+          <button className="ff-btn ff-btn-primary ff-btn-wide" onClick={() => location.reload()}>Opnieuw laden</button>
+        </div>
+      </div>
+    );
+  }
+}
+
+/** Startpunt: demo, of de echte app met aanmelden. Met een vangnet voor fouten. */
 export function Root() {
+  return (
+    <Vangnet>
+      <RootInner />
+    </Vangnet>
+  );
+}
+
+function RootInner() {
   const [demo] = useState(() => cloud.isDemo());
   const [phase, setPhase] = useState<Phase>("laden");
   const [parentMode, setParentMode] = useState<"nieuw" | "inloggen">("nieuw");
@@ -53,6 +85,7 @@ export function Root() {
   };
 
   useEffect(() => {
+    if (!demo) startFoutlog();
     if (!demo) void boot();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [demo]);

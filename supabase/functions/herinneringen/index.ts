@@ -60,6 +60,18 @@ async function wieBenIk(req: Request): Promise<Wie> {
   return rows[0];
 }
 
+// ---------- Klok-taken (pg_cron) ----------
+/** Alleen de klok mag een ronde starten: die stuurt de geheime sleutel uit app_secrets mee. */
+async function vereisKlok(req: Request) {
+  let geheim: string | undefined;
+  try {
+    geheim = (await db("app_secrets?name=eq.cron&select=value"))?.[0]?.value;
+  } catch {
+    return; // tabel bestaat nog niet (beveiliging.sql nog niet gedraaid): zoals vroeger
+  }
+  if (geheim && req.headers.get("x-cron-secret") !== geheim) throw new Fout("Niet toegestaan", 401);
+}
+
 // ---------- VAPID ----------
 const b64url = (buf: ArrayBuffer | Uint8Array) => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 const enc = new TextEncoder();
@@ -156,8 +168,8 @@ function tekstVoor(st: State, id: string, nl: ReturnType<typeof nuNL>, opWerk = 
 }
 
 /** "Lina is al lekker bezig": wie heeft de laatste 2 uur iets gedaan? */
-function wieIsBezig(st: State, id: string): string {
-  const grens = Date.now() - STIL_MIN * 60e3;
+function wieIsBezig(st: State, id: string, nu = new Date()): string {
+  const grens = nu.getTime() - STIL_MIN * 60e3;
   // deno-lint-ignore no-explicit-any
   const ids = [...new Set((st.feed ?? []).filter((f: any) => f.who !== id && new Date(f.at).getTime() > grens).map((f: any) => f.who))] as string[];
   // deno-lint-ignore no-explicit-any
@@ -255,13 +267,13 @@ function beslis(st: State, s: Sub, nu: Date): { titel: string; tekst: string; so
     if (vandaagGemeld && sindsMelding < 60) return null;
     const eerste = !(vandaagGemeld && s.last_kind === "wekker");
     return eerste
-      ? { titel: `Goedemorgen ${naam}! ☀️`, tekst: `Uitslapen is lekker, maar nu is het tijd. Begin met je ochtendroutine.${wieIsBezig(st, m.id)}`, soort: "wekker" }
-      : { titel: `${naam}, ben je al wakker?`, tekst: `Je hebt vandaag nog niks afgevinkt. Check even in en doe je ochtendroutine.${wieIsBezig(st, m.id)}`, soort: "wekker" };
+      ? { titel: `Goedemorgen ${naam}! ☀️`, tekst: `Uitslapen is lekker, maar nu is het tijd. Begin met je ochtendroutine.${wieIsBezig(st, m.id, nu)}`, soort: "wekker" }
+      : { titel: `${naam}, ben je al wakker?`, tekst: `Je hebt vandaag nog niks afgevinkt. Check even in en doe je ochtendroutine.${wieIsBezig(st, m.id, nu)}`, soort: "wekker" };
   }
   // Schooldag en na school nog niet in de app geweest.
   if (kind && schooldag && !vandaagActief && nl.min >= 15 * 60 + 30) {
     if (vandaagGemeld && sindsMelding < STIL_MIN) return null;
-    return { titel: `Hoi ${naam}, hoe was school?`, tekst: `Je bent vandaag nog niet in de app geweest. Check even in.${wieIsBezig(st, m.id)}`, soort: "na-school" };
+    return { titel: `Hoi ${naam}, hoe was school?`, tekst: `Je bent vandaag nog niet in de app geweest. Check even in.${wieIsBezig(st, m.id, nu)}`, soort: "na-school" };
   }
   // 2) Al 2 uur stil, terwijl je vandaag wel al bezig was. Was je aan het werk, dan tellen de 2 uur vanaf het einde van je werk.
   if (!vandaagActief) return null;
@@ -269,7 +281,7 @@ function beslis(st: State, s: Sub, nu: Date): { titel: string; tekst: string; so
   const stil = (nu.getTime() - vanaf) / 60e3;
   if (stil < STIL_MIN || sindsMelding < STIL_MIN) return null;
   // Tijdens werk alleen de gezondheid (water, fruit, lunch). Klussen kunnen dan toch niet.
-  return { titel: werk.bezig ? `${naam}, even pauze?` : `Hoi ${naam}, alles goed?`, tekst: tekstVoor(st, m.id, nl, werk.bezig) + (werk.bezig ? "" : wieIsBezig(st, m.id)), soort: "stil" };
+  return { titel: werk.bezig ? `${naam}, even pauze?` : `Hoi ${naam}, alles goed?`, tekst: tekstVoor(st, m.id, nl, werk.bezig) + (werk.bezig ? "" : wieIsBezig(st, m.id, nu)), soort: "stil" };
 }
 
 async function ronde() {
@@ -311,6 +323,7 @@ Deno.serve(async (req) => {
       }
 
       case "ronde":
+        await vereisKlok(req);
         return json(await ronde());
 
       case "abonneer": {

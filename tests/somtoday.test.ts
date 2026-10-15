@@ -8,10 +8,12 @@ let geldig: string;
 let n: number;
 let oauth: number;
 let storing = false;
+let sleutel: string | undefined;
 let geldigToken: typeof import("../supabase/functions/somtoday/index.ts").geldigToken;
+let ontsleutel: typeof import("../supabase/functions/somtoday/index.ts").ontsleutel;
 
 before(async () => {
-  (globalThis as unknown as { Deno: unknown }).Deno = { env: { get: (k: string) => (k === "SUPABASE_URL" ? "https://db" : "svc") }, serve: () => {} };
+  (globalThis as unknown as { Deno: unknown }).Deno = { env: { get: (k: string) => (k === "SUPABASE_URL" ? "https://db" : k === "SOMTODAY_SLEUTEL" ? sleutel : "svc") }, serve: () => {} };
   globalThis.fetch = (async (url: string, init: RequestInit = {}) => {
     const u = new URL(url);
     await new Promise((r) => setTimeout(r, 20));
@@ -32,7 +34,7 @@ before(async () => {
     }
     return new Response("[]");
   }) as typeof fetch;
-  ({ geldigToken } = await import("../supabase/functions/somtoday/index.ts"));
+  ({ geldigToken, ontsleutel } = await import("../supabase/functions/somtoday/index.ts"));
 });
 
 beforeEach(() => {
@@ -41,6 +43,7 @@ beforeEach(() => {
   n = 0;
   oauth = 0;
   storing = false;
+  sleutel = undefined;
 });
 
 test("twee telefoons tegelijk: maar één vernieuwing, allebei een geldig token", async () => {
@@ -69,4 +72,15 @@ test("storing bij Somtoday is géén verlopen koppeling", async () => {
   storing = true;
   await assert.rejects(geldigToken({ ...row }), /niet bereikbaar/);
   assert.equal(row.refresh_token, "R1", "token blijft bewaard");
+});
+
+test("met SOMTODAY_SLEUTEL staan tokens versleuteld in de database, en alles werkt gewoon", async () => {
+  sleutel = Buffer.from(new Uint8Array(32).map((_, i) => i * 7)).toString("base64");
+  const r = await geldigToken({ ...row });
+  assert.equal(r.at, "A1");
+  assert.match(String(row.refresh_token), /^enc1:/, "refresh-token versleuteld opgeslagen");
+  assert.match(String(row.access_token), /^enc1:/, "access-token versleuteld opgeslagen");
+  assert.equal(await ontsleutel(row.refresh_token), geldig);
+  row.access_expires = null;
+  assert.equal((await geldigToken({ ...row })).at, "A2", "vernieuwen met versleuteld token");
 });

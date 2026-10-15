@@ -157,13 +157,50 @@ export const makeInvite = (memberId: string) => rpc<string>("make_invite", { p_m
 export const joinFamily = (code: string) => rpc<WhoAmI>("join_family", { p_code: code });
 export const saveFamily = (state: FamilyState, rev: number) => rpc<number>("save_family", { p_state: state, p_rev: rev });
 
+/*
+  Laden gaat via de databasefunctie load_family: die geeft kinderen een versie zonder de privé-gegevens
+  van anderen (zie supabase/beveiliging.sql). Bestaat die functie nog niet, dan lezen we de tabel zoals vroeger.
+*/
+let viaFunctie = true;
+const ontbreekt = (e: unknown) => /could not find the function|PGRST202|404/i.test(String((e as Error)?.message ?? e));
+
 export async function loadFamily(): Promise<{ state: FamilyState; rev: number } | null> {
+  if (viaFunctie) {
+    try {
+      return (await rpc<{ state: FamilyState; rev: number } | null>("load_family")) ?? null;
+    } catch (e) {
+      if (!ontbreekt(e)) throw e;
+      viaFunctie = false;
+    }
+  }
   const rows = await call<{ state: FamilyState; rev: number }[]>("/rest/v1/families?select=state,rev&limit=1");
   return rows[0] ?? null;
 }
 export async function loadRev(): Promise<number | null> {
+  if (viaFunctie) {
+    try {
+      return (await rpc<number | null>("family_rev")) ?? null;
+    } catch (e) {
+      if (!ontbreekt(e)) throw e;
+      viaFunctie = false;
+    }
+  }
   const rows = await call<{ rev: number }[]>("/rest/v1/families?select=rev&limit=1");
   return rows[0]?.rev ?? null;
+}
+
+/** Ouders: de laatste versies van de gezinsstand, en een versie terugzetten. */
+export const familyHistory = () => rpc<{ id: number; rev: number; saved_at: string; saved_by_member: string | null }[]>("family_history");
+export const restoreFamily = (id: number) => rpc<number>("restore_family", { p_id: id });
+/** AVG: het hele gezin en alle gegevens verwijderen (alleen ouders). */
+export const deleteFamily = () => rpc<null>("delete_family");
+
+/** Foutmelding vastleggen, zodat problemen bij een gezin opvallen. Hooguit 10 per sessie, stil bij mislukken. */
+let fouten = 0;
+export function logError(message: string, stack = "", version = "") {
+  if (!session || fouten >= 10) return;
+  fouten++;
+  void rpc("log_error", { p_message: message, p_stack: stack, p_version: version, p_url: location.pathname }).catch(() => undefined);
 }
 
 /** Supabase Edge Function aanroepen, met de login van deze telefoon. */

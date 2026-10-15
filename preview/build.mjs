@@ -1,7 +1,8 @@
 // Bouwt een losse HTML-preview van de app met esbuild (zonder Next.js).
 // Gebruik: node preview/build.mjs
 import { build } from "esbuild";
-import { cpSync, existsSync, readFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, readFileSync, mkdirSync, writeFileSync, readdirSync, rmSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -69,9 +70,16 @@ const head = [
   '<link rel="apple-touch-icon" href="/apple-touch-icon.png">',
   fonts,
 ].join("");
+// De JavaScript als los bestand met een hash in de naam: de telefoon bewaart hem tot er een nieuwe versie is.
+const assets = resolve(dist, "assets");
+mkdirSync(assets, { recursive: true });
+for (const f of readdirSync(assets)) if (/^app-[0-9a-f]+\.js$/.test(f)) rmSync(resolve(assets, f));
+const appJs = result.outputFiles[0].text;
+const hash = createHash("sha256").update(appJs).digest("hex").slice(0, 12);
+writeFileSync(resolve(assets, `app-${hash}.js`), appJs);
 writeFileSync(
   resolve(dist, "index.html"),
-  `<!doctype html><html lang="nl"><head>${head}<style>${css}</style></head><body><div id="root"></div><script src="/config.js"></script><script>${js}</script><script>if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("/sw.js");</script></body></html>`,
+  `<!doctype html><html lang="nl"><head>${head}<style>${css}</style></head><body><div id="root"></div><script src="/config.js"></script><script src="/assets/app-${hash}.js"></script><script>if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("/sw.js");</script></body></html>`,
 );
 
 console.log("Preview gebouwd:", out, `(${Math.round(js.length / 1024)} kB JS)`);

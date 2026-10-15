@@ -15,6 +15,7 @@ import { Ik } from "@/components/screens/Ik";
 import { Leerplanner } from "@/components/screens/Leerplanner";
 import { MijnWerk } from "@/components/screens/MijnWerk";
 import { Oefenen } from "@/components/screens/Oefenen";
+import { Privacy } from "@/components/screens/Privacy";
 import { Ruzie } from "@/components/screens/Ruzie";
 import { BadgeViering } from "@/components/screens/Viering";
 import { Icon, type IconName } from "@/components/ui/Icon";
@@ -34,7 +35,7 @@ import { IkV2 } from "./IkV2";
 import { Vandaag } from "./Vandaag";
 
 type Tab = "vandaag" | "gezin" | "hulp" | "ik";
-type Pagina = null | "avatar" | "werk" | "meer" | "ouders" | "planner";
+type Pagina = null | "avatar" | "werk" | "meer" | "ouders" | "planner" | "privacy";
 
 const NAV: { id: Tab; label: string; icon: IconName }[] = [
   { id: "vandaag", label: "Vandaag", icon: "taken" },
@@ -141,6 +142,7 @@ export function AppV2() {
       {vol ?? (
         <>
           {pagina === "meer" && terug(<Ik state={state} me={me} onEditAvatar={() => setPagina("avatar")} onCalm={() => setCalm(true)} onToast={setToast} />)}
+          {pagina === "privacy" && <Privacy state={state} me={me} onToast={setToast} onTerug={() => setPagina(null)} />}
           {pagina === "ouders" && terug(<Gezin state={state} me={me} onToast={setToast} onOefenen={() => { setPagina(null); setTab("hulp"); }} onCoachNu={() => setCoachNu("")} />)}
           {!pagina && tab === "vandaag" && <Vandaag state={state} me={me} onToast={setToast} onMeerGevoel={() => setCheckIn(true)} onWie={() => (live ? setTab("ik") : setWie(true))} />}
           {!pagina && tab === "gezin" && <GezinV2 state={state} me={me} onToast={setToast} onOpenLid={setLid} onTips={setTips} onRuzie={(id) => setRuzie(id ?? "")} onCheckIn={() => setCheckIn(true)} />}
@@ -151,7 +153,7 @@ export function AppV2() {
                 {!isOuder && <button className="v2-menu-rij" onClick={() => setPagina("planner")}><span aria-hidden="true">📚</span><b className="ff-grow">Leerplanner: toetsen en huiswerk plannen</b><span aria-hidden="true">›</span></button>}
               </>} />
           )}
-          {!pagina && tab === "ik" && <IkV2 state={state} me={me} onToast={setToast} onAvatar={() => setPagina("avatar")} onWerk={() => setPagina("werk")} onMeer={() => setPagina("meer")} onOuders={isOuder ? () => setPagina("ouders") : undefined} />}
+          {!pagina && tab === "ik" && <IkV2 state={state} me={me} onToast={setToast} onAvatar={() => setPagina("avatar")} onWerk={() => setPagina("werk")} onMeer={() => setPagina("meer")} onPrivacy={() => setPagina("privacy")} onOuders={isOuder ? () => setPagina("ouders") : undefined} />}
 
           <nav className="ff-nav v2-nav" aria-label="Hoofdmenu" style={{ gridTemplateColumns: `repeat(${NAV.length}, minmax(0, 1fr))` }}>
             {NAV.map((n) => {

@@ -8,6 +8,13 @@ jobs:
   controle:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: test
+        ports: ["5432:5432"]
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -19,9 +26,16 @@ jobs:
         run: npm run typecheck
       - name: Tests
         run: npm test
+      - name: Database-tests (rechten, privacy, geschiedenis)
+        run: bash tests/sql/run.sh
+        env:
+          PGHOST: localhost
+          PGPORT: "5432"
+          PGUSER: postgres
+          PGPASSWORD: test
       - name: Bouwen (pilot)
         run: npm run build
       - name: Gebouwde app klopt met de broncode
-        run: git diff --stat --exit-code dist/index.html || (echo "dist/index.html is niet opnieuw gebouwd. Draai npm run build en commit." && exit 1)
+        run: git add -N dist && git diff --stat --exit-code dist || (echo "dist/ is niet opnieuw gebouwd. Draai npm run build en commit." && exit 1)
       - name: Bouwen (acceptatie)
         run: npm run build:acceptatie

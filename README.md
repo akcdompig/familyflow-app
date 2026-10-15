@@ -45,7 +45,7 @@ De echte app is een gewone webapp die je op je beginscherm zet (PWA). Hij staat 
 
 De demo blijft bereikbaar via `/#demo`.
 
-**Opnieuw bouwen** na een wijziging in de code: `node preview/build.mjs`. Daarmee worden `dist/` en de demo bijgewerkt.
+**Ontwikkelen:** `npm run dev` (demo op http://localhost:3000). **Bouwen:** `npm run build` werkt `dist/` en de demo bij. **Controleren:** `npm run check` (typecheck + tests).
 
 ## Somtoday-koppeling (versie 1.3)
 
@@ -63,6 +63,20 @@ Logt de school in via Microsoft, dan gaat het via een inloglink (het makkelijkst
 - Bij openen van de app (hooguit om de 3 uur) haalt de app 4 weken vooruit op en plant nieuwe dingen in. Er komt een melding: "Uit Somtoday: 1 toets en 3 huiswerk ingepland voor Kian".
 - "Nu ophalen" op de Somtoday-kaart doet het meteen.
 - De Somtoday-API is niet officieel. Werkt het opeens niet meer, dan zie je de fout op de kaart. Opnieuw koppelen helpt meestal.
+
+## Beveiliging en privacy (versie 2.1)
+
+**Wat het doet:** rechten per rol in de database (een kind kan geen ouder-dingen wijzigen), privé-gegevens alleen zichtbaar voor wie ze mag zien, versiegeschiedenis met terugzetten, foutmeldingen vastleggen, gezin verwijderen (AVG), geheime sleutel voor de klok-taken en versleutelde Somtoday-tokens.
+
+**Volgorde (belangrijk):**
+1. Eerst de nieuwe app live (die gebruikt `load_family`; werkt ook nog zonder de nieuwe database-functies).
+2. **Edge Functions**: plak de nieuwe `supabase/functions/herinneringen/index.ts` en `supabase/functions/somtoday/index.ts` en deploy ze.
+3. **SQL Editor**: plak `supabase/beveiliging.sql` en klik op **Run**.
+4. Aanrader: **Edge Functions › Secrets** › nieuw geheim `SOMTODAY_SLEUTEL` met een willekeurige sleutel van 32 bytes in base64 (maak er een met `openssl rand -base64 32`). Daarna worden Somtoday-tokens versleuteld bewaard. Oude tokens blijven werken.
+
+**Controle:** `npm test` (55 tests) en `bash tests/sql/run.sh` (38 database-tests tegen een echte Postgres). Beide draaien ook automatisch op GitHub bij elke wijziging.
+
+Privacyverklaring (concept): `PRIVACY.md`.
 
 ## Somtoday 2.0: koppeling blijft, plus lesrooster (versie 1.12)
 

@@ -848,3 +848,6 @@ i.is-vak { background: var(--ff-munt-zacht); border: 1px solid var(--ff-munt-don
 .v2-nu.is-bezig { background: var(--ff-lucht-zacht); color: var(--ff-tekst); box-shadow: none; }
 .v2-nu.is-bezig .ff-eyebrow { color: var(--ff-lucht-donker, #4a5fd1); }
 .v2-nu.is-bezig .ff-muted { color: var(--ff-tekst-zacht); }
+.ff-gevaar { border: 2px solid var(--ff-koraal-knop); }
+.ff-btn-gevaar { background: var(--ff-koraal-knop); color: #fff; }
+.ff-btn-gevaar:disabled { opacity: .45; }

@@ -12,7 +12,7 @@ import { geclaimd, levelProgress, teClaimen, xpForLevel } from "@/lib/xp";
 import type { FamilyState, Member } from "@/lib/types";
 
 /** Ik: je level, schatkist, achievements en je instellingen. Alles wat over jou gaat op één plek. */
-export function IkV2({ state, me, onToast, onAvatar, onWerk, onMeer, onOuders }: { state: FamilyState; me: Member; onToast: (m: string) => void; onAvatar: () => void; onWerk: () => void; onMeer: () => void; onOuders?: () => void }) {
+export function IkV2({ state, me, onToast, onAvatar, onWerk, onMeer, onOuders, onPrivacy }: { state: FamilyState; me: Member; onToast: (m: string) => void; onAvatar: () => void; onWerk: () => void; onMeer: () => void; onOuders?: () => void; onPrivacy?: () => void }) {
   const xp = geclaimd(state, me.id);
   const lp = levelProgress(xp);
   const kist = teClaimen(state, me.id);
@@ -78,6 +78,7 @@ export function IkV2({ state, me, onToast, onAvatar, onWerk, onMeer, onOuders }:
         <button className="v2-menu-rij" onClick={onAvatar}><span aria-hidden="true">🧑‍🎨</span><b className="ff-grow">Avatar aanpassen</b><span aria-hidden="true">›</span></button>
         <button className="v2-menu-rij" onClick={onWerk}><span aria-hidden="true">{isOuder ? "💼" : "🎒"}</span><b className="ff-grow">{isOuder ? "Werk en roosters" : "School en bijbaan"}</b><span aria-hidden="true">›</span></button>
         <button className="v2-menu-rij" onClick={onMeer}><span aria-hidden="true">🌿</span><b className="ff-grow">Mijn rustplan en meer</b><span aria-hidden="true">›</span></button>
+        {onPrivacy && <button className="v2-menu-rij" onClick={onPrivacy}><span aria-hidden="true">🔒</span><b className="ff-grow">Privacy en gegevens</b><span aria-hidden="true">›</span></button>}
         {isOuder && onOuders && <button className="v2-menu-rij" onClick={onOuders}><span aria-hidden="true">👨‍👩‍👧</span><b className="ff-grow">Ouders: overleg, beloningen, school en zorg</b><span aria-hidden="true">›</span></button>}
       </section>
 
