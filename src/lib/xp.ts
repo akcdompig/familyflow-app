@@ -57,7 +57,7 @@ export const XP_UITLEG: [string, string][] = [
   ["Lezen", `${XP.lezenPer10Min} punten per 10 minuten, max ${XP.lezenMaxPerDag} per dag. Boek uit: ${XP.boekUit} punten`],
   ["Oefening in de conflictcoach", `${XP.oefenscenario} punten, alleen de eerste keer`],
   ["Opdracht in het echt gedaan", `${XP.quest} punten`],
-  ["Ruzie samen opgelost", `${XP.ruzieOpgelost} punten, max één keer per dag`],
+  ["Ruzie samen opgelost, of samen hulp gevraagd", `${XP.ruzieOpgelost} punten, max één keer per dag`],
 ];
 
 export const DEFAULT_REWARDS = [
