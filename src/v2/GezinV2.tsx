@@ -32,7 +32,7 @@ function tijdVanDag() {
 }
 
 /** Gezin: de huiskamer met iedereen, en alles van het huis (eten, klussen, potje, planning). */
-export function GezinV2({ state, me, onToast, onOpenLid, onTips, onRuzie, onCheckIn }: { state: FamilyState; me: Member; onToast: (m: string) => void; onOpenLid: (id: string) => void; onTips: (id: string) => void; onRuzie: (id?: string) => void; onCheckIn: () => void }) {
+export function GezinV2({ state, me, onToast, onOuders, onOpenLid, onTips, onRuzie, onCheckIn }: { state: FamilyState; me: Member; onToast: (m: string) => void; onOuders: () => void; onOpenLid: (id: string) => void; onTips: (id: string) => void; onRuzie: (id?: string) => void; onCheckIn: () => void }) {
   const [tab, setTab] = useState<Tab>("nu");
   const [adding, setAdding] = useState(false);
   const klussen = klusStatus(state);
@@ -73,7 +73,7 @@ export function GezinV2({ state, me, onToast, onOpenLid, onTips, onRuzie, onChec
             <Row members={state.members.filter((m) => m.role === "ouder")} row="achter" state={state} me={me} onOpen={onOpenLid} />
             <Row members={state.members.filter((m) => m.role !== "ouder")} row="voor" state={state} me={me} onOpen={onOpenLid} />
           </section>
-          <Attention state={state} me={me} onTalkTips={onTips} onCheckIn={onCheckIn} onGoTasks={() => setTab("plan")} onRuzie={onRuzie} onGoGezin={() => setTab("plan")} />
+          <Attention state={state} me={me} onTalkTips={onTips} onCheckIn={onCheckIn} onGoTasks={() => setTab("plan")} onRuzie={onRuzie} onGoGezin={onOuders} />
           <Inbox state={state} me={me} />
           <NetGedaan state={state} me={me} />
           <Klassement state={state} me={me} onOpen={onOpenLid} />

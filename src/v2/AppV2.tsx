@@ -15,6 +15,7 @@ import { Ik } from "@/components/screens/Ik";
 import { Leerplanner } from "@/components/screens/Leerplanner";
 import { MijnWerk } from "@/components/screens/MijnWerk";
 import { Oefenen } from "@/components/screens/Oefenen";
+import { ProApp } from "@/components/screens/Pro";
 import { Privacy } from "@/components/screens/Privacy";
 import { Ruzie } from "@/components/screens/Ruzie";
 import { BadgeViering } from "@/components/screens/Viering";
@@ -94,6 +95,17 @@ export function AppV2() {
   }, []);
 
   if (!mounted) return <div className="ff-app ff-loading" aria-busy="true" />;
+  // Demo: school of zorg kijkt mee (met toestemming van de ouders).
+  const pro = state.pros.find((p) => p.id === state.me);
+  if (pro) {
+    return (
+      <div className="ff-app ff-theme-pro">
+        {!isLive() && <DemoBar state={state} onSwitch={() => setTab("vandaag")} />}
+        <ProApp key={pro.id} state={state} pro={pro} onToast={setToast} />
+        {toast && <div className="ff-toast" role="status">{toast.charAt(0).toUpperCase() + toast.slice(1)}</div>}
+      </div>
+    );
+  }
   const me = state.members.find((m) => m.id === state.me) ?? state.members[0];
   const isOuder = me.role === "ouder";
   const live = isLive();
@@ -145,7 +157,7 @@ export function AppV2() {
           {pagina === "privacy" && <Privacy state={state} me={me} onToast={setToast} onTerug={() => setPagina(null)} />}
           {pagina === "ouders" && terug(<Gezin state={state} me={me} onToast={setToast} onOefenen={() => { setPagina(null); setTab("hulp"); }} onCoachNu={() => setCoachNu("")} />)}
           {!pagina && tab === "vandaag" && <Vandaag state={state} me={me} onToast={setToast} onMeerGevoel={() => setCheckIn(true)} onWie={() => (live ? setTab("ik") : setWie(true))} />}
-          {!pagina && tab === "gezin" && <GezinV2 state={state} me={me} onToast={setToast} onOpenLid={setLid} onTips={setTips} onRuzie={(id) => setRuzie(id ?? "")} onCheckIn={() => setCheckIn(true)} />}
+          {!pagina && tab === "gezin" && <GezinV2 state={state} me={me} onToast={setToast} onOuders={() => setPagina("ouders")} onOpenLid={setLid} onTips={setTips} onRuzie={(id) => setRuzie(id ?? "")} onCheckIn={() => setCheckIn(true)} />}
           {!pagina && tab === "hulp" && (
             <Oefenen state={state} me={me} titel="Hulp" onToast={setToast} onCalm={() => setCalm(true)} onRuzie={() => setRuzie("")} onCoach={setCoach} onCoachNu={() => setCoachNu("")}
               onder={<>

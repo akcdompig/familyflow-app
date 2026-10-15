@@ -1,14 +1,14 @@
 // End-to-end: de gebouwde demo in een echte browser doorklikken, op telefoonformaat.
 // Faalt bij een JavaScript-fout op de pagina of als een stap niet lukt.
-// Gebruik: npm run build && npm run build:acceptatie && npm run e2e
+// Gebruik: npm run build && npm run build:v1 && npm run e2e
 import { chromium } from "playwright";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import assert from "node:assert/strict";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-const v1 = `file://${resolve(root, "preview/dist/index.html")}`;
-const v2 = `file://${resolve(root, "preview/acceptatie/index.html")}`;
+const v1 = `file://${resolve(root, "preview/v1/index.html")}`;
+const v2 = `file://${resolve(root, "preview/dist/index.html")}`;
 const browser = await chromium.launch();
 let fouten = 0;
 
@@ -34,7 +34,7 @@ const knop = (p, naam) => p.getByRole("button", { name: naam }).first();
 const tab = (p, naam) => p.locator(".ff-nav").getByRole("button", { name: naam });
 const wissel = (p, wie) => p.locator(".ff-demobar").getByRole("button", { name: wie }).click();
 
-// ---------- Pilot (v1) ----------
+// ---------- Oude versie (1.x) ----------
 await scenario("v1: alle tabbladen openen zonder fouten", v1, "10:00", async (p) => {
   for (const t of [/Taken/, /Thuis/, /Gezin/, /^Ik/, /Huiskamer/]) {
     await tab(p, t).click();
@@ -93,7 +93,7 @@ async function toegankelijk(p, tabs) {
 }
 await scenario("v1: toegankelijkheid op alle tabbladen", v1, "10:00", (p) => toegankelijk(p, [/Huiskamer/, /Thuis/, /Taken/, /Gezin/, /^Ik/]));
 
-// ---------- Acceptatie (v2) ----------
+// ---------- Live (versie 2) ----------
 await scenario("v2: toegankelijkheid op alle tabbladen", v2, "10:00", (p) => toegankelijk(p, [/Vandaag/, /Gezin/, /Hulp/, /^Ik/]));
 await scenario("v2: alle tabbladen openen zonder fouten", v2, "10:00", async (p) => {
   for (const t of [/Gezin/, /Hulp/, /^Ik/, /Vandaag/]) {
@@ -107,6 +107,11 @@ await scenario("v2: Nu doen werkt de ochtend stap voor stap af", v2, "08:15", as
   await p.locator(".v2-check.is-groot").click();
   await p.waitForTimeout(200);
   assert.notEqual(await p.locator(".v2-nu-titel").innerText(), eerst, "volgende stap verschijnt");
+});
+await scenario("v2: meekijken als school (demo)", v2, "10:00", async (p) => {
+  await p.locator(".ff-demobar").getByRole("button", { name: /Mentor|School/ }).first().click();
+  await p.waitForTimeout(400);
+  assert.ok(await p.locator(".ff-theme-pro").count() > 0, "school-scherm zichtbaar");
 });
 await scenario("v2: water tellen met één tik", v2, "10:00", async (p) => {
   const voor = await p.locator(".v2-teller").first().innerText();

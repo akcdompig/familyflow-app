@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Avatar } from "@/components/avatar/Avatar";
 import { ClaimViering } from "@/components/screens/Viering";
+import { Herinneringen } from "@/components/screens/Herinneringen";
 import { DAGDELEN, DOEL, begroeting, dagLog, dagdeel, datumTijd, reeks, type Dagdeel } from "@/lib/dag";
 import { dagprogramma, nuDoen, voortgang, type Stap } from "@/lib/dagprogramma";
 import { expressionFor } from "@/lib/mood";
@@ -32,6 +33,13 @@ export function Vandaag({ state, me, onToast, onMeerGevoel, onWie }: { state: Fa
   const [open, setOpen] = useState<Dagdeel>(nuDeel);
   const [pop, setPop] = useState<{ id: string; n: number } | null>(null);
   const [claim, setClaim] = useState<{ van: number; n: number } | null>(null);
+  const [pushLater, setPushLater] = useState(() => {
+    try {
+      return Date.now() - Number(localStorage.getItem("familyflow:push-later") ?? 0) < 3 * 864e5;
+    } catch {
+      return false;
+    }
+  });
   const stappen = dagprogramma(state, me.id);
   const v = voortgang(stappen);
   const volgende = nuDoen(stappen);
@@ -102,6 +110,8 @@ export function Vandaag({ state, me, onToast, onMeerGevoel, onWie }: { state: Fa
           <Avatar config={me.avatar} expression={expressionFor(ci)} size={40} headOnly animate={false} label={me.name} />
         </button>
       </header>
+
+      {!pushLater && <Herinneringen compact onToast={onToast} onWeg={() => { setPushLater(true); try { localStorage.setItem("familyflow:push-later", String(Date.now())); } catch { /* */ } }} />}
 
       {/* Hoe ver ben je vandaag */}
       <section className="v2-hero">

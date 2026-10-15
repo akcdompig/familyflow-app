@@ -1,17 +1,17 @@
 {
   "name": "familyflow-app",
-  "version": "2.0.0",
+  "version": "2.2.0",
   "private": true,
   "type": "module",
   "description": "FamilyFlow: één app voor het hele gezin. Dagprogramma, huiskamer met levende avatars, klussen, coaching en hulp bij ruzie.",
   "scripts": {
     "dev": "node preview/dev.mjs",
     "build": "node preview/build.mjs",
-    "build:acceptatie": "FF_UI=v2 node preview/build.mjs",
     "typecheck": "tsc --noEmit",
     "test": "node tests/run.mjs",
     "check": "npm run typecheck && npm test",
-    "e2e": "node tests/e2e/rook.mjs"
+    "e2e": "node tests/e2e/rook.mjs",
+    "build:v1": "FF_UI=v1 node preview/build.mjs"
   },
   "dependencies": {
     "react": "19.2.8",

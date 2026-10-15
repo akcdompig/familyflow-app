@@ -5,8 +5,8 @@ import { meldFout, startFoutlog } from "@/lib/foutlog";
 import { FamilyFlowApp as AppV1 } from "@/components/FamilyFlowApp";
 import { AppV2 } from "@/v2/AppV2";
 
-/* Acceptatie (versie 2.0) wordt gebouwd met FF_UI=v2. De pilot blijft de huidige app. */
-const FamilyFlowApp = process.env.FF_UI === "v2" ? AppV2 : AppV1;
+/* Versie 2 is de app. De oude versie (1.x) kan nog gebouwd worden met FF_UI=v1, om terug te kunnen. */
+const FamilyFlowApp = process.env.FF_UI === "v1" ? AppV1 : AppV2;
 import { CodeInvullen, GezinMaken, OuderAccount, Welkom } from "@/components/Onboarding";
 import { AvatarMaker } from "@/components/screens/AvatarMaker";
 import { Uitnodigen } from "@/components/screens/Uitnodigen";

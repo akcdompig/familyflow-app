@@ -8,4 +8,4 @@ preview/dist
 next-env.d.ts
 .DS_Store
 tests/.out
-preview/acceptatie
+preview/v1

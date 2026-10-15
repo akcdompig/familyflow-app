@@ -7,7 +7,9 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const out = resolve(root, process.env.FF_UI === "v2" ? "preview/acceptatie" : "preview/dist");
+// FF_UI=v1 bouwt de oude app in een eigen map (om terug te kunnen of te vergelijken), en raakt dist/ niet aan.
+const UI = process.env.FF_UI === "v1" ? "v1" : "v2";
+const out = resolve(root, UI === "v1" ? "preview/v1" : "preview/dist");
 mkdirSync(out, { recursive: true });
 
 const result = await build({
@@ -20,7 +22,7 @@ const result = await build({
   jsx: "automatic",
   alias: { "@": resolve(root, "src") },
   nodePaths: [resolve(root, "node_modules"), ...(process.env.EXTRA_NODE_PATH ? [process.env.EXTRA_NODE_PATH] : [])],
-  define: { "process.env.NODE_ENV": '"production"', "process.env.FF_UI": JSON.stringify(process.env.FF_UI ?? "v1") },
+  define: { "process.env.NODE_ENV": '"production"', "process.env.FF_UI": JSON.stringify(UI) },
   logLevel: "warning",
   logOverride: { "unsupported-directive": "silent" },
 });
@@ -38,12 +40,12 @@ writeFileSync(
 // Inhoud voor een Claude-artifact (die zet zelf het html/head/body-kader eromheen).
 writeFileSync(
   resolve(out, "artifact.html"),
-  `<title>${process.env.FF_UI === "v2" ? "FamilyFlow Acceptatie" : "FamilyFlow"}</title>\n<meta name="claude:viewport-fit-sides" content="cover">\n${fonts}\n<style>${css}\n.ff-app{padding-top:12px}</style>\n<div id="root"></div>\n<script>${js}</script>\n`,
+  `<title>${UI === "v1" ? "FamilyFlow 1.x" : "FamilyFlow"}</title>\n<meta name="claude:viewport-fit-sides" content="cover">\n${fonts}\n<style>${css}\n.ff-app{padding-top:12px}</style>\n<div id="root"></div>\n<script>${js}</script>\n`,
 );
 
-// Acceptatie (FF_UI=v2): alleen de preview bouwen, de echte app in dist/ blijft de pilot.
-if (process.env.FF_UI === "v2" || process.env.FF_DEV) {
-  console.log("Acceptatie gebouwd:", out, `(${Math.round(js.length / 1024)} kB JS). dist/ is niet aangeraakt.`);
+// Oude versie of lokaal ontwikkelen: alleen de preview bouwen, dist/ (wat live staat) niet aanraken.
+if (UI === "v1" || process.env.FF_DEV) {
+  console.log("Gebouwd:", out, `(${Math.round(js.length / 1024)} kB JS). dist/ is niet aangeraakt.`);
   process.exit(0);
 }
 // Echte app (release): dist/ met config.js, manifest, iconen en service worker. Vercel serveert deze map.

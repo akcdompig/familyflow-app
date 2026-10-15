@@ -33,12 +33,12 @@ jobs:
           PGPORT: "5432"
           PGUSER: postgres
           PGPASSWORD: test
-      - name: Bouwen (pilot)
+      - name: Bouwen (live, versie 2)
         run: npm run build
       - name: Gebouwde app klopt met de broncode
         run: git add -N dist && git diff --stat --exit-code dist || (echo "dist/ is niet opnieuw gebouwd. Draai npm run build en commit." && exit 1)
-      - name: Bouwen (acceptatie)
-        run: npm run build:acceptatie
+      - name: Bouwen (oude versie 1.x, om terug te kunnen)
+        run: npm run build:v1
       - name: Browser installeren
         run: npx playwright install --with-deps chromium
       - name: End-to-end (de app doorklikken op telefoonformaat)
