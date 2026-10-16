@@ -490,6 +490,75 @@ await scenario("v3.1: ouder zet een taak uit de bibliotheek aan en voegt een eig
   assert.match(await p.locator(".ff-afspraak-klus", { hasText: "Hond uitlaten" }).innerText(), /Rondje park/);
 });
 
+// ---------- 3.2 Duidelijk ----------
+async function langeNamen(p) {
+  // Demo slaat pas op na een eerste wijziging: tik één glas water aan.
+  await p.getByRole("button", { name: /Eten en drinken/ }).click();
+  await p.getByRole("button", { name: /^Water:/ }).click();
+  await p.waitForFunction(() => localStorage.getItem("familyflow:v1"));
+  await p.evaluate(() => {
+    const k = "familyflow:v1";
+    const s = JSON.parse(localStorage.getItem(k));
+    s.werk.p1[0].naam = "ING Bank (engineer)";
+    s.werk.p2[0].naam = "Gemeente Almere (beleidsadviseur)";
+    s.members.find((m) => m.id === "p2").name = "Kimberly mama";
+    localStorage.setItem(k, JSON.stringify(s));
+  });
+  await p.reload(); await p.waitForSelector(".ff-nav");
+}
+for (const breed of [360, 390, 1280]) {
+  await scenario(`v3.2: lange werknamen overlappen niet in de huiskamer (${breed}px)`, v2, "14:00", async (p) => {
+    await p.setViewportSize({ width: breed, height: 900 });
+    await langeNamen(p);
+    await tab(p, /Gezin/).click();
+    await p.waitForSelector(".ff-tag");
+    const r = await p.evaluate(() => {
+      const kamer = document.querySelector(".ff-room").getBoundingClientRect();
+      const tags = [...document.querySelectorAll(".ff-slot-achter .ff-tag, .ff-slot-voor .ff-tag")].map((t) => ({ b: t.getBoundingClientRect(), rij: t.closest(".ff-slot").className }));
+      let overlap = 0, buiten = 0;
+      for (const [i, a] of tags.entries()) {
+        if (a.b.left < kamer.left - 1 || a.b.right > kamer.right + 1) buiten++;
+        for (const b of tags.slice(i + 1)) if (a.rij === b.rij && a.b.left < b.b.right - 1 && b.b.left < a.b.right - 1 && a.b.top < b.b.bottom && b.b.top < a.b.bottom) overlap++;
+      }
+      const label = document.querySelector(".ff-slot-achter").getAttribute("aria-label");
+      return { overlap, buiten, label };
+    });
+    assert.equal(r.overlap, 0, "labels overlappen");
+    assert.equal(r.buiten, 0, "labels buiten de kamer");
+    assert.match(r.label, /ING Bank \(engineer\)/, "volledige tekst voor schermlezers");
+  });
+}
+
+await scenario("v3.2: knoppen en links in koraal halen WCAG-contrast 4,5:1", v2, "10:00", async (p) => {
+  const kleur = await p.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--ff-koraal-knop").trim());
+  const L = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)).reduce((a, c, i) => a + c * [0.2126, 0.7152, 0.0722][i], 0);
+  const cr = (a, b) => { const [x, y] = [L(a), L(b)].sort(); return (y + 0.05) / (x + 0.05); };
+  assert.ok(cr(kleur, "#ffffff") >= 4.5, `koraal op wit ${cr(kleur, "#ffffff").toFixed(2)}`);
+  assert.ok(cr(kleur, "#ffe9e4") >= 4.5, `koraal op zacht ${cr(kleur, "#ffe9e4").toFixed(2)}`);
+});
+
+await scenario("v3.2: ademhalen in de coach: in/uit-hulp en altijd een stopknop", v2, "18:00", async (p) => {
+  await wissel(p, "Noah");
+  await tab(p, /Hulp/).click();
+  await p.locator(".ff-aanrader").first().click();
+  await knop(p, /^Verder/).click();
+  await p.locator(".ff-licht-rood").click();
+  await knop(p, "Ademhalen met de app").click();
+  assert.ok(await p.getByText("Adem in…").isVisible());
+  await knop(p, "Stoppen met ademhalen").click();
+  assert.equal(await p.locator(".ff-adem").count(), 0, "ademoefening is gestopt");
+  assert.ok(await knop(p, "Ademhalen met de app").isVisible(), "optie blijft staan");
+});
+
+await scenario("v3.2: ouder opent huiswerk en Somtoday van een kind via Ik", v2, "10:00", async (p) => {
+  await wissel(p, "Papa");
+  await tab(p, /^Ik/).click();
+  await knop(p, /Huiswerk en Somtoday van de kinderen/).click();
+  assert.match(await p.locator(".ff-eyebrow").first().innerText(), /Leerplanner · (Noah|Lina)/i);
+  assert.ok(await p.getByRole("heading", { name: /Leerweek van (Noah|Lina)/ }).isVisible());
+  assert.match(await p.locator("body").innerText(), /Somtoday/);
+});
+
 await browser.close();
 if (fouten) {
   console.log(`\n${fouten} scenario('s) mislukt`);

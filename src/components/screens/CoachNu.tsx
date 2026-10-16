@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
+import { Ademhalen, metAdem } from "@/components/ui/Stoplicht";
 import { CATEGORY_LABEL, CONFLICTS, OPVOEDVRAGEN, type ConflictScenario } from "@/lib/conflicts";
 import {
   ALGEMENE_HULP,
@@ -54,7 +55,7 @@ export function CoachNu({ state, me, onClose, onToast, onPractice, onSamen, star
   const [licht, setLicht] = useState<Licht | null>(null);
   const [rust, setRust] = useState<string>("");
   const [wanneer, setWanneer] = useState("");
-  const [adem, setAdem] = useState(0);
+  const [adem, setAdem] = useState(false);
   const [q, setQ] = useState(0);
   const [afspraak, setAfspraak] = useState("");
   const [bewaard, setBewaard] = useState(false);
@@ -63,11 +64,6 @@ export function CoachNu({ state, me, onClose, onToast, onPractice, onSamen, star
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [stage, q]);
-  useEffect(() => {
-    if (adem <= 0) return;
-    const t = window.setTimeout(() => setAdem((n) => n - 1), 1000);
-    return () => window.clearTimeout(t);
-  }, [adem]);
 
   const rol = ouder ? "ouder" : "kind";
   const step = STEP_OF[stage];
@@ -242,14 +238,13 @@ export function CoachNu({ state, me, onClose, onToast, onPractice, onSamen, star
           <div className="ff-card ff-stack-s">
             <b>{ouder ? "Bied een keuze aan. Niks is verplicht." : "Wat helpt jou nu? Kies er één."}</b>
             <div className="ff-chips">
-              {[...sc.calming_options, ...RUST_OPTIES.map((r) => r.label)].filter((v, i, a) => a.indexOf(v) === i).slice(0, 7).map((o) => (
-                <button key={o} className="ff-chip" aria-pressed={rust === o} onClick={() => { setRust(o); if (o === "Ademhalen met de app") setAdem(30); }}>{o}</button>
+              {metAdem([...sc.calming_options, ...RUST_OPTIES.map((r) => r.label)], 7).map((o) => (
+                <button key={o} className="ff-chip" aria-pressed={rust === o} onClick={() => { setRust(o); setAdem(o === "Ademhalen met de app"); }}>{o}</button>
               ))}
             </div>
-            {adem > 0 && (
-              <div className="ff-calm ff-stack-s" style={{ borderRadius: 18, padding: 12 }}>
-                <p className="ff-small">4 tellen in, 4 tellen uit. Stoppen mag altijd.</p>
-                <div className="ff-breath"><span>{adem}</span></div>
+            {adem && (
+              <div className="ff-calm" style={{ borderRadius: 18, padding: 12 }}>
+                <Ademhalen onStop={() => setAdem(false)} />
               </div>
             )}
           </div>

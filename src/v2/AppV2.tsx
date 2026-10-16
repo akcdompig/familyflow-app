@@ -181,7 +181,7 @@ export function AppV2() {
                 </button>
               ) : undefined} />
           )}
-          {!pagina && tab === "ik" && <IkV2 state={state} me={me} onToast={setToast} onAvatar={() => setPagina("avatar")} onWerk={() => setPagina("werk")} onMeer={() => setPagina("meer")} onPrivacy={() => setPagina("privacy")} onOuders={isOuder ? () => setPagina("ouders") : undefined} />}
+          {!pagina && tab === "ik" && <IkV2 state={state} me={me} onToast={setToast} onAvatar={() => setPagina("avatar")} onWerk={() => setPagina("werk")} onMeer={() => setPagina("meer")} onPrivacy={() => setPagina("privacy")} onOuders={isOuder ? () => setPagina("ouders") : undefined} onPlanner={isOuder && state.members.some((m) => m.role !== "ouder") ? () => setPagina("planner") : undefined} />}
 
           <nav className="ff-nav v2-nav" aria-label="Hoofdmenu" style={{ gridTemplateColumns: `repeat(${NAV.length}, minmax(0, 1fr))` }}>
             {NAV.map((n) => {

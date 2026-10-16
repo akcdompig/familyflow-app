@@ -138,7 +138,7 @@ export function Vandaag({ state, me, onToast, onMeerGevoel, onWie, onSamenVerder
           <div className="v2-tellers">
             {/* Water, fruit en snoep zitten achter één knop: minder prikkels boven "Nu doen". */}
             <button className="v2-teller" aria-expanded={tellers} onClick={() => setTellers(!tellers)} aria-label={`Eten en drinken: water ${log.water} van ${DOEL.water}, fruit ${log.fruit} van ${DOEL.fruit}`}>
-              💧🍎 <b>{log.water + log.fruit}</b>/{DOEL.water + DOEL.fruit} {tellers ? "▴" : "▾"}
+              💧🍎 Eten en drinken <b>{log.water + log.fruit}</b>/{DOEL.water + DOEL.fruit} {tellers ? "▴" : "▾"}
             </button>
             {kist > 0 && (
               <button className="v2-teller is-kist" onClick={() => { const van = geclaimd(state, me.id); const c = actions.claimPunten(me.id); if (c) setClaim({ van, n: c }); }}>

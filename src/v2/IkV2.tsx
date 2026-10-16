@@ -12,7 +12,7 @@ import { geclaimd, levelProgress, teClaimen, xpForLevel } from "@/lib/xp";
 import type { FamilyState, Member } from "@/lib/types";
 
 /** Ik: je level, schatkist, achievements en je instellingen. Alles wat over jou gaat op één plek. */
-export function IkV2({ state, me, onToast, onAvatar, onWerk, onMeer, onOuders, onPrivacy }: { state: FamilyState; me: Member; onToast: (m: string) => void; onAvatar: () => void; onWerk: () => void; onMeer: () => void; onOuders?: () => void; onPrivacy?: () => void }) {
+export function IkV2({ state, me, onToast, onAvatar, onWerk, onMeer, onOuders, onPrivacy, onPlanner }: { state: FamilyState; me: Member; onToast: (m: string) => void; onAvatar: () => void; onWerk: () => void; onMeer: () => void; onOuders?: () => void; onPrivacy?: () => void; onPlanner?: () => void }) {
   const xp = geclaimd(state, me.id);
   const lp = levelProgress(xp);
   const kist = teClaimen(state, me.id);
@@ -34,7 +34,7 @@ export function IkV2({ state, me, onToast, onAvatar, onWerk, onMeer, onOuders, o
             <circle cx="70" cy="70" r={R} fill="none" stroke="var(--ff-koraal-knop)" strokeWidth="10" strokeLinecap="round" strokeDasharray={omtrek} strokeDashoffset={omtrek * (1 - lp.pct / 100)} transform="rotate(-90 70 70)" />
           </svg>
           <div className="v2-level-av"><Avatar config={me.avatar} expression={expressionFor(state.checkins[me.id])} size={96} label={me.name} /></div>
-          <span className="v2-level-nr">Lvl {lp.level}</span>
+          <span className="v2-level-nr">Niveau {lp.level}</span>
         </div>
         <h1 className="ff-h1">{me.name}</h1>
         <span className="ff-small ff-muted">{xp} punten · nog {lp.left} tot level {lp.level + 1}</span>
@@ -81,6 +81,7 @@ export function IkV2({ state, me, onToast, onAvatar, onWerk, onMeer, onOuders, o
         <button className="v2-menu-rij" onClick={onWerk}><span aria-hidden="true">{isOuder ? "💼" : "🎒"}</span><b className="ff-grow">{isOuder ? "Werk en roosters" : "School en bijbaan"}</b><span aria-hidden="true">›</span></button>
         <button className="v2-menu-rij" onClick={onMeer}><span aria-hidden="true">🌿</span><b className="ff-grow">Mijn rustplan en meer</b><span aria-hidden="true">›</span></button>
         {onPrivacy && <button className="v2-menu-rij" onClick={onPrivacy}><span aria-hidden="true">🔒</span><b className="ff-grow">Privacy en gegevens</b><span aria-hidden="true">›</span></button>}
+        {isOuder && onPlanner && <button className="v2-menu-rij" onClick={onPlanner}><span aria-hidden="true">📚</span><b className="ff-grow">Huiswerk en Somtoday van de kinderen</b><span aria-hidden="true">›</span></button>}
         {isOuder && onOuders && <button className="v2-menu-rij" onClick={onOuders}><span aria-hidden="true">👨‍👩‍👧</span><b className="ff-grow">Gezin instellen: uitnodigen, beloningen, bedtijden</b><span aria-hidden="true">›</span></button>}
       </section>
 

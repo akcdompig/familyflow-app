@@ -20,35 +20,56 @@ export function StoplichtKiezer({ value, onPick, kort = false }: { value?: Licht
   );
 }
 
+const ADEM = "Ademhalen met de app";
+
+/**
+  Ademhalen met de app: één onderdeel voor de hele app (stoplicht, coach, conflictcoach).
+  Rustige cirkel, "Adem in / Adem uit" om de 4 tellen, en altijd een knop om te stoppen. Beweging stopt bij reduced-motion.
+*/
+export function Ademhalen({ seconden = 30, onStop }: { seconden?: number; onStop: () => void }) {
+  const [over, setOver] = useState(seconden);
+  useEffect(() => {
+    if (over <= 0) return;
+    const t = window.setTimeout(() => setOver((n) => n - 1), 1000);
+    return () => window.clearTimeout(t);
+  }, [over]);
+  const fase = Math.floor((seconden - over) / 4) % 2 === 0 ? "Adem in…" : "Adem uit…";
+  return (
+    <div className="ff-adem ff-stack-s" role="group" aria-label="Ademhalen">
+      <p className="ff-small">4 tellen in, 4 tellen uit. Stoppen mag altijd.</p>
+      <div className="ff-breath"><span aria-hidden="true">{over > 0 ? over : "✓"}</span></div>
+      <p className="ff-adem-fase" aria-live="polite">{over > 0 ? fase : "Klaar. Hoe gaat het nu?"}</p>
+      <button className="ff-btn ff-btn-ghost ff-btn-s" onClick={onStop}>{over > 0 ? "Stoppen met ademhalen" : "Sluiten"}</button>
+    </div>
+  );
+}
+
 /** Rustig worden: altijd een keuze, nooit verplicht. Ademen met de app is één van de opties. */
 export function RustKeuze({ onDone, extra = [], knop = "Ik ben rustiger, verder" }: { onDone: () => void; extra?: string[]; knop?: string }) {
   const [keuze, setKeuze] = useState("");
-  const [adem, setAdem] = useState(0);
-  useEffect(() => {
-    if (adem <= 0) return;
-    const t = window.setTimeout(() => setAdem((n) => n - 1), 1000);
-    return () => window.clearTimeout(t);
-  }, [adem]);
-  const opties = [...extra, ...RUST_OPTIES.map((r) => r.label)].filter((v, i, a) => a.indexOf(v) === i).slice(0, 6);
+  const [adem, setAdem] = useState(false);
+  const opties = metAdem([...extra, ...RUST_OPTIES.map((r) => r.label)], 6);
   return (
     <section className="ff-card ff-stack-s ff-calm">
       <b>Eerst rust. Je hoeft nu niks op te lossen.</b>
       <p className="ff-small">Bij rood denk je minder helder. Dat geldt voor iedereen. Wat helpt jou nu?</p>
       <div className="ff-chips">
         {opties.map((o) => (
-          <button key={o} className="ff-chip" aria-pressed={keuze === o} onClick={() => { setKeuze(o); setAdem(o === "Ademhalen met de app" ? 30 : 0); }}>{o}</button>
+          <button key={o} className="ff-chip" aria-pressed={keuze === o} onClick={() => { setKeuze(o); setAdem(o === ADEM); }}>{o}</button>
         ))}
       </div>
-      {adem > 0 && (
-        <>
-          <p className="ff-small">4 tellen in, 4 tellen uit. Stoppen mag altijd.</p>
-          <div className="ff-breath"><span>{adem}</span></div>
-        </>
-      )}
-      {keuze && keuze !== "Ademhalen met de app" && <p className="ff-small">Neem er de tijd voor. Kom terug als je weer op oranje of groen zit.</p>}
+      {adem && <Ademhalen onStop={() => { setAdem(false); setKeuze(""); }} />}
+      {keuze && keuze !== ADEM && <p className="ff-small">Neem er de tijd voor. Kom terug als je weer op oranje of groen zit.</p>}
       <button className="ff-btn ff-btn-ghost" onClick={onDone}>{knop}</button>
     </section>
   );
+}
+
+/** Unieke opties, hooguit `max`, en ademhalen met de app valt er nooit af. */
+export function metAdem(lijst: string[], max: number): string[] {
+  const uniek = lijst.filter((v, i, a) => a.indexOf(v) === i);
+  const zonder = uniek.filter((o) => o !== ADEM);
+  return uniek.includes(ADEM) ? [...zonder.slice(0, max - 1), ADEM] : zonder.slice(0, max);
 }
 
 export const lichtNaarGetal = (l: Licht) => (l === "rood" ? 8 : l === "oranje" ? 5 : 3);
