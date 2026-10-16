@@ -126,7 +126,7 @@ export function bewijzen(s: FamilyState, id: string, van: string, tot: string): 
 
   // Samen-momenten (alleen als ze echt gedaan zijn): oefenen bij de competenties die erbij horen.
   for (const x of s.samen ?? []) {
-    if (!x.gedaan || !x.wie.includes(id)) continue;
+    if (!x.gedaan || !(x.deden ?? x.wie).includes(id)) continue;
     const d = dagVan(x.gedaan);
     for (const c of samenComp(x.soort)) voeg(c, d, x.titel, "oefenen");
     if (x.vrienden) voeg("sociaal", d, `${x.titel} met ${x.vrienden}`, "oefenen");

@@ -10,7 +10,7 @@ import { samenwerken } from "@/lib/samenwerken";
 import { lookVoor } from "@/lib/status";
 import { verdeling } from "@/lib/verdeling";
 import type { FamilyState, Member } from "@/lib/types";
-import { PlanSheet } from "./Samen";
+import { PlanSheet, SamenActies } from "./Samen";
 import { AfsprakenOpDag } from "@/components/screens/Afspraak";
 
 /*
@@ -67,16 +67,18 @@ export function WeekV2({ state, me, onToast, onOpenLid }: { state: FamilyState; 
       <section className="ff-card ff-stack-s v2-week-samen" aria-label="Samen op deze dag">
         <b>💞 Samen</b>
         {samen.length ? samen.map((x) => {
-          const wie = x.wie.map(lid).filter(Boolean) as Member[];
+          const wie = (x.gedaan ? x.deden ?? x.wie : x.wie).map(lid).filter(Boolean) as Member[];
           return (
-            <div key={x.id} className="v2-gepland">
+            <div key={x.id} className="v2-gepland-blok">
+            <div className="v2-gepland">
               <span className="v2-samen-emoji" aria-hidden="true">{IDEEEN.find((i) => i.id === x.soort)?.emoji ?? "✨"}</span>
               <span className="ff-grow ff-stack-xs">
                 <b>{x.titel}{x.gedaan ? " ✓" : ""}</b>
                 <span className="ff-small ff-muted">{x.tijd ? `${x.tijd.replace(":", ".")} · ` : ""}{wie.map((m) => (m.id === me.id ? "jij" : m.name)).join(", ")}{x.vrienden ? ` + ${x.vrienden}` : ""}</span>
               </span>
               <span className="v2-gepland-koppen">{wie.slice(0, 4).map((m) => <Kop key={m.id} m={m} />)}</span>
-              {!x.gedaan && dag <= vandaag && (isOuder || x.wie.includes(me.id)) && <button className="ff-btn ff-btn-primary ff-btn-sm" onClick={() => { samenwerken.gedaan(x.id, me.id); onToast("Leuk! +10 punten voor iedereen 💞"); }}>Gedaan</button>}
+            </div>
+            <SamenActies key={x.id + (x.gedaan ?? "")} x={x} state={state} me={me} onToast={onToast} />
             </div>
           );
         }) : <span className="ff-small ff-muted">{verleden ? "Deze dag niks samen gedaan." : "Nog niks gepland."}</span>}

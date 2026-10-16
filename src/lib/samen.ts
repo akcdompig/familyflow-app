@@ -74,7 +74,7 @@ const gedaanSamen = (s: FamilyState, nu: Date, dagen: number) =>
 
 /** De band tussen twee mensen: hoeveel keer samen iets gedaan de laatste 30 dagen. 0–5 hartjes. */
 export function band(s: FamilyState, a: string, b: string, nu = new Date()): number {
-  return Math.min(5, gedaanSamen(s, nu, 30).filter((x) => x.wie.includes(a) && x.wie.includes(b)).length);
+  return Math.min(5, gedaanSamen(s, nu, 30).filter((x) => (x.deden ?? x.wie).includes(a) && (x.deden ?? x.wie).includes(b)).length);
 }
 
 /** Gepland (nog niet gedaan) en niet ouder dan 3 dagen over tijd. */

@@ -149,17 +149,43 @@ export const samenwerken = {
   plan(m: Omit<SamenMoment, "id" | "at">) {
     wijzig((s) => metFeed({ ...s, samen: [...(s.samen ?? []), { ...m, id: newId("s"), at: new Date().toISOString() }].slice(-80) }, m.door, `plant samen: ${m.titel.toLowerCase()} 📅`));
   },
-  /** Gedaan: iedereen die meedeed krijgt 10 punten. */
-  gedaan(id: string, door: string) {
+  /** Gedaan: wie echt meedeed krijgt 10 punten. Wie niet mee kon, krijgt niks (en het plan blijft kloppen). */
+  gedaan(id: string, door: string, deden?: string[]) {
     wijzig((s) => {
       const x = (s.samen ?? []).find((m) => m.id === id);
       if (!x || x.gedaan) return s;
-      let uit: FamilyState = { ...s, samen: (s.samen ?? []).map((m) => (m.id === id ? { ...m, gedaan: new Date().toISOString() } : m)) };
-      for (const w of x.wie) uit = { ...uit, xp: addXp(uit, w, 10) };
-      const anderen = x.wie.filter((w) => w !== door).map((w) => naam(s, w));
+      const wie = (deden ?? x.wie).filter((w) => x.wie.includes(w));
+      if (!wie.length) return s;
+      let uit: FamilyState = { ...s, samen: (s.samen ?? []).map((m) => (m.id === id ? { ...m, gedaan: new Date().toISOString(), deden: wie } : m)) };
+      for (const w of wie) uit = { ...uit, xp: addXp(uit, w, 10) };
+      const anderen = wie.filter((w) => w !== door).map((w) => naam(s, w));
       const met = [...anderen, ...(x.vrienden ? [x.vrienden] : [])];
-      return metFeed(uit, x.wie.includes(door) ? door : x.wie[0], `deed samen${met.length ? ` met ${met.join(" en ")}` : ""}: ${x.titel.toLowerCase()} 💞`, 10);
+      return metFeed(uit, wie.includes(door) ? door : wie[0], `deed samen${met.length ? ` met ${met.join(" en ")}` : ""}: ${x.titel.toLowerCase()} 💞`, 10);
     }, () => { const x = (stand().samen ?? []).find((m) => m.id === id); return x ? `Samen: ${x.titel}` : "Samen iets gedaan"; });
+  },
+  /** Per ongeluk op Gedaan getikt, of het ging anders? Terugzetten: weer gepland, en de punten gaan er bij iedereen weer af. */
+  terugzetten(id: string) {
+    wijzig((s) => {
+      const x = (s.samen ?? []).find((m) => m.id === id);
+      if (!x?.gedaan) return s;
+      let uit: FamilyState = { ...s, samen: (s.samen ?? []).map((m) => (m.id === id ? { ...m, gedaan: undefined, deden: undefined } : m)) };
+      for (const w of x.deden ?? x.wie) {
+        uit = { ...uit, xp: addXp(uit, w, -10) };
+        // Al geclaimd? Dan zakt de claimstand mee, anders "verdwijnen" de volgende punten.
+        const c = uit.claim?.[w];
+        if (c !== undefined && c > (uit.xp[w] ?? 0)) uit = { ...uit, claim: { ...uit.claim, [w]: uit.xp[w] ?? 0 } };
+      }
+      // Ook de regel in "Net gedaan" weg.
+      const tekst = x.titel.toLowerCase();
+      return { ...uit, feed: (uit.feed ?? []).filter((f) => !(f.tekst.includes(`: ${tekst} 💞`) && f.at >= x.gedaan!)) };
+    }, () => { const x = (stand().samen ?? []).find((m) => m.id === id); return x ? `Samen: ${x.titel}` : "Samen iets gedaan"; });
+  },
+  /** Een gepland moment aanpassen: wie gaat mee, welke dag, hoe laat. Alleen zolang het nog niet gedaan is. */
+  wijzigSamen(id: string, patch: { wie?: string[]; datum?: string; tijd?: string }) {
+    wijzig((s) => ({
+      ...s,
+      samen: (s.samen ?? []).map((m) => (m.id === id && !m.gedaan ? { ...m, ...(patch.wie?.length ? { wie: patch.wie } : {}), ...(patch.datum ? { datum: patch.datum } : {}), tijd: patch.tijd === undefined ? m.tijd : patch.tijd || undefined } : m)),
+    }));
   },
   reactie(id: string, wie: string, r: "😐" | "🙂" | "😍") {
     wijzig((s) => ({ ...s, samen: (s.samen ?? []).map((m) => (m.id === id ? { ...m, reactie: { ...(m.reactie ?? {}), [wie]: r } } : m)) }));

@@ -35,7 +35,7 @@ export function SamenTab({ state, me, onToast }: { state: FamilyState; me: Membe
   const anderen = state.members.filter((m) => m.id !== me.id && m.joined !== false);
   const sug = suggestie(state, me);
   const lijst = gepland(state);
-  const terug = (state.samen ?? []).filter((x) => x.gedaan && x.wie.includes(me.id) && Date.now() - new Date(x.gedaan).getTime() < 14 * 864e5).reverse();
+  const terug = (state.samen ?? []).filter((x) => x.gedaan && (x.deden ?? x.wie).includes(me.id) && Date.now() - new Date(x.gedaan).getTime() < 14 * 864e5).reverse();
   const ideeen = IDEEEN.filter((i) => (!tijd || i.tijd === tijd) && (budget < 0 || i.budget <= budget) && (!energie || i.energie === energie) && (!vrienden || i.vrienden) && (i.vanaf ?? 0) <= (me.age ?? 99));
   const n = dezeMaand(state);
 
@@ -135,19 +135,107 @@ export function SamenTab({ state, me, onToast }: { state: FamilyState; me: Membe
 }
 
 function Gepland({ x, state, me, onToast }: { x: SamenMoment; state: FamilyState; me: Member; onToast: (m: string) => void }) {
-  const isOuder = me.role === "ouder";
-  const mag = isOuder || x.wie.includes(me.id) || x.door === me.id;
   const wie = x.wie.map((id) => state.members.find((m) => m.id === id)).filter(Boolean) as Member[];
   return (
-    <div className="v2-gepland">
-      <span className="v2-samen-emoji" aria-hidden="true">{IDEEEN.find((i) => i.id === x.soort)?.emoji ?? "✨"}</span>
-      <span className="ff-grow ff-stack-xs">
-        <b>{x.titel}</b>
-        <span className="ff-small ff-muted">{datumTekst(x.datum, x.tijd)} · {wie.map((m) => (m.id === me.id ? "jij" : m.name)).join(", ")}{x.vrienden ? ` + ${x.vrienden}` : ""}</span>
-      </span>
-      <span className="v2-gepland-koppen">{wie.slice(0, 3).map((m) => <Kop key={m.id} m={m} size={24} />)}</span>
-      {mag && <button className="ff-btn ff-btn-primary ff-btn-sm" onClick={() => { samenwerken.gedaan(x.id, me.id); onToast("Leuk! +10 punten voor iedereen 💞"); }}>Gedaan</button>}
-      {mag && <button className="ff-link ff-small" aria-label={`${x.titel} weghalen`} onClick={() => { samenwerken.weg(x.id); onToast("Weggehaald"); }}>✕</button>}
+    <div className="v2-gepland-blok">
+      <div className="v2-gepland">
+        <span className="v2-samen-emoji" aria-hidden="true">{IDEEEN.find((i) => i.id === x.soort)?.emoji ?? "✨"}</span>
+        <span className="ff-grow ff-stack-xs">
+          <b>{x.titel}</b>
+          <span className="ff-small ff-muted">{datumTekst(x.datum, x.tijd)} · {wie.map((m) => (m.id === me.id ? "jij" : m.name)).join(", ")}{x.vrienden ? ` + ${x.vrienden}` : ""}</span>
+        </span>
+        <span className="v2-gepland-koppen">{wie.slice(0, 3).map((m) => <Kop key={m.id} m={m} size={24} />)}</span>
+      </div>
+      <SamenActies key={x.id + (x.gedaan ?? "") + x.wie.join()} x={x} state={state} me={me} onToast={onToast} />
+    </div>
+  );
+}
+
+/**
+  Wat je met een samen-moment kunt doen. Alles is terug te draaien:
+  - Gedaan: eerst kiezen wie er echt meedeed. Alleen die krijgen punten.
+  - Aanpassen (zolang het nog niet gedaan is): wie gaat mee, welke dag, hoe laat.
+  - Terugzetten (als het al gedaan is): weer gepland, de punten gaan er weer af.
+  Aanpassen en terugzetten: ouders, of wie het plande.
+*/
+export function SamenActies({ x, state, me, onToast }: { x: SamenMoment; state: FamilyState; me: Member; onToast: (m: string) => void }) {
+  const isOuder = me.role === "ouder";
+  const mag = isOuder || x.wie.includes(me.id) || x.door === me.id;
+  const beheer = isOuder || x.door === me.id;
+  const [stap, setStap] = useState<null | "gedaan" | "aanpassen" | "terug" | "weg">(null);
+  const [deden, setDeden] = useState<string[]>(x.wie);
+  const [nieuwWie, setNieuwWie] = useState<string[]>(x.wie);
+  const [datum, setDatum] = useState(x.datum);
+  const [tijd, setTijd] = useState(x.tijd ?? "");
+  const leden = state.members.filter((m) => m.joined !== false);
+  const naam = (id: string) => (id === me.id ? "jij" : state.members.find((m) => m.id === id)?.name ?? "");
+  const vandaag = new Date().toLocaleDateString("sv-SE");
+  const kreeg = x.deden ?? x.wie;
+  const wissel = (lijst: string[], id: string) => (lijst.includes(id) ? lijst.filter((w) => w !== id) : [...lijst, id]);
+  if (!mag) return null;
+
+  if (x.gedaan) {
+    if (!beheer) return null;
+    return stap !== "terug" ? (
+      <button className="ff-link ff-small v2-samen-actie" onClick={() => setStap("terug")}>Klopt niet? Terugzetten</button>
+    ) : (
+      <div className="v2-samen-keuze" role="group" aria-label="Terugzetten">
+        <span className="ff-small">Weer op gepland zetten? De punten gaan er weer af bij {kreeg.map(naam).join(", ")}.</span>
+        <div className="ff-row">
+          <button className="ff-btn ff-btn-ghost ff-btn-s" onClick={() => setStap(null)}>Nee</button>
+          <button className="ff-btn ff-btn-primary ff-btn-s" onClick={() => { samenwerken.terugzetten(x.id); onToast("Teruggezet: weer gepland, punten eraf"); setStap(null); setDeden(x.wie); }}>Ja, terugzetten</button>
+        </div>
+      </div>
+    );
+  }
+
+  if (stap === "gedaan") {
+    return (
+      <div className="v2-samen-keuze" role="group" aria-label="Wie deed er mee?">
+        <span className="ff-small"><b>Wie deed er mee?</b> Tik iemand weg die niet mee kon.</span>
+        <div className="ff-chips">{x.wie.map((id) => <button key={id} className="ff-chip" aria-pressed={deden.includes(id)} onClick={() => setDeden(wissel(deden, id))}>{deden.includes(id) ? "✓ " : ""}{naam(id)}</button>)}</div>
+        <div className="ff-row">
+          <button className="ff-btn ff-btn-ghost ff-btn-s" onClick={() => { setStap(null); setDeden(x.wie); }}>Terug</button>
+          <button className="ff-btn ff-btn-primary ff-btn-s ff-grow" disabled={!deden.length} onClick={() => { samenwerken.gedaan(x.id, me.id, deden); onToast(`Gedaan 💞 +10 punten voor ${deden.map(naam).join(", ")}`); setStap(null); }}>Klopt, gedaan</button>
+        </div>
+      </div>
+    );
+  }
+
+  if (stap === "aanpassen") {
+    return (
+      <div className="v2-samen-keuze" role="group" aria-label="Aanpassen">
+        <span className="ff-small"><b>Wie gaat er mee?</b></span>
+        <div className="ff-chips">{leden.map((m) => <button key={m.id} className="ff-chip" aria-pressed={nieuwWie.includes(m.id)} onClick={() => setNieuwWie(wissel(nieuwWie, m.id))}>{nieuwWie.includes(m.id) ? "✓ " : ""}{naam(m.id)}</button>)}</div>
+        <div className="ff-row v2-samen-tijd">
+          <label className="ff-field ff-grow"><span className="ff-eyebrow">Dag</span><input type="date" value={datum} min={vandaag} onChange={(e) => setDatum(e.target.value)} /></label>
+          <label className="ff-field ff-grow"><span className="ff-eyebrow">Hoe laat (mag leeg)</span><input type="time" value={tijd} onChange={(e) => setTijd(e.target.value)} /></label>
+        </div>
+        <div className="ff-row">
+          <button className="ff-btn ff-btn-ghost ff-btn-s" onClick={() => { setStap(null); setNieuwWie(x.wie); setDatum(x.datum); setTijd(x.tijd ?? ""); }}>Annuleren</button>
+          <button className="ff-btn ff-btn-primary ff-btn-s ff-grow" disabled={!nieuwWie.length || !datum} onClick={() => { samenwerken.wijzigSamen(x.id, { wie: nieuwWie, datum, tijd }); onToast("Aangepast"); setStap(null); setDeden(nieuwWie); }}>Opslaan</button>
+        </div>
+        <button className="ff-link ff-small" onClick={() => setStap("weg")}>Gaat helemaal niet door</button>
+      </div>
+    );
+  }
+
+  if (stap === "weg") {
+    return (
+      <div className="v2-samen-keuze" role="group" aria-label="Weghalen">
+        <span className="ff-small">Helemaal weghalen? Er zijn nog geen punten voor gegeven.</span>
+        <div className="ff-row">
+          <button className="ff-btn ff-btn-ghost ff-btn-s" onClick={() => setStap(null)}>Nee</button>
+          <button className="ff-btn ff-btn-primary ff-btn-s" onClick={() => { samenwerken.weg(x.id); onToast("Weggehaald"); }}>Ja, weghalen</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="ff-row v2-samen-actie">
+      {x.datum <= vandaag && <button className="ff-btn ff-btn-primary ff-btn-s" onClick={() => setStap("gedaan")}>Gedaan</button>}
+      {beheer && <button className="ff-btn ff-btn-ghost ff-btn-s" onClick={() => setStap("aanpassen")}>Aanpassen</button>}
     </div>
   );
 }

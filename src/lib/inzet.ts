@@ -61,7 +61,7 @@ export function weekInzet(s: FamilyState, id: string, nu = new Date()): InzetReg
   if (anders.length) uit.push({ emoji: "📅", tekst: anders.length === 1 ? `Afspraak: ${anders[0].titel}` : `${anders.length} andere afspraken`, bron: "agenda" });
 
   // Samen gedaan met het gezin.
-  const samen = (s.samen ?? []).filter((x) => x.gedaan && x.wie.includes(id) && dagen.includes(iso(new Date(x.gedaan))));
+  const samen = (s.samen ?? []).filter((x) => x.gedaan && (x.deden ?? x.wie).includes(id) && dagen.includes(iso(new Date(x.gedaan))));
   if (samen.length) uit.push({ emoji: "💞", tekst: samen.length === 1 ? `Samen: ${samen[0].titel}` : `${samen.length} keer iets samen gedaan`, bron: "samen" });
 
   // Even rustig geworden.
