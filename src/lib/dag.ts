@@ -21,7 +21,7 @@ export interface DagLog {
   eten?: string[];
   /** Ongezond: snoep, koek, chips of een snack (aantal). */
   snoep?: number;
-  /** Ongezond: zoet drinken, zoals frisdrank, sap, ijsthee of energydrank (aantal glazen/blikjes). */
+  /** Ongezond: drinken met suiker, zoals frisdrank, sap, ijsthee of energydrink (aantal glazen/blikjes). Light/zero telt niet. */
   zoet?: number;
 }
 
@@ -108,7 +108,7 @@ export const DOEL = { water: 6, fruit: 2 };
 /** Ongezond: met één knop aangeven. Eén keer iets lekkers mag, daarna zakt de gezondheid een beetje. */
 export const ONGEZOND: { id: "snoep" | "zoet"; label: string; kort: string; emoji: string; voorbeeld: string }[] = [
   { id: "snoep", label: "Snoep of snack", kort: "snoep", emoji: "🍬", voorbeeld: "snoep, koek, chips, patat" },
-  { id: "zoet", label: "Zoet drinken", kort: "zoet", emoji: "🥤", voorbeeld: "frisdrank, sap, ijsthee, energydrank" },
+  { id: "zoet", label: "Drinken met suiker", kort: "suiker", emoji: "🥤", voorbeeld: "frisdrank, sap, ijsthee, energydrink. Light of zero telt niet mee." },
 ];
 /** Hoeveel ongezonde dingen vandaag (snoep + zoet drinken). */
 export const ongezond = (log: DagLog) => (log.snoep ?? 0) + (log.zoet ?? 0);

@@ -123,20 +123,27 @@ await scenario("v2: meekijken als school (demo)", v2, "10:00", async (p) => {
   await p.waitForTimeout(400);
   assert.ok(await p.locator(".ff-theme-pro").count() > 0, "school-scherm zichtbaar");
 });
-await scenario("v2: water tellen: tellers zitten achter één knop, dan één tik", v2, "10:00", async (p) => {
-  assert.equal(await p.getByRole("button", { name: /^Water:/ }).count(), 0, "tellers standaard ingeklapt");
-  await p.getByRole("button", { name: /Eten en drinken/ }).click();
-  const water = p.getByRole("button", { name: /^Water:/ });
-  const voor = await water.innerText();
-  await water.click();
-  assert.notEqual(await water.innerText(), voor);
+await scenario("v3.5: water in glazen: altijd zichtbaar, tik = zoveel glazen, nog een keer = één terug", v2, "10:00", async (p) => {
+  const blok = p.getByRole("region", { name: "Water en fruit" });
+  assert.match(await blok.innerText(), /1,5 liter/);
+  await blok.getByRole("button", { name: "3 glazen water" }).click();
+  assert.match(await blok.innerText(), /3 van 6 glazen/);
+  await blok.getByRole("button", { name: /^3 glazen water, tik om er één af te halen/ }).click();
+  assert.match(await blok.innerText(), /2 van 6 glazen/);
+  await blok.getByRole("button", { name: "Nog een glas water" }).click();
+  assert.match(await blok.innerText(), /3 van 6 glazen/);
+});
+
+await scenario("v3.5: tip van vandaag staat op Vandaag, ook zonder zelf iets te kiezen", v2, "10:00", async (p) => {
+  await wissel(p, "Noah");
+  assert.match(await p.locator("body").innerText(), /Tip van vandaag · (gezond eten en drinken|praten en ruzie oplossen)/);
 });
 
 await scenario("v2: kind geeft snoep aan, ouder ziet het in het overzicht", v2, "16:00", async (p) => {
   await wissel(p, "Lina");
-  await p.getByRole("button", { name: /Eten en drinken/ }).click();
   await p.getByRole("button", { name: /Ongezond vandaag/ }).click();
-  await p.getByRole("button", { name: "Zoet drinken plus één" }).click();
+  assert.match(await p.getByRole("dialog").innerText(), /Light of zero telt niet mee/);
+  await p.getByRole("button", { name: "Drinken met suiker plus één" }).click();
   await p.getByRole("button", { name: "Snoep of snack plus één" }).click();
   await knop(p, /^Klaar$/).click();
   assert.match(await p.getByRole("button", { name: /Ongezond vandaag/ }).innerText(), /2/);
@@ -145,7 +152,7 @@ await scenario("v2: kind geeft snoep aan, ouder ziet het in het overzicht", v2, 
   const rij = p.getByRole("region", { name: "Eten en drinken van de kinderen" }).locator(".v2-voeding-kind", { hasText: "Lina" });
   assert.match(await rij.innerText(), /2× ongezond/);
   await rij.click();
-  assert.match(await p.locator(".v2-voeding").innerText(), /Zoet drinken/);
+  assert.match(await p.locator(".v2-voeding").innerText(), /drinken met suiker/i);
   await p.locator(".v2-voeding").scrollIntoViewIfNeeded();
 });
 
@@ -494,8 +501,7 @@ await scenario("v3.1: ouder zet een taak uit de bibliotheek aan en voegt een eig
 // ---------- 3.2 Duidelijk ----------
 async function langeNamen(p) {
   // Demo slaat pas op na een eerste wijziging: tik één glas water aan.
-  await p.getByRole("button", { name: /Eten en drinken/ }).click();
-  await p.getByRole("button", { name: /^Water:/ }).click();
+  await p.getByRole("button", { name: "Nog een glas water" }).click();
   await p.waitForFunction(() => localStorage.getItem("familyflow:v1"));
   await p.evaluate(() => {
     const k = "familyflow:v1";

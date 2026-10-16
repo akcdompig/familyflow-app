@@ -13,6 +13,7 @@ import { actions } from "@/lib/store";
 import type { OpenRegel } from "@/lib/herkomst";
 import { teClaimen } from "@/lib/xp";
 import { OngezondKnop } from "./Voeding";
+import { CoachTip } from "@/components/screens/CoachTip";
 import { SchermKind } from "./Scherm";
 import { KlusSheet, antwoordTekst, vraagVan } from "@/components/screens/KlusSheet";
 import { klusStatus } from "@/lib/huis";
@@ -34,7 +35,6 @@ const MOODS: { m: MoodLevel; e: string; l: string }[] = [
   Dan "Nu doen": één ding tegelijk. Daaronder de hele dag, per dagdeel.
 */
 export function Vandaag({ state, me, onToast, onMeerGevoel, onWie, onSamenVerder, onPlanner, onWeek }: { state: FamilyState; me: Member; onToast: (m: string) => void; onMeerGevoel: () => void; onWie: () => void; onSamenVerder?: () => void; onPlanner?: () => void; onWeek?: () => void }) {
-  const [tellers, setTellers] = useState(false);
   const [, tik] = useState(0);
   useEffect(() => {
     const t = window.setInterval(() => tik((n) => n + 1), 60_000);
@@ -142,29 +142,17 @@ export function Vandaag({ state, me, onToast, onMeerGevoel, onWie, onSamenVerder
           <b className="v2-groot">{v.klaar}<span className="ff-muted">/{v.totaal}</span></b>
           <span className="ff-small ff-muted">{pct >= 1 ? "Alles af! Topdag 🎉" : "klaar vandaag"}{r > 1 ? ` · 🔥 ${r} dagen` : ""} <Info label="Wat betekent dit getal?" tekst={`Zoveel dingen van je lijst zijn af: routine, eten, taken en klussen.${r > 1 ? " 🔥 = zoveel dagen op rij je ochtendroutine af." : ""}`} /></span>
           <div className="v2-tellers">
-            {/* Water, fruit en snoep zitten achter één knop: minder prikkels boven "Nu doen". */}
-            <button className="v2-teller" aria-expanded={tellers} onClick={() => setTellers(!tellers)} aria-label={`Eten en drinken: water ${log.water} van ${DOEL.water}, fruit ${log.fruit} van ${DOEL.fruit}`}>
-              💧🍎 Eten en drinken <b>{log.water + log.fruit}</b>/{DOEL.water + DOEL.fruit} {tellers ? "▴" : "▾"}
-            </button>
             {kist > 0 && (
               <button className="v2-teller is-kist" onClick={() => { const c = actions.claim(me.id); if (c) setClaim({ van: c.van, n: c.totaal, regels: c.regels }); }}>
                 💎 <b>+{kist}</b> claim
               </button>
             )}
           </div>
-          {tellers && (
-            <div className="v2-tellers">
-              <button className="v2-teller" onClick={() => { actions.updateDag(me.id, (l) => ({ ...l, water: l.water + 1 })); }} aria-label={`Water: ${log.water} van ${DOEL.water}. Tik voor een glas erbij`}>
-                💧 <b>{log.water}</b>/{DOEL.water}
-              </button>
-              <button className="v2-teller" onClick={() => { actions.updateDag(me.id, (l) => ({ ...l, fruit: l.fruit + 1 })); }} aria-label={`Fruit: ${log.fruit} van ${DOEL.fruit}. Tik voor een stuk erbij`}>
-                🍎 <b>{log.fruit}</b>/{DOEL.fruit}
-              </button>
-              <OngezondKnop state={state} me={me} onToast={onToast} />
-            </div>
-          )}
         </div>
       </section>
+
+      {/* Water en fruit: altijd in beeld, met glazen. Tik op een glas = zoveel gehad; nog een keer tikken = één terug. */}
+      <Drinken state={state} me={me} onToast={onToast} />
 
       {/* Eerst: het ene ding dat nu moet. Pas daarna gevoel en schermtijd. */}
       {/* Aan het werk of op school: dat is nu je "ding". Daarna gaat het lijstje verder. */}
@@ -239,6 +227,9 @@ export function Vandaag({ state, me, onToast, onMeerGevoel, onWie, onSamenVerder
 
       {me.role !== "ouder" && <SchermKind state={state} me={me} />}
 
+      {/* Tip van vandaag: gezond eten en drinken komt altijd voorbij, plus wat je zelf kiest. */}
+      <CoachTip state={state} me={me} onToast={onToast} />
+
       {/* De hele dag, per dagdeel */}
       <div className="v2-dag">
         {DAGDELEN.map((d) => {
@@ -309,5 +300,39 @@ export function Vandaag({ state, me, onToast, onMeerGevoel, onWie, onSamenVerder
       {claim && <ClaimViering me={me} van={claim.van} n={claim.n} regels={claim.regels} onKlaar={() => setClaim(null)} />}
       <KlusSheet state={state} me={me} klus={klusOpen ? klusStatus(state).find((k) => k.key === klusOpen) ?? null : null} onClose={() => setKlusOpen(null)} onToast={onToast} />
     </div>
+  );
+}
+
+/** Water en fruit, altijd zichtbaar. 6 glazen = 1,5 liter. Per ongeluk te veel? Tik op het laatste glas. */
+function Drinken({ state, me, onToast }: { state: FamilyState; me: Member; onToast: (m: string) => void }) {
+  const log = dagLog(state, me.id);
+  const zet = (soort: "water" | "fruit", i: number) =>
+    actions.updateDag(me.id, (l) => {
+      const nu = l[soort];
+      return { ...l, [soort]: i < nu ? i : i + 1 };
+    });
+  const glazen = Math.max(DOEL.water, log.water);
+  return (
+    <section className="ff-card v2-drinken" aria-label="Water en fruit">
+      <div className="v2-drinken-rij">
+        <span className="v2-drinken-kop"><b>💧 Water</b><span className="ff-small ff-muted"> {log.water} van {DOEL.water} glazen · 1,5 liter</span></span>
+        <div className="v2-glazen" role="group" aria-label="Glazen water">
+          {Array.from({ length: glazen }, (_, i) => (
+            <button key={i} className="ff-dag-glas" aria-pressed={i < log.water} aria-label={i < log.water && i === log.water - 1 ? `${i + 1} glazen water, tik om er één af te halen` : `${i + 1} ${i ? "glazen" : "glas"} water`} onClick={() => { zet("water", i); if (i + 1 === DOEL.water && log.water < DOEL.water) onToast("1,5 liter! Je brein is je dankbaar 💧"); }}>💧</button>
+          ))}
+          <button className="ff-dag-glas is-plus" aria-label="Nog een glas water" onClick={() => actions.updateDag(me.id, (l) => ({ ...l, water: l.water + 1 }))}>+</button>
+        </div>
+      </div>
+      <div className="v2-drinken-rij">
+        <span className="v2-drinken-kop"><b>🍎 Fruit</b><span className="ff-small ff-muted"> {log.fruit} van {DOEL.fruit} stuks</span></span>
+        <div className="v2-glazen" role="group" aria-label="Stuks fruit">
+          {Array.from({ length: Math.max(DOEL.fruit, log.fruit) }, (_, i) => (
+            <button key={i} className="ff-dag-glas" aria-pressed={i < log.fruit} aria-label={`${i + 1} ${i ? "stuks" : "stuk"} fruit`} onClick={() => zet("fruit", i)}>🍎</button>
+          ))}
+          <button className="ff-dag-glas is-plus" aria-label="Nog een stuk fruit" onClick={() => actions.updateDag(me.id, (l) => ({ ...l, fruit: l.fruit + 1 }))}>+</button>
+          <OngezondKnop state={state} me={me} onToast={onToast} />
+        </div>
+      </div>
+    </section>
   );
 }

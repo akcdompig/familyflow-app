@@ -7,13 +7,14 @@
 
 import type { Member } from "./types";
 
-export type Onderwerp = "koken" | "sport" | "gezond" | "leren" | "hoofd" | "geld";
+export type Onderwerp = "koken" | "sport" | "gezond" | "praten" | "leren" | "hoofd" | "geld";
 export type Groep = "kind" | "tiener" | "ouder";
 
 export const ONDERWERPEN: { id: Onderwerp; label: string; emoji: string; uitleg: string }[] = [
   { id: "koken", label: "Koken", emoji: "🍳", uitleg: "Makkelijke recepten en keukentrucs" },
   { id: "sport", label: "Sport en fitness", emoji: "💪", uitleg: "Fitter worden, rustig opbouwen" },
   { id: "gezond", label: "Gezond eten en drinken", emoji: "🥦", uitleg: "Wat is goed voor je, en wat niet" },
+  { id: "praten", label: "Praten en ruzie oplossen", emoji: "🤝", uitleg: "Rustig blijven, luisteren, samen oplossen" },
   { id: "leren", label: "Leren en plannen", emoji: "📚", uitleg: "Slimmer leren, minder stress voor toetsen" },
   { id: "hoofd", label: "Je hoofd", emoji: "🧠", uitleg: "Gamen, schermtijd, slaap en stress" },
   { id: "geld", label: "Geld en sparen", emoji: "💰", uitleg: "Sparen, uitgeven en slim kopen" },
@@ -49,14 +50,35 @@ const TIPS: Record<Onderwerp, Tip[]> = {
     { tekst: "Buiten spelen telt ook als sport! Voetballen, klimmen, fietsen: alles waar je van gaat hijgen.", voor: ["kind"] },
   ],
   gezond: [
-    { tekst: "Drink zo'n 6 tot 8 glazen water per dag. Dorst is vaak al een teken dat je te laat bent." },
+    { tekst: "Drink zo'n 1,5 liter water per dag: dat zijn 6 glazen. Je hersenen bestaan voor een groot deel uit water. Al een beetje te weinig drinken maakt je moe, geeft hoofdpijn en je kunt je slechter concentreren." },
+    { tekst: "Dorst is al een teken dat je te laat bent. Zet 's ochtends een fles water klaar en drink er de hele dag van." },
+    { tekst: "Je brein draait 's ochtends op je ontbijt. Iets met eiwit, zoals eieren, kwark of yoghurt, houdt je langer vol en helpt je concentratie op school." },
+    { tekst: "Noedels uit een zakje als ontbijt? Veel zout, weinig eiwit en je hebt snel weer honger. Eieren, kwark met fruit of havermout geven je veel langer energie." },
+    { tekst: "Veel suiker geeft eerst een piek en dan een dip: moe, chagrijnig en zin in nog meer. Daarom liever geen frisdrank met suiker. Water is het beste, light of zero kan af en toe." },
+    { tekst: "Kies vers in plaats van bewerkt: groente, fruit, eieren, vlees, vis, kwark. Chips, kant-en-klaar en zakjes zitten vaak vol zout, suiker en vet, en houden je niet lang vol." },
+    { tekst: "Train je? Drink voor, tijdens en na het sporten. Heb je veel gezweet, dan mag er een klein snufje zout in je water om aan te vullen wat je kwijt bent." },
+    { tekst: "Na het trainen herstellen je spieren. Eiwit helpt daarbij: een glas melk, kwark, eieren, kip of vis." },
     { tekst: "Twee stuks fruit per dag: leg ze 's ochtends al klaar, dan pak je ze vanzelf." },
-    { tekst: "Ontbijten helpt je concentratie op school. Iets kleins is beter dan niks." },
-    { tekst: "Frisdrank en energiedrank zitten vol suiker. Water met een schijfje citroen of komkommer is een goede ruil." },
-    { tekst: "Energiedrankjes zijn niet bedoeld voor tieners: veel cafeïne, slechter slapen, onrustig hoofd.", voor: ["tiener"] },
+    { tekst: "Energiedrankjes zijn niet bedoeld voor tieners: veel suiker en cafeïne, slechter slapen, een onrustig hoofd.", voor: ["tiener", "kind"] },
     { tekst: "Groente bij elke warme maaltijd: maak er een spelletje van wie de meeste kleuren op zijn bord heeft." },
-    { tekst: "Honger tussendoor? Kies eerst fruit, yoghurt of een boterham, en pas daarna iets lekkers." },
+    { tekst: "Honger tussendoor? Kies eerst fruit, een eitje, kwark of een boterham, en pas daarna iets lekkers." },
     { tekst: "Eet niet achter een scherm. Dan merk je niet wanneer je vol zit." },
+    { tekst: "Zet water op tafel en leg fruit in het zicht. Wat makkelijk te pakken is, eten en drinken kinderen vanzelf.", voor: ["ouder"] },
+    { tekst: "Leg uit wáárom, niet alleen dát: \"Je hersenen werken beter met water en een goed ontbijt.\" Kinderen houden iets beter vol als ze snappen waarom.", voor: ["ouder"] },
+    { tekst: "Koop wat je wilt dat ze eten. Ligt er geen frisdrank of snoep in huis, dan is de keuze makkelijk.", voor: ["ouder"] },
+  ],
+  praten: [
+    { tekst: "Boos? Eerst afkoelen, dan praten. Zeg: \"Ik wil hier zo over praten, maar nu even niet.\"" },
+    { tekst: "Praat in ik-zinnen: \"Ik baal ervan als…\" in plaats van \"Jij doet altijd…\". Dan voelt de ander zich minder aangevallen." },
+    { tekst: "Laat de ander uitpraten. Zeg daarna kort wat je hoorde: \"Dus jij vindt dat…?\" Dan voelt iemand zich gehoord." },
+    { tekst: "Schreeuwt de ander? Praat jij juist langzamer en zachter. Rust werkt aanstekelijk." },
+    { tekst: "Sorry zeggen is sterk, niet zwak. Kijk daarna samen: hoe doen we het de volgende keer?" },
+    { tekst: "Een pauze is geen weglopen. Spreek een tijd af: \"We praten om 8 uur verder.\"" },
+    { tekst: "Zoek samen een oplossing waar jullie allebei mee kunnen leven. Dan hoeft niemand te winnen." },
+    { tekst: "Zeg wat je wél wilt, niet alleen wat je niet wilt. \"Ik wil dat je klopt\" werkt beter dan \"Kom niet zomaar binnen\"." },
+    { tekst: "Benoem wat je ziet, zonder oordeel: \"Ik zie dat je boos bent.\" Dat haalt vaak al spanning weg.", voor: ["ouder"] },
+    { tekst: "Ga naast je kind zitten in plaats van ertegenover. In de auto of tijdens het koken praat het vaak makkelijker.", voor: ["ouder"] },
+    { tekst: "Eerst verbinden, dan corrigeren. Een hand op de schouder en \"Ik snap dat je baalt\", daarna pas de afspraak.", voor: ["ouder"] },
   ],
   leren: [
     { tekst: "Leer in blokjes van 20 minuten met 5 minuten pauze. Je onthoudt meer dan in een uur achter elkaar." },
@@ -148,13 +170,18 @@ const dagNr = (nu: Date) => Math.floor(new Date(nu.getFullYear(), nu.getMonth(),
 
 /** De tip van vandaag voor dit lid, uit de onderwerpen die hij heeft gekozen. */
 export function tipVanDeDag(m: Member, interesses: string[], nu = new Date()): { onderwerp: (typeof ONDERWERPEN)[number]; tekst: string; recept?: Recept } | null {
-  const gekozen = ONDERWERPEN.filter((o) => interesses.includes(o.id));
+  // Gezond eten en drinken komt altijd voorbij, plus wat je zelf kiest. Nog niks gekozen? Dan gezond en praten.
+  const eigen = interesses.length ? interesses : ["praten"];
+  const gekozen = ONDERWERPEN.filter((o) => o.id === "gezond" || eigen.includes(o.id));
   if (!gekozen.length) return null;
   const g = groepVan(m);
   const n = dagNr(nu) + m.id.length;
-  const onderwerp = gekozen[n % gekozen.length];
+  // Om de dag gezond eten en drinken; de andere dagen om de beurt de rest.
+  const anders = gekozen.filter((o) => o.id !== "gezond");
+  const onderwerp = !anders.length || n % 2 === 0 ? gekozen.find((o) => o.id === "gezond")! : anders[Math.floor(n / 2) % anders.length];
   const pool = TIPS[onderwerp.id].filter((t) => !t.voor || t.voor.includes(g));
-  const tekst = pool[Math.floor(n / gekozen.length) % pool.length].tekst;
-  const recept = onderwerp.id === "koken" ? RECEPTEN[Math.floor(n / gekozen.length) % RECEPTEN.length] : undefined;
+  const stap = Math.floor(n / 2);
+  const tekst = pool[stap % pool.length].tekst;
+  const recept = onderwerp.id === "koken" ? RECEPTEN[stap % RECEPTEN.length] : undefined;
   return { onderwerp, tekst, recept };
 }
