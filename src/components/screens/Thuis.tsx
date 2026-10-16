@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Info } from "@/components/screens/Uitleg";
 import { Avatar } from "@/components/avatar/Avatar";
 import { Sheet } from "@/components/ui/Sheet";
 import { addDays, iso } from "@/lib/planner";
@@ -201,7 +202,10 @@ export function Klussen({ state, me, lijst, onToast, simpel = false }: { state: 
   return (
     <div className="ff-stack">
       {isOuder && (
-        <button className="ff-btn ff-btn-primary ff-btn-wide v2-verdeel-knop" onClick={() => setVerdeel(true)}>📋 Verdeel de taken</button>
+        <div className="ff-stack-xs">
+          <button className="ff-btn ff-btn-primary ff-btn-wide v2-verdeel-knop" onClick={() => setVerdeel(true)}>📋 Verdeel de taken</button>
+          <span className="ff-small ff-muted">Hoe werkt dat? <Info label="Hoe werkt Verdeel de taken?" tekst="De app maakt een voorstel voor de week: eerlijk naar tijd, met school, werk en leeftijd erbij. Jij kijkt het na, wisselt wat niet klopt en tikt op Bevestigen. Daarna ziet iedereen het." /></span>
+        </div>
       )}
       {isOuder && <PlanStatus state={state} />}
       <AfsprakenBanner state={state} me={me} onOpen={() => setAfspraken(true)} />

@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { Avatar } from "@/components/avatar/Avatar";
 import { ClaimViering } from "@/components/screens/Viering";
-import { AfsprakenOpDag } from "@/components/screens/Afspraak";
+import { AfspraakSheet, AfsprakenOpDag } from "@/components/screens/Afspraak";
+import { Info } from "@/components/screens/Uitleg";
 import { Herinneringen } from "@/components/screens/Herinneringen";
 import { DAGDELEN, DOEL, begroeting, dagLog, dagdeel, datumTijd, reeks, type Dagdeel } from "@/lib/dag";
 import { dagprogramma, nuDoen, voortgang, type Stap } from "@/lib/dagprogramma";
@@ -19,6 +20,7 @@ import { iso } from "@/lib/planner";
 import type { FamilyState, Member, MoodLevel, Oordeel } from "@/lib/types";
 import { OORDEEL, actief, teEvalueren } from "@/lib/afspraken";
 
+const GEVOEL_WOORD: Record<MoodLevel, string> = { 1: "slecht", 2: "niet zo goed", 3: "oké", 4: "goed", 5: "top" };
 const MOODS: { m: MoodLevel; e: string; l: string }[] = [
   { m: 1, e: "😣", l: "Slecht" },
   { m: 2, e: "🙁", l: "Niet zo" },
@@ -31,7 +33,7 @@ const MOODS: { m: MoodLevel; e: string; l: string }[] = [
   Vandaag: jouw dagprogramma. Bovenaan hoe ver je bent, je schatkist, water, fruit en hoe je je voelt.
   Dan "Nu doen": één ding tegelijk. Daaronder de hele dag, per dagdeel.
 */
-export function Vandaag({ state, me, onToast, onMeerGevoel, onWie, onSamenVerder, onPlanner }: { state: FamilyState; me: Member; onToast: (m: string) => void; onMeerGevoel: () => void; onWie: () => void; onSamenVerder?: () => void; onPlanner?: () => void }) {
+export function Vandaag({ state, me, onToast, onMeerGevoel, onWie, onSamenVerder, onPlanner, onWeek }: { state: FamilyState; me: Member; onToast: (m: string) => void; onMeerGevoel: () => void; onWie: () => void; onSamenVerder?: () => void; onPlanner?: () => void; onWeek?: () => void }) {
   const [tellers, setTellers] = useState(false);
   const [, tik] = useState(0);
   useEffect(() => {
@@ -41,6 +43,7 @@ export function Vandaag({ state, me, onToast, onMeerGevoel, onWie, onSamenVerder
   const nuDeel = dagdeel();
   const [open, setOpen] = useState<Dagdeel>(nuDeel);
   const [pop, setPop] = useState<{ id: string; n: number } | null>(null);
+  const [nieuweAfspraak, setNieuweAfspraak] = useState(false);
   const [claim, setClaim] = useState<{ van: number; n: number; regels: OpenRegel[] } | null>(null);
   const [klusOpen, setKlusOpen] = useState<string | null>(null);
   const [pushLater, setPushLater] = useState(() => {
@@ -137,7 +140,7 @@ export function Vandaag({ state, me, onToast, onMeerGevoel, onWie, onSamenVerder
         </div>
         <div className="v2-hero-t">
           <b className="v2-groot">{v.klaar}<span className="ff-muted">/{v.totaal}</span></b>
-          <span className="ff-small ff-muted">{pct >= 1 ? "Alles af! Topdag 🎉" : "klaar vandaag"}{r > 1 ? ` · 🔥 ${r} dagen` : ""}</span>
+          <span className="ff-small ff-muted">{pct >= 1 ? "Alles af! Topdag 🎉" : "klaar vandaag"}{r > 1 ? ` · 🔥 ${r} dagen` : ""} <Info label="Wat betekent dit getal?" tekst={`Zoveel dingen van je lijst zijn af: routine, eten, taken en klussen.${r > 1 ? " 🔥 = zoveel dagen op rij je ochtendroutine af." : ""}`} /></span>
           <div className="v2-tellers">
             {/* Water, fruit en snoep zitten achter één knop: minder prikkels boven "Nu doen". */}
             <button className="v2-teller" aria-expanded={tellers} onClick={() => setTellers(!tellers)} aria-label={`Eten en drinken: water ${log.water} van ${DOEL.water}, fruit ${log.fruit} van ${DOEL.fruit}`}>
@@ -220,12 +223,12 @@ export function Vandaag({ state, me, onToast, onMeerGevoel, onWie, onSamenVerder
 
       {/* Losse afspraken van vandaag: alleen als je er hebt. Geen vinkje, geen punten. */}
       {(state.agenda?.[me.id] ?? []).some((a) => a.datum === iso(new Date())) && (
-        <AfsprakenOpDag state={state} me={me} datum={iso(new Date())} onToast={onToast} alleenIk titel="📅 Jouw afspraken vandaag" />
+        <AfsprakenOpDag state={state} me={me} datum={iso(new Date())} onToast={onToast} alleenIk toevoegen={false} titel="📅 Jouw afspraken vandaag" />
       )}
 
       {/* Hoe voel je je: één tik */}
       <section className="v2-gevoel" aria-label="Hoe voel je je?">
-        <span className="ff-small"><b>{vandaagIn ? "Je voelt je" : "Hoe voel je je?"}</b></span>
+        <span className="ff-small"><b>{vandaagIn ? "Je voelt je" : "Hoe voel je je?"}</b>{vandaagIn && ci && !ci.rest && MOODS.find((x) => x.m === ci.mood) ? <span className="v2-gevoel-woord"> {GEVOEL_WOORD[ci.mood]}</span> : null}</span>
         <div className="v2-gevoel-rij">
           {MOODS.map((x) => (
             <button key={x.m} className="v2-face" aria-pressed={vandaagIn && ci?.mood === x.m && !ci.rest} aria-label={x.l} onClick={() => { actions.checkIn(me.id, { mood: x.m, rest: false, topics: [], wantsTalk: false }); if (x.m <= 2) onMeerGevoel(); else onToast(vandaagIn ? "Bijgewerkt" : "Ingecheckt ✓"); }}>{x.e}</button>
@@ -293,6 +296,11 @@ export function Vandaag({ state, me, onToast, onMeerGevoel, onWie, onSamenVerder
           );
         })}
       </div>
+
+      {/* Altijd te vinden: een afspraak zetten en de week bekijken. */}
+      <button className="v2-menu-rij" onClick={() => setNieuweAfspraak(true)}><span aria-hidden="true">📅</span><b className="ff-grow">Afspraak toevoegen</b><span aria-hidden="true">›</span></button>
+      {onWeek && <button className="v2-menu-rij" onClick={onWeek}><span aria-hidden="true">🗓️</span><b className="ff-grow">Bekijk de week</b><span aria-hidden="true">›</span></button>}
+      <AfspraakSheet open={nieuweAfspraak} me={me} datum={iso(new Date())} onClose={() => setNieuweAfspraak(false)} onToast={onToast} />
 
       {me.role !== "ouder" && onPlanner && (
         <button className="v2-menu-rij" onClick={onPlanner}><span aria-hidden="true">📚</span><b className="ff-grow">Huiswerk en toetsen plannen</b><span aria-hidden="true">›</span></button>

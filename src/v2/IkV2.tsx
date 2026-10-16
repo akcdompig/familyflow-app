@@ -7,6 +7,7 @@ import { Herinneringen } from "@/components/screens/Herinneringen";
 import { ClaimViering } from "@/components/screens/Viering";
 import { PuntenHistorie } from "@/components/screens/Punten";
 import { InzetKaart } from "@/components/screens/Inzet";
+import { Info } from "@/components/screens/Uitleg";
 import { BADGES, bijna } from "@/lib/badges";
 import { expressionFor } from "@/lib/mood";
 import { actions } from "@/lib/store";
@@ -15,7 +16,7 @@ import { geclaimd, levelProgress, teClaimen, xpForLevel } from "@/lib/xp";
 import type { FamilyState, Member } from "@/lib/types";
 
 /** Ik: je level, schatkist, achievements en je instellingen. Alles wat over jou gaat op één plek. */
-export function IkV2({ state, me, onToast, onAvatar, onWerk, onMeer, onOuders, onPrivacy, onPlanner }: { state: FamilyState; me: Member; onToast: (m: string) => void; onAvatar: () => void; onWerk: () => void; onMeer: () => void; onOuders?: () => void; onPrivacy?: () => void; onPlanner?: () => void }) {
+export function IkV2({ state, me, onToast, onAvatar, onWerk, onMeer, onOuders, onPrivacy, onPlanner, onUitleg }: { state: FamilyState; me: Member; onToast: (m: string) => void; onAvatar: () => void; onWerk: () => void; onMeer: () => void; onOuders?: () => void; onPrivacy?: () => void; onPlanner?: () => void; onUitleg?: () => void }) {
   const xp = geclaimd(state, me.id);
   const lp = levelProgress(xp);
   const kist = teClaimen(state, me.id);
@@ -40,14 +41,14 @@ export function IkV2({ state, me, onToast, onAvatar, onWerk, onMeer, onOuders, o
           <span className="v2-level-nr">Niveau {lp.level}</span>
         </div>
         <h1 className="ff-h1">{me.name}</h1>
-        <span className="ff-small ff-muted">{xp} punten · nog {lp.left} tot level {lp.level + 1}</span>
-        {!isOuder && volgendeBeloning && <span className="ff-small">🎁 Level {volgendeBeloning.level}: {volgendeBeloning.title} <span className="ff-muted">(nog {xpForLevel(volgendeBeloning.level) - xp})</span></span>}
+        <span className="ff-small ff-muted">{xp} punten · nog {lp.left} tot niveau {lp.level + 1}</span>
+        {!isOuder && volgendeBeloning && <span className="ff-small">🎁 Niveau {volgendeBeloning.level}: {volgendeBeloning.title} <span className="ff-muted">(nog {xpForLevel(volgendeBeloning.level) - xp})</span></span>}
       </section>
 
       {kist > 0 && (
         <section className="ff-card ff-schatkist">
           <div className="ff-schatkist-bol" aria-hidden="true">💎<b>+{kist}</b></div>
-          <div className="ff-grow"><b>Je schatkist</b><span className="ff-small ff-muted ff-block">{kist} punten om te claimen</span></div>
+          <div className="ff-grow"><b>Je schatkist</b> <Info label="Wat is de schatkist?" tekst="Punten die je verdient komen hier. Tik op Claim en je ziet waarvoor je ze kreeg. Daarna tellen ze mee voor je niveau." /><span className="ff-small ff-muted ff-block">{kist} punten om te claimen</span></div>
           <button className="ff-btn ff-btn-primary" onClick={() => { const c = actions.claim(me.id); if (c) setClaim({ van: c.van, n: c.totaal, regels: c.regels }); }}>Claim</button>
         </section>
       )}
@@ -89,6 +90,7 @@ export function IkV2({ state, me, onToast, onAvatar, onWerk, onMeer, onOuders, o
         <button className="v2-menu-rij" onClick={onMeer}><span aria-hidden="true">🌿</span><b className="ff-grow">Mijn rustplan en meer</b><span aria-hidden="true">›</span></button>
         {onPrivacy && <button className="v2-menu-rij" onClick={onPrivacy}><span aria-hidden="true">🔒</span><b className="ff-grow">Privacy en gegevens</b><span aria-hidden="true">›</span></button>}
         {isOuder && onPlanner && <button className="v2-menu-rij" onClick={onPlanner}><span aria-hidden="true">📚</span><b className="ff-grow">Huiswerk en Somtoday van de kinderen</b><span aria-hidden="true">›</span></button>}
+        {onUitleg && <button className="v2-menu-rij" onClick={onUitleg}><span aria-hidden="true">❓</span><b className="ff-grow">Hoe werkt de app?</b><span aria-hidden="true">›</span></button>}
         {isOuder && onOuders && <button className="v2-menu-rij" onClick={onOuders}><span aria-hidden="true">👨‍👩‍👧</span><b className="ff-grow">Gezin instellen: uitnodigen, beloningen, bedtijden</b><span aria-hidden="true">›</span></button>}
       </section>
 

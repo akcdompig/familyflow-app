@@ -227,7 +227,7 @@ export function Gezin({ state, me, onToast, onOefenen, onCoachNu, instellen = fa
         </details>
         {state.members.filter((m) => m.role !== "ouder").map((k) => {
           const mins = (state.reading?.[k.id] ?? []).filter((r) => Date.now() - new Date(r.at).getTime() < 7 * 864e5).reduce((a, r) => a + r.min, 0);
-          return <p key={k.id} className="ff-small"><b>{k.name}:</b> level {levelOf(geclaimd(state, k.id))} · {state.xp[k.id] ?? 0} punten{teClaimen(state, k.id) ? ` (${teClaimen(state, k.id)} nog te claimen)` : ""} · {mins} min gelezen deze week</p>;
+          return <p key={k.id} className="ff-small"><b>{k.name}:</b> niveau {levelOf(geclaimd(state, k.id))} · {state.xp[k.id] ?? 0} punten{teClaimen(state, k.id) ? ` (${teClaimen(state, k.id)} nog te claimen)` : ""} · {mins} min gelezen deze week</p>;
         })}
       </section>
 

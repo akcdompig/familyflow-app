@@ -131,7 +131,7 @@ function Play({ scenario: s, me, onClose, onToast }: { scenario: Scenario; me: M
     <div className="ff-screen">
       <header className="ff-top">
         <div>
-          <div className="ff-eyebrow">Level {s.id} · {s.where}</div>
+          <div className="ff-eyebrow">Oefening {s.id} · {s.where}</div>
           <h1 className="ff-h2">{s.title}</h1>
         </div>
         <button className="ff-iconbtn" onClick={onClose} aria-label="Stoppen"><Icon name="sluit" /></button>
@@ -183,7 +183,7 @@ function Play({ scenario: s, me, onClose, onToast }: { scenario: Scenario; me: M
             ))}
           </div>
           <p className="ff-small ff-muted">Dit antwoord is alleen voor jou.</p>
-          <button className="ff-btn ff-btn-primary ff-btn-wide" onClick={finish}>Level klaar</button>
+          <button className="ff-btn ff-btn-primary ff-btn-wide" onClick={finish}>Oefening klaar</button>
         </section>
       )}
     </div>

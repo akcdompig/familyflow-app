@@ -12,6 +12,7 @@ import { CoachNu } from "@/components/screens/CoachNu";
 import { Gezin } from "@/components/screens/Gezin";
 import { Ik } from "@/components/screens/Ik";
 import { Leerplanner } from "@/components/screens/Leerplanner";
+import { EersteKeer, UitlegPagina, type UitlegTab } from "@/components/screens/Uitleg";
 import { MijnWerk } from "@/components/screens/MijnWerk";
 import { Oefenen } from "@/components/screens/Oefenen";
 import { ProApp } from "@/components/screens/Pro";
@@ -39,7 +40,7 @@ import { SchermOuder } from "./Scherm";
 import { SamenVerder } from "./SamenVerder";
 
 type Tab = "vandaag" | "gezin" | "samen" | "hulp" | "ik";
-type Pagina = null | "avatar" | "werk" | "meer" | "ouders" | "planner" | "privacy";
+type Pagina = null | "avatar" | "werk" | "meer" | "ouders" | "planner" | "privacy" | "uitleg";
 
 const NAV: { id: Tab; label: string; icon: IconName }[] = [
   { id: "vandaag", label: "Vandaag", icon: "taken" },
@@ -152,6 +153,7 @@ export function AppV2() {
   else if (pagina === "avatar") vol = <AvatarMaker key={me.id} member={me} onClose={() => setPagina(null)} onSaved={setToast} />;
   else if (pagina === "werk") vol = <MijnWerk state={state} me={me} onClose={() => setPagina(null)} onToast={setToast} />;
   else if (pagina === "planner") vol = <Leerplanner key={me.id} state={state} me={me} onClose={() => setPagina(null)} onToast={setToast} />;
+  else if (pagina === "uitleg") vol = <UitlegPagina me={me} onClose={() => setPagina(null)} onToast={setToast} />;
 
   const terug = (inhoud: ReactElement) => (
     <>
@@ -168,20 +170,31 @@ export function AppV2() {
           {pagina === "meer" && terug(<Ik state={state} me={me} onEditAvatar={() => setPagina("avatar")} onCalm={() => setCalm(true)} onToast={setToast} />)}
           {pagina === "privacy" && <Privacy state={state} me={me} onToast={setToast} onTerug={() => setPagina(null)} />}
           {pagina === "ouders" && terug(<Gezin instellen state={state} me={me} onToast={setToast} onOefenen={() => { setPagina(null); setTab("hulp"); }} onCoachNu={() => setCoachNu("")} />)}
-          {!pagina && tab === "vandaag" && <Vandaag state={state} me={me} onToast={setToast} onMeerGevoel={() => setCheckIn(true)} onWie={() => (live ? setTab("ik") : setWie(true))} onSamenVerder={() => setTab("samen")} onPlanner={() => setPagina("planner")} />}
+          {/* Eerste keer op een tabblad: één korte uitleg. Daarna niet meer (terug te halen via Hoe werkt de app?). */}
+          {!pagina && <EersteKeer key={`${tab}-${me.id}`} tab={tab as UitlegTab} me={me} onMeer={() => setPagina("uitleg")} />}
+          {!pagina && tab === "vandaag" && <Vandaag state={state} me={me} onToast={setToast} onMeerGevoel={() => setCheckIn(true)} onWie={() => (live ? setTab("ik") : setWie(true))} onSamenVerder={() => setTab("samen")} onPlanner={() => setPagina("planner")} onWeek={() => { setGezinTab("week"); setTab("gezin"); }} />}
           {!pagina && tab === "samen" && <SamenVerder state={state} me={me} onToast={setToast} onCoach={(id) => setCoachNu(id)} onKlussen={() => { setGezinTab("klussen"); setTab("gezin"); }} />}
           {!pagina && tab === "gezin" && <GezinV2 key={gezinTab ?? "nu"} startTab={gezinTab} state={state} me={me} onToast={setToast} onOuders={() => setPagina("ouders")} onOpenLid={setLid} onTips={setTips} onRuzie={(id) => setRuzie(id ?? "")} onCheckIn={() => setCheckIn(true)} />}
           {!pagina && tab === "hulp" && (
             <Oefenen state={state} me={me} titel="Hulp" onToast={setToast} onCalm={() => setCalm(true)} onRuzie={() => setRuzie("")} onCoach={setCoach} onCoachNu={() => setCoachNu("")}
-              onder={isOuder ? (
-                <button className="ff-card v2-opvoed" onClick={() => setCoachNu("@opvoed")}>
-                  <span aria-hidden="true" className="v2-opvoed-emoji">🧭</span>
-                  <span className="ff-grow"><b>Ik heb een opvoedvraag</b><span className="ff-small ff-muted ff-block">Geen ruzie nu, wel iets waar je mee zit: huiswerk, schermregels</span></span>
-                  <span aria-hidden="true">›</span>
-                </button>
-              ) : undefined} />
+              onder={
+                <>
+                  {isOuder && (
+                    <button className="ff-card v2-opvoed" onClick={() => setCoachNu("@opvoed")}>
+                      <span aria-hidden="true" className="v2-opvoed-emoji">🧭</span>
+                      <span className="ff-grow"><b>Ik heb een opvoedvraag</b><span className="ff-small ff-muted ff-block">Geen ruzie nu, wel iets waar je mee zit: huiswerk, schermregels</span></span>
+                      <span aria-hidden="true">›</span>
+                    </button>
+                  )}
+                  <button className="ff-card v2-opvoed" onClick={() => setPagina("uitleg")}>
+                    <span aria-hidden="true" className="v2-opvoed-emoji">❓</span>
+                    <span className="ff-grow"><b>Hoe werkt de app?</b><span className="ff-small ff-muted ff-block">Uitleg in gewone woorden: je dag, taken, afspraken, punten</span></span>
+                    <span aria-hidden="true">›</span>
+                  </button>
+                </>
+              } />
           )}
-          {!pagina && tab === "ik" && <IkV2 state={state} me={me} onToast={setToast} onAvatar={() => setPagina("avatar")} onWerk={() => setPagina("werk")} onMeer={() => setPagina("meer")} onPrivacy={() => setPagina("privacy")} onOuders={isOuder ? () => setPagina("ouders") : undefined} onPlanner={isOuder && state.members.some((m) => m.role !== "ouder") ? () => setPagina("planner") : undefined} />}
+          {!pagina && tab === "ik" && <IkV2 state={state} me={me} onToast={setToast} onAvatar={() => setPagina("avatar")} onWerk={() => setPagina("werk")} onMeer={() => setPagina("meer")} onPrivacy={() => setPagina("privacy")} onUitleg={() => setPagina("uitleg")} onOuders={isOuder ? () => setPagina("ouders") : undefined} onPlanner={isOuder && state.members.some((m) => m.role !== "ouder") ? () => setPagina("planner") : undefined} />}
 
           <nav className="ff-nav v2-nav" aria-label="Hoofdmenu" style={{ gridTemplateColumns: `repeat(${NAV.length}, minmax(0, 1fr))` }}>
             {NAV.map((n) => {

@@ -58,21 +58,22 @@ export function AfspraakSheet({ open, me, datum, item, onClose, onToast }: { ope
       {!check ? (
         <form className="ff-stack-s" onSubmit={(e) => { e.preventDefault(); opslaan(); }} noValidate>
           <h2 className="ff-h2">{item ? "Afspraak aanpassen" : "Afspraak toevoegen"}</h2>
+          <p className="ff-small ff-muted">Nodig: wat, datum en hoe laat. De rest mag je overslaan.</p>
           <label className="ff-field">
-            <span className="ff-eyebrow">Wat</span>
-            <input value={x.titel} onChange={zet("titel")} placeholder="Bijv. Ontbijten met Akram" maxLength={80} aria-invalid={geprobeerd && !x.titel.trim()} />
+            <span className="ff-eyebrow">Wat <span className="ff-nodig">(nodig)</span></span>
+            <input value={x.titel} onChange={zet("titel")} placeholder="Bijv. huisarts, gesprek op school" maxLength={80} aria-invalid={geprobeerd && !x.titel.trim()} />
           </label>
           <label className="ff-field">
-            <span className="ff-eyebrow">Datum</span>
+            <span className="ff-eyebrow">Datum <span className="ff-nodig">(nodig)</span></span>
             <input type="date" value={x.datum} onChange={zet("datum")} aria-invalid={geprobeerd && !x.datum} />
           </label>
           <div className="ff-row ff-afspraak-tijden">
             <label className="ff-field ff-grow">
-              <span className="ff-eyebrow">Van</span>
+              <span className="ff-eyebrow">Van <span className="ff-nodig">(nodig)</span></span>
               <input type="time" value={x.van} onChange={zet("van")} aria-invalid={geprobeerd && !x.van} />
             </label>
             <label className="ff-field ff-grow">
-              <span className="ff-eyebrow">Tot</span>
+              <span className="ff-eyebrow">Tot <span className="ff-nodig">(nodig)</span></span>
               <input type="time" value={x.tot} onChange={zet("tot")} aria-invalid={geprobeerd && (!x.tot || x.tot <= x.van)} />
             </label>
           </div>
@@ -143,7 +144,7 @@ export function AfspraakRij({ a, wie, me, onOpen }: { a: AgendaItem; wie: Member
 }
 
 /** Afspraken op een dag: van jezelf (aan te passen) en, voor ouders, ook van de rest van het gezin. */
-export function AfsprakenOpDag({ state, me, datum, onToast, alleenIk = false, titel = "📅 Afspraken" }: { state: FamilyState; me: Member; datum: string; onToast: (m: string) => void; alleenIk?: boolean; titel?: string }) {
+export function AfsprakenOpDag({ state, me, datum, onToast, alleenIk = false, titel = "📅 Afspraken", toevoegen = true }: { state: FamilyState; me: Member; datum: string; onToast: (m: string) => void; alleenIk?: boolean; titel?: string; toevoegen?: boolean }) {
   const [open, setOpen] = useState<{ item?: AgendaItem } | null>(null);
   const leden = state.members.filter((m) => m.joined !== false && (m.id === me.id || (!alleenIk && (me.role === "ouder" || m.role === "ouder"))));
   const rijen = leden.flatMap((m) => (state.agenda?.[m.id] ?? []).filter((a) => a.datum === datum).map((a) => ({ a, m }))).sort((x, y) => x.a.van.localeCompare(y.a.van));
@@ -153,7 +154,7 @@ export function AfsprakenOpDag({ state, me, datum, onToast, alleenIk = false, ti
       <b>{titel}</b>
       {rijen.map(({ a, m }) => <AfspraakRij key={a.id} a={a} wie={m} me={me} onOpen={() => setOpen({ item: a })} />)}
       {!rijen.length && <span className="ff-small ff-muted">Geen afspraken.</span>}
-      {datum >= vandaag && <button className="ff-btn ff-btn-ghost ff-btn-wide" onClick={() => setOpen({})}>+ Afspraak toevoegen</button>}
+      {toevoegen && datum >= vandaag && <button className="ff-btn ff-btn-ghost ff-btn-wide" onClick={() => setOpen({})}>+ Afspraak toevoegen</button>}
       <AfspraakSheet open={!!open} me={me} datum={datum} item={open?.item} onClose={() => setOpen(null)} onToast={onToast} />
     </section>
   );
