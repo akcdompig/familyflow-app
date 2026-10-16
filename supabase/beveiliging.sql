@@ -158,7 +158,8 @@ declare
   uit jsonb := nieuw;
   k text;
   ouder_velden text[] := array['family', 'rewards', 'pros', 'consent', 'proNotes', 'goals', 'allesAan', 'startedAt', 'meetings', 'pet', 'checked', 'badgesStart', 'version', 'klusAfspraken', 'vrijstelling', 'bezwaarAntwoord', 'schermtijd', 'schermAfspraak'];
-  per_lid text[] := array['checkins', 'history', 'plans', 'coach', 'played', 'werk', 'somtoday', 'vakanties', 'rooster', 'interesses', 'reading', 'actief', 'sleep', 'doelen'];
+  -- 3.2: xpLog (waar komen je punten vandaan), agenda (losse afspraken) en inzet: ieder alleen de eigen.
+  per_lid text[] := array['checkins', 'history', 'plans', 'coach', 'played', 'werk', 'somtoday', 'vakanties', 'rooster', 'interesses', 'reading', 'actief', 'sleep', 'doelen', 'xpLog', 'agenda', 'inzet'];
 begin
   -- Ouder-instellingen: altijd de bestaande waarde.
   foreach k in array ouder_velden loop
@@ -220,6 +221,13 @@ language sql immutable as $$
       'bezwaarAntwoord', (select coalesce(jsonb_object_agg(e.key, e.value), '{}'::jsonb) from jsonb_each(coalesce(st -> 'bezwaarAntwoord', '{}')) e
                           where exists (select 1 from jsonb_array_elements(coalesce(st -> 'bezwaren', '[]')) c where c ->> 'id' = e.key and c ->> 'door' = me)),
       'doelen', public.ff_eigen('{}', coalesce(st -> 'doelen', '{}'), me),
+      'xpLog', public.ff_eigen('{}', coalesce(st -> 'xpLog', '{}'), me),
+      'inzet', public.ff_eigen('{}', coalesce(st -> 'inzet', '{}'), me),
+      -- Afspraken: je eigen helemaal, die van ouders zonder notitie, die van broers en zussen niet.
+      'agenda', (select coalesce(jsonb_object_agg(e.key, case when e.key = me then e.value
+                   else (select coalesce(jsonb_agg(a - 'notitie'), '[]'::jsonb) from jsonb_array_elements(case when jsonb_typeof(e.value) = 'array' then e.value else '[]'::jsonb end) a) end), '{}'::jsonb)
+                 from jsonb_each(coalesce(st -> 'agenda', '{}')) e
+                 where e.key = me or exists (select 1 from jsonb_array_elements(coalesce(st -> 'members', '[]')) m where m ->> 'id' = e.key and m ->> 'role' = 'ouder')),
       'schermtijd', public.ff_eigen('{}', coalesce(st -> 'schermtijd', '{}'), me),
       'schermAfspraak', public.ff_eigen('{}', coalesce(st -> 'schermAfspraak', '{}'), me),
       'proNotes', '{"school": "", "zorg": ""}'::jsonb

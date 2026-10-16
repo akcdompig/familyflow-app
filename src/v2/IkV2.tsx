@@ -5,9 +5,12 @@ import { Avatar } from "@/components/avatar/Avatar";
 import { Interesses } from "@/components/screens/CoachTip";
 import { Herinneringen } from "@/components/screens/Herinneringen";
 import { ClaimViering } from "@/components/screens/Viering";
+import { PuntenHistorie } from "@/components/screens/Punten";
+import { InzetKaart } from "@/components/screens/Inzet";
 import { BADGES, bijna } from "@/lib/badges";
 import { expressionFor } from "@/lib/mood";
 import { actions } from "@/lib/store";
+import type { OpenRegel } from "@/lib/herkomst";
 import { geclaimd, levelProgress, teClaimen, xpForLevel } from "@/lib/xp";
 import type { FamilyState, Member } from "@/lib/types";
 
@@ -17,7 +20,7 @@ export function IkV2({ state, me, onToast, onAvatar, onWerk, onMeer, onOuders, o
   const lp = levelProgress(xp);
   const kist = teClaimen(state, me.id);
   const [alleBadges, setAlleBadges] = useState(false);
-  const [claim, setClaim] = useState<{ van: number; n: number } | null>(null);
+  const [claim, setClaim] = useState<{ van: number; n: number; regels: OpenRegel[] } | null>(null);
   const mijnBadges = (state.badges ?? []).filter((b) => b.who === me.id);
   const voortgang = bijna(state, me.id);
   const isOuder = me.role === "ouder";
@@ -45,9 +48,13 @@ export function IkV2({ state, me, onToast, onAvatar, onWerk, onMeer, onOuders, o
         <section className="ff-card ff-schatkist">
           <div className="ff-schatkist-bol" aria-hidden="true">💎<b>+{kist}</b></div>
           <div className="ff-grow"><b>Je schatkist</b><span className="ff-small ff-muted ff-block">{kist} punten om te claimen</span></div>
-          <button className="ff-btn ff-btn-primary" onClick={() => { const van = geclaimd(state, me.id); const c = actions.claimPunten(me.id); if (c) setClaim({ van, n: c }); }}>Claim</button>
+          <button className="ff-btn ff-btn-primary" onClick={() => { const c = actions.claim(me.id); if (c) setClaim({ van: c.van, n: c.totaal, regels: c.regels }); }}>Claim</button>
         </section>
       )}
+
+      <PuntenHistorie state={state} me={me} />
+
+      <InzetKaart state={state} me={me} onToast={onToast} />
 
       <section className="ff-card ff-stack-s">
         <b>🏆 Mijn achievements</b>
@@ -85,7 +92,7 @@ export function IkV2({ state, me, onToast, onAvatar, onWerk, onMeer, onOuders, o
         {isOuder && onOuders && <button className="v2-menu-rij" onClick={onOuders}><span aria-hidden="true">👨‍👩‍👧</span><b className="ff-grow">Gezin instellen: uitnodigen, beloningen, bedtijden</b><span aria-hidden="true">›</span></button>}
       </section>
 
-      {claim && <ClaimViering me={me} van={claim.van} n={claim.n} onKlaar={() => setClaim(null)} />}
+      {claim && <ClaimViering me={me} van={claim.van} n={claim.n} regels={claim.regels} onKlaar={() => setClaim(null)} />}
     </div>
   );
 }

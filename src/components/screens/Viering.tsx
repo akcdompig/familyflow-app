@@ -5,6 +5,7 @@ import { Avatar } from "@/components/avatar/Avatar";
 import { badgeDef } from "@/lib/badges";
 import { actions } from "@/lib/store";
 import { levelOf } from "@/lib/xp";
+import type { OpenRegel } from "@/lib/herkomst";
 import type { FamilyState, Member } from "@/lib/types";
 
 const KLEUREN = ["#ff6b57", "#ffc845", "#3cc6a0", "#8fa6ff", "#ff9ec7", "#ffffff"];
@@ -56,34 +57,55 @@ export function BadgeViering({ state, me }: { state: FamilyState; me: Member }) 
   );
 }
 
-/** Punten claimen: de schatkist gaat open, je poppetje springt in het midden en de punten tellen op. */
-export function ClaimViering({ me, van, n, onKlaar }: { me: Member; van: number; n: number; onKlaar: () => void }) {
-  const [teller, setTeller] = useState(0);
+/**
+  Punten claimen: je ziet waarvoor je ze kreeg. De regels komen één voor één binnen en tellen op tot het totaal.
+  Snel (hooguit ~2 seconden), en bij "minder beweging" staat alles meteen in beeld.
+*/
+export function ClaimViering({ me, van, n, regels = [], onKlaar }: { me: Member; van: number; n: number; regels?: OpenRegel[]; onKlaar: () => void }) {
+  const lijst = kortLijstje(regels, n);
+  const rustig = typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  const [zicht, setZicht] = useState(rustig ? lijst.length : 0);
   useEffect(() => {
     trillen();
-    const start = performance.now();
-    let raf = 0;
-    const stap = (t: number) => {
-      const p = Math.min(1, (t - start) / 1400);
-      setTeller(Math.round(n * (1 - Math.pow(1 - p, 3))));
-      if (p < 1) raf = requestAnimationFrame(stap);
-    };
-    raf = requestAnimationFrame(stap);
-    return () => cancelAnimationFrame(raf);
-  }, [n]);
+  }, []);
+  useEffect(() => {
+    if (zicht >= lijst.length) return;
+    const t = window.setTimeout(() => setZicht((z) => z + 1), zicht === 0 ? 250 : Math.min(320, 1800 / lijst.length));
+    return () => window.clearTimeout(t);
+  }, [zicht, lijst.length]);
+  const klaar = zicht >= lijst.length;
+  const teller = klaar ? n : lijst.slice(0, zicht).reduce((a, r) => a + r.n, 0);
   const oud = levelOf(van);
   const nieuw = levelOf(van + n);
   return (
-    <div className="ff-viering" role="alertdialog" aria-label={`${n} punten geclaimd`}>
-      <Confetti />
-      <div className="ff-viering-kaart">
+    <div className="ff-viering" role="alertdialog" aria-modal="true" aria-label={`${n} punten geclaimd`}>
+      {!rustig && <Confetti />}
+      <div className="ff-viering-kaart ff-claim-kaart">
         <div className="ff-viering-badge" aria-hidden="true">💎</div>
-        <div className="ff-viering-pop"><Avatar config={me.avatar} expression="blij" size={170} label={me.name} /></div>
-        <b className="ff-viering-teller">+{teller}</b>
-        <span className="ff-muted">punten geclaimd</span>
-        {nieuw > oud && <b className="ff-viering-titel">Level {nieuw}! 🎉</b>}
-        <button className="ff-btn ff-btn-primary ff-btn-wide" onClick={onKlaar}>Top!</button>
+        <div className="ff-viering-pop"><Avatar config={me.avatar} expression="blij" size={110} label={me.name} /></div>
+        <b className="ff-viering-teller" aria-hidden="true">+{teller}</b>
+        {lijst.length > 0 && (
+          <ul className="ff-claim-lijst" aria-label="Waarvoor je punten kreeg">
+            {lijst.map((r, i) => (
+              <li key={r.wat + i} className={`ff-claim-regel${i < zicht ? " is-in" : ""}${r.onbekend ? " is-onbekend" : ""}`} aria-hidden={i >= zicht}>
+                <span className="ff-grow">{r.wat}{r.keer > 1 ? <span className="ff-muted"> ×{r.keer}</span> : null}</span>
+                <b className="ff-claim-n">+{r.n}</b>
+              </li>
+            ))}
+          </ul>
+        )}
+        <p className={`ff-claim-totaal${klaar ? " is-in" : ""}`} aria-live="polite">{klaar ? <>Je hebt in totaal <b>{n} punten</b> verdiend</> : " "}</p>
+        {klaar && nieuw > oud && <b className="ff-viering-titel">Level {nieuw}! 🎉</b>}
+        <button className="ff-btn ff-btn-primary ff-btn-wide" onClick={onKlaar}>{klaar ? "Top!" : "Sla over"}</button>
       </div>
     </div>
   );
+}
+
+/** Hooguit 7 regels in beeld. De rest samen in één regel, met het echte aantal punten. */
+function kortLijstje(regels: OpenRegel[], n: number): OpenRegel[] {
+  const max = 7;
+  const lijst = regels.length > max ? [...regels.slice(0, max - 1), { wat: `En nog ${regels.length - max + 1} andere dingen`, n: regels.slice(max - 1).reduce((a, r) => a + r.n, 0), keer: 1 }] : regels;
+  void n;
+  return lijst;
 }

@@ -559,6 +559,109 @@ await scenario("v3.2: ouder opent huiswerk en Somtoday van een kind via Ik", v2,
   assert.match(await p.locator("body").innerText(), /Somtoday/);
 });
 
+// ---------- 3.2: claimen met uitleg, losse afspraken, inzet ----------
+await scenario("v3.2: claimen laat zien waarvoor de punten zijn, één voor één, en dubbelklik geeft niks extra", v2, "18:00", async (p) => {
+  await wissel(p, "Noah");
+  await tab(p, /^Ik/).click();
+  const claim = p.getByRole("button", { name: "Claim", exact: true });
+  await claim.dblclick();
+  const dialoog = p.getByRole("alertdialog");
+  await dialoog.getByText("Je hebt in totaal 45 punten verdiend").waitFor({ timeout: 5000 });
+  const regels = await dialoog.locator(".ff-claim-regel").allInnerTexts();
+  assert.ok(regels.some((r) => /Huiswerk maken\s*\+15/.test(r)), regels.join(" | "));
+  assert.equal(regels.length, 4);
+  await dialoog.getByRole("button", { name: "Top!" }).click();
+  assert.equal(await p.getByRole("button", { name: "Claim", exact: true }).count(), 0, "schatkist is leeg");
+  await p.reload(); await p.waitForSelector(".ff-nav");
+  await wissel(p, "Noah"); await tab(p, /^Ik/).click();
+  assert.equal(await p.getByRole("button", { name: "Claim", exact: true }).count(), 0, "na herladen nog steeds leeg");
+  await p.getByText("Waar komen mijn punten vandaan?").click();
+  assert.match(await p.locator(".ff-punten-historie").innerText(), /Huiswerk maken/);
+  assert.match(await p.locator(".ff-punten-historie").innerText(), /Korte oefening gedaan/);
+});
+
+await scenario("v3.2: claimen met één beloning, en lege schatkist", v2, "18:00", async (p) => {
+  await wissel(p, "Mama");
+  await tab(p, /^Ik/).click();
+  assert.equal(await p.getByRole("button", { name: "Claim", exact: true }).count(), 0, "niks te claimen: geen knop");
+  await p.getByText("Waar komen mijn punten vandaan?").click();
+  assert.match(await p.locator(".ff-punten-historie").innerText(), /Nog niks te zien/);
+  // Eén beloning: inchecken.
+  await tab(p, /Vandaag/).click();
+  await p.locator(".v2-face").nth(3).click();
+  await tab(p, /^Ik/).click();
+  await p.getByRole("button", { name: "Claim", exact: true }).click();
+  const dialoog = p.getByRole("alertdialog");
+  await dialoog.getByText(/Je hebt in totaal \d+ punten verdiend/).waitFor({ timeout: 5000 });
+  const regels = await dialoog.locator(".ff-claim-regel").allInnerTexts();
+  assert.equal(regels.length, 1, regels.join(" | "));
+  assert.match(regels[0], /Ingecheckt/);
+});
+
+await scenario("v3.2: losse afspraak toevoegen zonder werkdag, aanpassen met 'dit verandert'", v2, "10:00", async (p) => {
+  await wissel(p, "Mama");
+  await tab(p, /Gezin/).click();
+  await p.getByRole("tab", { name: /Week/ }).click();
+  await p.getByRole("button", { name: "+ Afspraak toevoegen" }).click();
+  await p.getByRole("button", { name: "Afspraak opslaan" }).click();
+  assert.match(await p.getByRole("alert").innerText(), /naam/);
+  await p.getByRole("textbox", { name: "Wat" }).fill("Lunch met Sanne");
+  await p.getByRole("dialog").getByLabel("Van", { exact: true }).fill("12:30");
+  await p.getByRole("dialog").getByLabel("Tot", { exact: true }).fill("13:30");
+  await p.getByRole("button", { name: /Sociaal/ }).click();
+  const opslaan = p.getByRole("button", { name: "Afspraak opslaan" });
+  // Twee keer snel achter elkaar op opslaan (zelfde knop, voordat het blad dicht is).
+  await opslaan.evaluate((b) => { b.click(); b.click(); });
+  const lijst = p.getByRole("region", { name: "Afspraken" });
+  await lijst.getByText("Lunch met Sanne").waitFor();
+  assert.equal(await lijst.getByText("Lunch met Sanne").count(), 1, "één afspraak, ook na dubbelklik");
+  assert.ok(await lijst.getByText("Ontbijten met Akram").isVisible(), "afspraak van papa blijft staan");
+  await lijst.getByRole("button", { name: /Lunch met Sanne/ }).click();
+  await p.getByRole("dialog").getByLabel("Tot", { exact: true }).fill("14:00");
+  await p.getByRole("button", { name: "Opslaan", exact: true }).click();
+  const check = p.getByRole("region", { name: "Dit verandert" });
+  assert.match(await check.innerText(), /Eind:\s*13\.30\s*→\s*14\.00/);
+  await check.getByRole("button", { name: "Ja, opslaan" }).click();
+  assert.match(await lijst.innerText(), /12\.30–14\.00/);
+  assert.match(await lijst.innerText(), /11\.00–12\.00/, "andere afspraak ongewijzigd");
+});
+
+await scenario("v3.2: zakelijke afspraak geeft geen punten; inzet staat bij Ik zonder punten", v2, "18:00", async (p) => {
+  await wissel(p, "Papa");
+  await tab(p, /^Ik/).click();
+  const punten = await p.locator(".v2-ik-kop").innerText();
+  await tab(p, /Gezin/).click();
+  await p.getByRole("tab", { name: /Week/ }).click();
+  await p.getByRole("button", { name: "+ Afspraak toevoegen" }).click();
+  await p.getByRole("textbox", { name: "Wat" }).fill("Pitch bij klant");
+  await p.getByRole("dialog").getByLabel("Van", { exact: true }).fill("09:00");
+  await p.getByRole("dialog").getByLabel("Tot", { exact: true }).fill("10:00");
+  await p.getByRole("button", { name: /Zakelijk/ }).click();
+  await p.getByRole("button", { name: "Afspraak opslaan" }).click();
+  await tab(p, /^Ik/).click();
+  assert.equal(await p.locator(".v2-ik-kop").innerText(), punten, "zelfde punten");
+  const inzet = p.getByRole("region", { name: "Wat je deed deze week" });
+  assert.match(await inzet.innerText(), /Zakelijke afspraak: Pitch bij klant/);
+  assert.match(await inzet.innerText(), /zakelijke afspraak: Pitch bij klant\./i);
+  await inzet.getByRole("button", { name: "+ Iets wat je deed" }).click();
+  await inzet.getByRole("button", { name: /Rust en herstel/ }).click();
+  await inzet.getByRole("button", { name: "Erbij zetten" }).click();
+  assert.match(await inzet.innerText(), /ruimte gemaakt voor rust en herstel/);
+  assert.equal(await p.locator(".v2-ik-kop").innerText(), punten, "inzet geeft geen punten");
+});
+
+for (const breed of [390, 1280]) {
+  await scenario(`v3.2: afspraak met plaatje past op het scherm (${breed}px)`, v2, "10:00", async (p) => {
+    await p.setViewportSize({ width: breed, height: 900 });
+    await wissel(p, "Papa");
+    const kaart = p.getByRole("region", { name: "Afspraken" });
+    await kaart.waitFor();
+    assert.equal(await kaart.locator(".ff-afspraak-beeld").count(), 1, "plaatje bij ontbijten met Akram");
+    const breedte = await p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
+    assert.ok(breedte, "geen horizontaal scrollen");
+  });
+}
+
 await browser.close();
 if (fouten) {
   console.log(`\n${fouten} scenario('s) mislukt`);

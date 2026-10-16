@@ -10,7 +10,8 @@ import { Herinneringen } from "@/components/screens/Herinneringen";
 import { ClaimViering } from "@/components/screens/Viering";
 import { CoachTip } from "@/components/screens/CoachTip";
 import { bijna } from "@/lib/badges";
-import { geclaimd, teClaimen } from "@/lib/xp";
+import type { OpenRegel } from "@/lib/herkomst";
+import { teClaimen } from "@/lib/xp";
 import { Icon } from "@/components/ui/Icon";
 import { MoodFace } from "@/components/ui/MoodFace";
 import { actions } from "@/lib/store";
@@ -497,7 +498,7 @@ function KlussenVandaag({ state, me, onGoThuis }: { state: FamilyState; me: Memb
 */
 function Schatkist({ state, me }: { state: FamilyState; me: Member }) {
   const n = teClaimen(state, me.id);
-  const [viering, setViering] = useState<{ van: number; n: number } | null>(null);
+  const [viering, setViering] = useState<{ van: number; n: number; regels: OpenRegel[] } | null>(null);
   const volgende = bijna(state, me.id).slice(0, 2);
   if (!n && !volgende.length && !viering) return null;
   return (
@@ -509,7 +510,7 @@ function Schatkist({ state, me }: { state: FamilyState; me: Member }) {
             <b>Je schatkist</b>
             <span className="ff-small ff-muted ff-block">{n} punten gespaard. Claim ze als je wilt, of spaar door.</span>
           </div>
-          <button className="ff-btn ff-btn-primary" onClick={() => { const van = geclaimd(state, me.id); const c = actions.claimPunten(me.id); if (c) setViering({ van, n: c }); }}>Claim</button>
+          <button className="ff-btn ff-btn-primary" onClick={() => { const c = actions.claim(me.id); if (c) setViering({ van: c.van, n: c.totaal, regels: c.regels }); }}>Claim</button>
         </div>
       )}
       {volgende.map((v) => (
@@ -522,7 +523,7 @@ function Schatkist({ state, me }: { state: FamilyState; me: Member }) {
           <span className="ff-small ff-muted">{v.n}/{v.doel}</span>
         </div>
       ))}
-      {viering && <ClaimViering me={me} van={viering.van} n={viering.n} onKlaar={() => setViering(null)} />}
+      {viering && <ClaimViering me={me} van={viering.van} n={viering.n} regels={viering.regels} onKlaar={() => setViering(null)} />}
     </section>
   );
 }
