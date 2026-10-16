@@ -10,7 +10,8 @@ import { Herinneringen } from "@/components/screens/Herinneringen";
 import { ClaimViering } from "@/components/screens/Viering";
 import { CoachTip } from "@/components/screens/CoachTip";
 import { bijna } from "@/lib/badges";
-import { geclaimd, teClaimen } from "@/lib/xp";
+import type { OpenRegel } from "@/lib/herkomst";
+import { teClaimen } from "@/lib/xp";
 import { Icon } from "@/components/ui/Icon";
 import { MoodFace } from "@/components/ui/MoodFace";
 import { actions } from "@/lib/store";
@@ -147,16 +148,26 @@ export function Row({ members, row, state, me, onOpen }: { members: Member[]; ro
         const hongerig = !zzz && !werk && m.joined !== false && honger(state, m.id);
         const spread = Math.min(46, 92 / members.length);
         const left = 50 + (i - (members.length - 1) / 2) * spread;
-        const style = { left: `${left}%` } as CSSProperties;
+        // Elke persoon krijgt een eigen strook van de kamer; het label blijft daarbinnen (geen overlap bij lange namen).
+        const style = { left: `${left}%`, width: `${spread}%` } as CSSProperties;
+        const status = m.joined === false ? "nog niet aangemeld" : zzz ? "slaapt" : werk ? null : stinkt ? "nog even douchen?" : hongerig ? "heeft honger…" : moodLabel(c);
+        const waar = werk ? (werk.look === "school" ? "op school" : werk.werk.naam) : "";
         return (
           <button key={m.id} className={`ff-slot ff-slot-${row} ${m.joined === false ? "is-away" : ""}`} style={style} onClick={() => onOpen(m.id)} aria-label={`${m.name}: ${zzz ? "slaapt" : werk ? `${werk.look === "school" ? "op school" : `aan het werk bij ${werk.werk.naam}`}, ${restTekst(werk.rest)}` : moodLabel(c)}`}>
             <Avatar config={m.avatar} expression={zzz ? "slaap" : expressionFor(c)} bezig={werk?.look} walm={stinkt} dorst={dorstig} honger={hongerig} energy={m.energy} size={row === "voor" ? 112 : 100} seed={i * 3 + (row === "voor" ? 2 : 0)} label={m.name} />
             <span className="ff-tag">
-              <span className="ff-tag-name">
+              <span className="ff-tag-name" title={m.name}>
                 <span className="ff-dot" style={{ background: moodDot(c) }} />
-                {m.id === me.id ? "Jij" : m.name}
+                <span className="ff-tag-txt">{m.id === me.id ? "Jij" : m.name}</span>
               </span>
-              <span className={`ff-tag-mood${zzz ? " is-slaap" : werk ? " is-werk" : ""}`}>{m.joined === false ? "nog niet aangemeld" : zzz ? "slaapt" : werk ? `${werk.look === "school" ? "op school" : werk.werk.naam} · ${restTekst(werk.rest)}` : stinkt ? "nog even douchen?" : hongerig ? "heeft honger…" : moodLabel(c)}</span>
+              {werk ? (
+                <>
+                  <span className="ff-tag-mood is-werk ff-tag-txt" title={waar}>{waar}</span>
+                  <span className="ff-tag-mood ff-tag-txt">{restTekst(werk.rest)}</span>
+                </>
+              ) : (
+                <span className={`ff-tag-mood ff-tag-txt${zzz ? " is-slaap" : ""}`}>{status}</span>
+              )}
               {werk ? <BezigBalk b={werk} klein /> : m.joined !== false && !zzz && <Meters state={state} id={m.id} klein />}
             </span>
             {c?.wantsTalk && <span className="ff-bubble" aria-hidden="true"><Icon name="chat" size={16} /></span>}
@@ -487,7 +498,7 @@ function KlussenVandaag({ state, me, onGoThuis }: { state: FamilyState; me: Memb
 */
 function Schatkist({ state, me }: { state: FamilyState; me: Member }) {
   const n = teClaimen(state, me.id);
-  const [viering, setViering] = useState<{ van: number; n: number } | null>(null);
+  const [viering, setViering] = useState<{ van: number; n: number; regels: OpenRegel[] } | null>(null);
   const volgende = bijna(state, me.id).slice(0, 2);
   if (!n && !volgende.length && !viering) return null;
   return (
@@ -499,7 +510,7 @@ function Schatkist({ state, me }: { state: FamilyState; me: Member }) {
             <b>Je schatkist</b>
             <span className="ff-small ff-muted ff-block">{n} punten gespaard. Claim ze als je wilt, of spaar door.</span>
           </div>
-          <button className="ff-btn ff-btn-primary" onClick={() => { const van = geclaimd(state, me.id); const c = actions.claimPunten(me.id); if (c) setViering({ van, n: c }); }}>Claim</button>
+          <button className="ff-btn ff-btn-primary" onClick={() => { const c = actions.claim(me.id); if (c) setViering({ van: c.van, n: c.totaal, regels: c.regels }); }}>Claim</button>
         </div>
       )}
       {volgende.map((v) => (
@@ -512,7 +523,7 @@ function Schatkist({ state, me }: { state: FamilyState; me: Member }) {
           <span className="ff-small ff-muted">{v.n}/{v.doel}</span>
         </div>
       ))}
-      {viering && <ClaimViering me={me} van={viering.van} n={viering.n} onKlaar={() => setViering(null)} />}
+      {viering && <ClaimViering me={me} van={viering.van} n={viering.n} regels={viering.regels} onKlaar={() => setViering(null)} />}
     </section>
   );
 }

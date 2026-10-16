@@ -125,7 +125,11 @@ p { margin: 0; }
   background: var(--ff-vlak); border-radius: 16px; padding: 5px 12px 6px;
   font-size: var(--ff-t-s); font-weight: 800; box-shadow: var(--ff-schaduw-s);
 }
-.ff-tag-name { display: inline-flex; align-items: center; gap: 6px; }
+.ff-tag-name { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; min-width: 0; }
+/* Lange namen en werkplekken: binnen de eigen strook blijven, inkorten met … (volledige tekst in aria-label en title). */
+.ff-tag { max-width: 100%; min-width: 0; box-sizing: border-box; }
+.ff-tag > * { max-width: 100%; }
+.ff-tag-txt { display: block; min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ff-tag-mood { font-weight: 600; font-size: 0.74rem; color: var(--ff-tekst-zacht); }
 .ff-dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
 .ff-bubble {
@@ -1103,3 +1107,44 @@ a.ff-onb-choice { text-decoration: none; color: inherit; }
 .v2-mijnweek-dag { flex: none; width: 56px; font-weight: 700; color: var(--ff-tekst-zacht); font-size: 13px; }
 .ff-klus-uitleg { background: var(--ff-munt-zacht); border-radius: 14px; padding: 10px 12px; }
 .ff-klus-uitleg p { margin: 4px 0 0; }
+
+/* ---- 3.2 Duidelijk ---- */
+.ff-adem { justify-items: center; text-align: center; }
+.ff-adem-fase { font-family: var(--ff-font-speels); font-weight: 600; font-size: 1.15rem; color: var(--ff-munt-donker); margin: 0; }
+
+/* ---- 3.2: claimen met uitleg ---- */
+.ff-claim-kaart { max-height: calc(100dvh - 32px); overflow-y: auto; }
+.ff-claim-lijst { list-style: none; margin: 0; padding: 0; width: 100%; display: grid; gap: 6px; text-align: left; }
+.ff-claim-regel { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 12px; background: var(--ff-zon-zacht, #fff6dc); font-weight: 700; font-size: var(--ff-t-s); opacity: 0; transform: translateY(6px); transition: opacity .22s ease-out, transform .22s ease-out; }
+.ff-claim-regel.is-in { opacity: 1; transform: none; }
+.ff-claim-regel.is-onbekend { background: var(--ff-wolk, #f4f1ee); font-weight: 600; }
+.ff-claim-n { color: var(--ff-koraal-knop); font-variant-numeric: tabular-nums; }
+.ff-claim-regel.is-in .ff-claim-n { animation: ff-claim-zweef .5s ease-out; }
+@keyframes ff-claim-zweef { from { transform: translateY(-8px); opacity: .3; } to { transform: none; opacity: 1; } }
+.ff-claim-totaal { margin: 4px 0 0; min-height: 1.4em; opacity: 0; transition: opacity .25s; }
+.ff-claim-totaal.is-in { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .ff-claim-regel { opacity: 1; transform: none; transition: none; } .ff-claim-totaal { opacity: 1; } }
+.ff-punten-lijst { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.ff-punten-lijst li { display: flex; gap: 10px; font-size: var(--ff-t-s); font-weight: 600; }
+.ff-punten-lijst li b { color: var(--ff-koraal-knop); font-variant-numeric: tabular-nums; }
+.ff-punten-lijst li.is-onbekend { color: var(--ff-tekst-zacht); }
+
+/* ---- 3.2: losse afspraken ---- */
+.ff-afspraak { display: flex; align-items: center; gap: 12px; width: 100%; border: 0; background: var(--ff-wolk); border-radius: var(--ff-rond-m); padding: 8px 12px 8px 8px; font: inherit; color: var(--ff-tekst); text-align: left; min-height: 56px; }
+button.ff-afspraak { cursor: pointer; }
+button.ff-afspraak:hover { background: var(--ff-lucht-zacht); }
+.ff-afspraak b { overflow-wrap: anywhere; }
+.ff-afspraak-beeld { flex: none; border-radius: 12px; }
+.ff-afspraak-emoji { flex: none; width: 40px; height: 40px; display: grid; place-items: center; font-size: 22px; background: var(--ff-vlak); border-radius: 12px; }
+.ff-afspraak-tijden { gap: 12px; align-items: stretch; }
+.ff-afspraak-tijden .ff-field { min-width: 0; }
+.ff-verschil { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.ff-verschil s { color: var(--ff-tekst-zacht); }
+.ff-field [aria-invalid="true"] { border-color: var(--ff-koraal-knop); }
+@media (prefers-reduced-motion: no-preference) { .ff-beeld-damp { animation: ff-damp 2.4s ease-in-out infinite; } }
+@keyframes ff-damp { 0%, 100% { opacity: .25; transform: translateY(1px); } 50% { opacity: .7; transform: translateY(-1px); } }
+/* ---- 3.2: inzet en waardering ---- */
+.ff-waardering { list-style: none; margin: 0; padding: 10px 12px; display: grid; gap: 4px; background: var(--ff-munt-zacht); border-radius: var(--ff-rond-m); color: var(--ff-munt-donker); font-weight: 700; font-size: var(--ff-t-s); }
+.ff-inzet-lijst { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.ff-inzet-lijst li { display: flex; align-items: center; gap: 10px; font-size: var(--ff-t-s); font-weight: 600; min-height: 32px; }
+.ff-inzet-weg { border: 0; background: var(--ff-wolk); border-radius: 50%; width: 32px; height: 32px; font: inherit; font-size: 18px; color: var(--ff-tekst-zacht); cursor: pointer; }

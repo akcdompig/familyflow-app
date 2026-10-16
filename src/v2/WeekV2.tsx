@@ -11,6 +11,7 @@ import { lookVoor } from "@/lib/status";
 import { verdeling } from "@/lib/verdeling";
 import type { FamilyState, Member } from "@/lib/types";
 import { PlanSheet } from "./Samen";
+import { AfsprakenOpDag } from "@/components/screens/Afspraak";
 
 /*
   Week: kijk vooruit (morgen trainen met Khloe en Kian) en terug (hoe ging dinsdag?).
@@ -81,6 +82,9 @@ export function WeekV2({ state, me, onToast, onOpenLid }: { state: FamilyState; 
         }) : <span className="ff-small ff-muted">{verleden ? "Deze dag niks samen gedaan." : "Nog niks gepland."}</span>}
         {!verleden && <button className="ff-btn ff-btn-ghost ff-btn-wide" onClick={() => setPlan(true)}>+ Iets samen plannen op deze dag</button>}
       </section>
+
+      {/* Losse afspraken: zonder eerst de hele werkweek in te vullen. */}
+      <AfsprakenOpDag state={state} me={me} datum={dag} onToast={onToast} />
 
       {/* Terugblik of vandaag: hoe ging het? */}
       {!toekomst && (

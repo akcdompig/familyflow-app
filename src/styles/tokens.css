@@ -3,7 +3,7 @@
 :root {
   /* Merk */
   --ff-koraal: #ff6b57;        /* merk, illustraties */
-  --ff-koraal-knop: #d9442f;   /* knoppen met witte tekst (contrast > 4.5:1) */
+  --ff-koraal-knop: #c43a26;   /* knoppen, links, actieve tab: 5,3:1 op wit, 4,5:1 op koraal-zacht (WCAG 1.4.3) */
   --ff-koraal-zacht: #ffe9e4;
   --ff-nacht: #23204a;         /* tekst, donkere vlakken */
   --ff-nacht-2: #3a3670;

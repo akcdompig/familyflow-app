@@ -181,7 +181,30 @@ export function demoFamily(): FamilyState {
     badgesStart: daysAgo(4),
     // Lina deed deze week voor het eerst iets nieuws; die viering was er al, zodat de demo rustig opent.
     badges: [{ id: "b-demo-1", who: "k2", badge: "nieuwe-vaardigheid", at: daysAgo(5), gezien: ["k2", "p1", "p2", "k1"] }],
-    claim: { p1: 0, p2: 0, k1: 0, k2: 0 },
+    // Voorbeeld: wat er nog in de schatkist ligt, en waarvoor. Eén eerdere claim van Noah als historie.
+    claim: { p1: 0, p2: 0, k1: 140, k2: 60 },
+    // Een losse afspraak voor papa vandaag, zonder dat er iets anders hoeft te staan.
+    agenda: {
+      p1: [{ id: "ag1", titel: "Ontbijten met Akram", datum: new Date(daysAgo(0, 12)).toLocaleDateString("sv-SE"), van: "11:00", tot: "12:00", soort: "sociaal", met: "Akram", waar: "Café de Haven", at: daysAgo(1, 20) }],
+    },
+    inzet: { p1: [{ id: "iz1", soort: "pitch", datum: new Date(daysAgo(1, 12)).toLocaleDateString("sv-SE"), tekst: "pitch voor een nieuwe klant", at: daysAgo(1, 21) }] },
+    xpLog: {
+      k1: [
+        { id: "x1", n: 10, wat: "Korte oefening gedaan", at: daysAgo(4, 17), claim: daysAgo(3, 19) },
+        { id: "x2", n: 10, wat: "Korte oefening gedaan", at: daysAgo(4, 17), claim: daysAgo(3, 19) },
+        { id: "x3", n: 20, wat: "Ochtendroutine", at: daysAgo(3, 8), claim: daysAgo(3, 19) },
+        { id: "x4", n: 10, wat: "Ochtendroutine", at: daysAgo(1, 8) },
+        { id: "x5", n: 15, wat: "Huiswerk maken", at: daysAgo(1, 17) },
+        { id: "x6", n: 5, wat: "Vaatwasser inruimen en aanzetten", at: daysAgo(1, 20) },
+        { id: "x7", n: 15, wat: "Oefenscenario met de coach", at: daysAgo(1, 19) },
+      ],
+      k2: [
+        { id: "x8", n: 10, wat: "Stofzuigen", at: daysAgo(3, 15) },
+        { id: "x9", n: 10, wat: "Was doen (draaien, ophangen, vouwen)", at: daysAgo(1, 18) },
+        { id: "x10", n: 5, wat: "Vaatwasser uitruimen", at: daysAgo(1, 8) },
+        { id: "x11", n: 5, wat: "Ochtendroutine", at: daysAgo(1, 8) },
+      ],
+    },
     werk: {
       p1: [{ id: "w1", naam: "Kantoor", soort: "vast", days: [1, 2, 4, 5], van: "08:00", tot: "17:00", inkomen: true }],
       p2: [{ id: "w2", naam: "Gemeente", soort: "vast", days: [1, 2, 3, 4], van: "08:30", tot: "17:00", inkomen: true }],

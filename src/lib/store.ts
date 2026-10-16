@@ -7,9 +7,11 @@ import { phoneTaskTitle, todayKey } from "./tasks";
 import { XP } from "./xp";
 import { DOEL, ROUTINE, basisXp, type DagLog } from "./dag";
 import { nieuweBadges } from "./badges";
+import { controleer as controleerAfspraak, isDubbel, schoon as schoonAfspraak, type Invoer } from "./agenda";
+import { markeerGeclaimd, metHerkomst, openRegels, type OpenRegel, type Wat } from "./herkomst";
 import { verdeling } from "./verdeling";
 const routineAf = (l: DagLog) => ROUTINE.filter((r) => r.gewicht > 0).every((r) => l.routine.includes(r.id));
-import type { Kookplan, PotItem, Dienst, WerkItem, CoachRun, Quest, AvatarConfig, CalmPlan, CheckIn, Conflict, ConflictSide, FamilyState, Meeting, ProKind, Task } from "./types";
+import type { AgendaItem, InzetItem, InzetSoort, Kookplan, PotItem, Dienst, WerkItem, CoachRun, Quest, AvatarConfig, CalmPlan, CheckIn, Conflict, ConflictSide, FamilyState, Meeting, ProKind, Task } from "./types";
 
 /*
   Eén store voor demo en echt.
@@ -98,15 +100,21 @@ const badgeCheck: Fn = (s) => {
   let uit = s;
   for (const { who, def } of nieuw) {
     const at = new Date().toISOString();
+    const voor = uit;
     uit = { ...uit, badges: [...(uit.badges ?? []), { id: newId("b"), who, badge: def.id, at, gezien: [] }].slice(-200), xp: addXp(uit, who, def.punten) };
+    uit = metHerkomst(voor, uit, `Achievement: ${def.naam}`, at);
     uit = metFeed(uit, who, `heeft ${def.emoji} ${def.naam} gehaald!`, def.punten);
   }
   return uit;
 };
 
 /** Alle wijzigingen gaan hierdoorheen. */
-function update(fn0: Fn) {
-  const fn: Fn = (s) => stempel(badgeCheck(fn0(basis(s))));
+function update(fn0: Fn, wat?: Wat) {
+  // Herkomst: wie kreeg punten en waarvoor. Binnen fn, zodat het ook klopt als de wijziging opnieuw wordt toegepast na een sync.
+  const fn: Fn = (s) => {
+    const voor = basis(s);
+    return stempel(badgeCheck(metHerkomst(voor, fn0(voor), wat)));
+  };
   state = fn(state);
   persistLocal();
   emit();
@@ -256,9 +264,20 @@ const metFeed = (s: FamilyState, who: string, tekst: string, punten = 0): Family
   return { ...s, feed: [...feed, { id: newId("f"), who, tekst, punten, at: new Date().toISOString() }].slice(-40) };
 };
 /** Voor de losse actie-bestanden (samenwerken.ts): dezelfde update, met badges, stempel en opslaan. */
-export const wijzig = (fn: Fn) => update(fn);
+export const wijzig = (fn: Fn, wat?: Wat) => update(fn, wat);
 export const stand = () => state;
 export { addXp, newId, metFeed };
+const naamVan = (s: FamilyState, id?: string) => s.members.find((m) => m.id === id)?.name ?? "iemand";
+/** Waarvoor waren de punten op "Mijn dag"? Eén omschrijving per soort, zodat het overzicht kort blijft. */
+function dagWat(oud: DagLog, nieuw: DagLog): string {
+  if (nieuw.routine.length !== oud.routine.length) return "Ochtendroutine";
+  if ((nieuw.water >= DOEL.water) !== (oud.water >= DOEL.water)) return "Genoeg water gedronken";
+  if ((nieuw.fruit >= DOEL.fruit) !== (oud.fruit >= DOEL.fruit)) return "Fruit gegeten";
+  if ((nieuw.eten ?? []).length !== (oud.eten ?? []).length || !!nieuw.ontbijt !== !!oud.ontbijt) return "Op tijd gegeten";
+  if (!!nieuw.sport !== !!oud.sport) return "Gesport";
+  if (!!nieuw.kleding !== !!oud.kleding) return "Schone kleren aan";
+  return "Mijn dag";
+}
 const isKid = (s: FamilyState, id: string) => !!s.members.find((m) => m.id === id) && s.members.find((m) => m.id === id)!.role !== "ouder";
 
 export const actions = {
@@ -276,11 +295,12 @@ export const actions = {
       const sleep = { ...(s.sleep ?? {}) };
       delete sleep[memberId]; // inchecken = wakker
       return { ...s, xp, sleep, checkins: { ...s.checkins, [memberId]: { ...c, at } }, history: { ...s.history, [memberId]: hist } };
-    });
+    }, "Ingecheckt");
   },
   /** Dagelijkse basis bijwerken (routine, kleding, water, fruit, ontbijt, sport). Kinderen krijgen er XP voor. */
   updateDag(memberId: string, fn: (log: DagLog) => DagLog) {
     const d = todayKey();
+    let wat = "Mijn dag";
     update((s) => {
       const oud: DagLog = { routine: [], water: 0, fruit: 0, ...(s.dag?.[d]?.[memberId] ?? {}) };
       const nieuw = fn({ ...oud, routine: [...oud.routine] });
@@ -295,15 +315,29 @@ export const actions = {
       if (!routineAf(oud) && routineAf(nieuw)) uit = metFeed(uit, memberId, "heeft de ochtendroutine gedaan 🚿", ROUTINE.filter((r) => r.gewicht > 0).length * 2 + 5);
       if (oud.water < DOEL.water && nieuw.water >= DOEL.water) uit = metFeed(uit, memberId, "heeft genoeg water gedronken 💧", 5);
       if (oud.fruit < DOEL.fruit && nieuw.fruit >= DOEL.fruit) uit = metFeed(uit, memberId, "heeft 2 stuks fruit gegeten 🍎", 5);
+      wat = dagWat(oud, nieuw);
       return uit;
-    });
+    }, () => wat);
   },
   /** Punten uit de schatkist claimen. Geeft terug hoeveel. */
   claimPunten(memberId: string): number {
-    const n = Math.max(0, (state.xp[memberId] ?? 0) - (state.claim?.[memberId] ?? state.xp[memberId] ?? 0));
-    if (!n) return 0;
-    update((s) => metFeed({ ...s, claim: { ...(s.claim ?? {}), [memberId]: s.xp[memberId] ?? 0 } }, memberId, `claimde ${n} punten 💎`));
-    return n;
+    return actions.claim(memberId)?.totaal ?? 0;
+  },
+  /**
+    Claimen met uitleg: hoeveel, en waarvoor. Eén keer: de claimstand gaat naar het puntentotaal,
+    dus een tweede tik (of herladen) vindt niks meer om te claimen. De server laat claim nooit boven xp komen.
+  */
+  claim(memberId: string): { totaal: number; regels: OpenRegel[]; van: number } | null {
+    const open = openRegels(state, memberId);
+    if (!open.totaal) return null;
+    const van = state.claim?.[memberId] ?? state.xp[memberId] ?? 0;
+    const at = new Date().toISOString();
+    update((s) => {
+      const n = Math.max(0, (s.xp[memberId] ?? 0) - (s.claim?.[memberId] ?? s.xp[memberId] ?? 0));
+      if (!n) return s;
+      return metFeed(markeerGeclaimd({ ...s, claim: { ...(s.claim ?? {}), [memberId]: s.xp[memberId] ?? 0 } }, memberId, at), memberId, `claimde ${n} punten 💎`);
+    });
+    return { ...open, van };
   },
   /** Viering van een achievement gezien. */
   badgeGezien(id: string, viewer: string) {
@@ -327,6 +361,8 @@ export const actions = {
   */
   klusGedaan(key: string, by: string, xp: number, label = ""): string {
     const id = newId("k");
+    const klusNaam = label ? label.replace(/ \(alvast\)$/, "") : "Klus";
+    let wat: Wat = klusNaam;
     update((s) => {
       const d = todayKey();
       const at = new Date().toISOString();
@@ -340,12 +376,14 @@ export const actions = {
         const groep = newId("g");
         const s1 = { ...s, klusLog: [...(s.klusLog ?? []), { id, klus: key, by, at, samen: groep }, { id: newId("k"), klus: key, by: partner, at, samen: groep }].slice(-300) };
         const s2 = { ...s1, xp: addXp({ ...s1, xp: addXp(s1, by, half) }, partner, half) };
+        wat = (w) => `${klusNaam} (samen met ${w === by ? naamVan(s, partner) : naamVan(s, by)})`;
         return metFeed(s2, by, `en ${s.members.find((m) => m.id === partner)?.name ?? "iemand"} deden samen: ${tekst} 🤝`, half);
       }
       const netjes = (s.uitdagingen ?? []).some((u) => u.klus === key && u.verliezer === by && (u.manier === "spel" || u.manier === "loting" || !u.manier) && new Date(u.at).toDateString() === new Date().toDateString());
       const totaal = xp + (netjes ? 3 : 0);
+      wat = netjes ? `${klusNaam} (netjes gedaan +3)` : klusNaam;
       return metFeed({ ...s, klusLog: [...(s.klusLog ?? []), { id, klus: key, by, at }].slice(-300), xp: totaal ? addXp(s, by, totaal) : s.xp }, by, `heeft gedaan: ${tekst} ✓${netjes ? " Netjes 💪" : ""}`, totaal);
-    });
+    }, (w) => (typeof wat === "function" ? wat(w) : wat));
     return id;
   },
   /** Verkeerd ingevuld? Weghalen, XP gaat er weer af (bij samen: bij allebei). */
@@ -447,7 +485,7 @@ export const actions = {
         checked = { ...(s.checked ?? {}), [d]: c };
       }
       return { ...s, checked, done: { ...s.done, [d]: day }, xp: telt && task.xp ? addXp(s, doer, wasDone ? -task.xp : task.xp) : s.xp };
-    });
+    }, task.title);
     return nowDone;
   },
   /** Ouder bevestigt een blokje (bijvoorbeeld na overhoren). Dan pas XP. */
@@ -457,7 +495,7 @@ export const actions = {
       const doer = s.done[d]?.[task.id];
       if (!doer || s.checked?.[d]?.[task.id]) return s;
       return { ...s, checked: { ...(s.checked ?? {}), [d]: { ...(s.checked?.[d] ?? {}), [task.id]: parentId } }, xp: task.xp ? addXp(s, doer, task.xp) : s.xp };
-    });
+    }, `${task.title} (bevestigd)`);
   },
   /** Werk van een gezinslid opslaan (hele lijst). */
   setWerk(memberId: string, list: WerkItem[]) {
@@ -509,7 +547,7 @@ export const actions = {
     update((s) => {
       const first = !s.calm.some((c) => c.member === memberId && isToday(c.at));
       return { ...s, calm: [...s.calm, { member: memberId, at }].slice(-100), xp: first ? addXp(s, memberId, XP.rustig) : s.xp };
-    });
+    }, "Even rustig geworden");
   },
   /** Oefenlevel klaar. Alleen de eerste keer XP. */
   finishScenario(memberId: string, id: number): boolean {
@@ -518,7 +556,7 @@ export const actions = {
       const list = s.played[memberId] ?? [];
       if (list.includes(id)) return s;
       return { ...s, played: { ...s.played, [memberId]: [...list, id] }, xp: addXp(s, memberId, XP.korteOefening) };
-    });
+    }, "Korte oefening gedaan");
     return true;
   },
   startConflict(c: Omit<Conflict, "id" | "at" | "status">) {
@@ -539,7 +577,7 @@ export const actions = {
       // Ook samen een ouder om hulp vragen telt: een respectvolle poging wordt beloond, niet alleen een perfect resultaat.
       for (const m of [c.from, c.with]) if (!solvedToday(m)) xp = { ...xp, [m]: (xp[m] ?? 0) + XP.ruzieOpgelost };
       return { ...s, xp, conflicts: s.conflicts.map((x) => (x.id === id ? { ...x, status: help ? "hulp" : "opgelost", solution, solvedAt: help ? undefined : new Date().toISOString() } : x)) };
-    });
+    }, help ? "Samen hulp gevraagd bij een ruzie" : "Ruzie samen opgelost");
   },
   /** Ouder heeft geholpen bij een ruzie. */
   parentHelped(id: string) {
@@ -582,7 +620,7 @@ export const actions = {
       const list = s.coach?.[memberId] ?? [];
       const first = !list.some((r) => r.id === run.id);
       return { ...s, coach: { ...(s.coach ?? {}), [memberId]: [...list, { ...run, at }].slice(-200) }, xp: first ? addXp(s, memberId, XP.oefenscenario) : s.xp };
-    });
+    }, "Oefenscenario met de coach");
   },
   addQuest(q: Omit<Quest, "id" | "at">) {
     const extra = { id: newId("q"), at: new Date().toISOString() };
@@ -603,7 +641,7 @@ export const actions = {
         quests: (s.quests ?? []).map((x) => (x.id === id ? { ...x, done } : x)),
         xp: addXp(s, q.member, done ? XP.quest : -XP.quest),
       };
-    });
+    }, () => { const q = (state.quests ?? []).find((x) => x.id === id); return q ? `Opdracht: ${q.title}` : "Opdracht uit het echte leven"; });
   },
   removeQuest(id: string) {
     update((s) => ({ ...s, quests: (s.quests ?? []).filter((x) => x.id !== id) }));
@@ -637,8 +675,47 @@ export const actions = {
     const earnedAfter = Math.min(XP.lezenMaxPerDag, Math.floor((today + min) / 10) * XP.lezenPer10Min);
     const gained = (earnedAfter - earnedToday) + (uit ? XP.boekUit : 0);
     const entry = { at: new Date().toISOString(), min, book: book.trim() || undefined, uit: uit || undefined };
-    update((s) => ({ ...s, reading: { ...(s.reading ?? {}), [memberId]: [...(s.reading?.[memberId] ?? []), entry].slice(-300) }, xp: gained ? addXp(s, memberId, gained) : s.xp }));
+    update((s) => ({ ...s, reading: { ...(s.reading ?? {}), [memberId]: [...(s.reading?.[memberId] ?? []), entry].slice(-300) }, xp: gained ? addXp(s, memberId, gained) : s.xp }), uit ? `Gelezen${book.trim() ? `: ${book.trim()}` : ""} (boek uit)` : `Gelezen${book.trim() ? `: ${book.trim()}` : ""}`);
     return gained;
+  },
+  /**
+    Losse afspraak opslaan (nieuw of aangepast). Geen punten, geen taak. Dezelfde afspraak twee keer opslaan
+    (dubbel tikken) geeft er één. Aanpassen raakt alleen deze afspraak. Geeft het id terug, of null als het niet klopt.
+  */
+  bewaarAfspraak(wie: string, invoer: Invoer, id?: string): string | null {
+    const x = schoonAfspraak(invoer);
+    if (controleerAfspraak(x).length) return null;
+    const lijst = state.agenda?.[wie] ?? [];
+    const bestaand = id ? lijst.find((a) => a.id === id) : undefined;
+    const dubbel = lijst.find((a) => a.id !== id && isDubbel([a], x));
+    if (dubbel) return dubbel.id;
+    const nieuwId = bestaand?.id ?? newId("ag");
+    const at = new Date().toISOString();
+    update((s) => {
+      const l = s.agenda?.[wie] ?? [];
+      if (!bestaand && isDubbel(l, x)) return s;
+      const item: AgendaItem = bestaand ? { ...bestaand, ...x, met: x.met, waar: x.waar, notitie: x.notitie, gewijzigd: at } : { id: nieuwId, ...x, at };
+      const volgende = bestaand ? l.map((a) => (a.id === nieuwId ? item : a)) : [...l, item];
+      // Bewaar wat nog komt en de laatste 60 dagen.
+      const grens = new Date(Date.now() - 60 * 864e5).toLocaleDateString("sv-SE");
+      return { ...s, agenda: { ...(s.agenda ?? {}), [wie]: volgende.filter((a) => a.datum >= grens).slice(-200) } };
+    });
+    return nieuwId;
+  },
+  verwijderAfspraak(wie: string, id: string) {
+    update((s) => ({ ...s, agenda: { ...(s.agenda ?? {}), [wie]: (s.agenda?.[wie] ?? []).filter((a) => a.id !== id) } }));
+  },
+  /** Inzet zichtbaar maken (extra project, pitch, rust). Waardering, geen punten. Zelfde soort op dezelfde dag één keer. */
+  inzetErbij(wie: string, soort: InzetSoort, datum: string, tekst?: string) {
+    update((s) => {
+      const l = s.inzet?.[wie] ?? [];
+      if (l.some((x) => x.soort === soort && x.datum === datum && (x.tekst ?? "") === (tekst?.trim() ?? ""))) return s;
+      const item: InzetItem = { id: newId("iz"), soort, datum, at: new Date().toISOString(), ...(tekst?.trim() ? { tekst: tekst.trim() } : {}) };
+      return { ...s, inzet: { ...(s.inzet ?? {}), [wie]: [...l, item].slice(-150) } };
+    });
+  },
+  inzetWeg(wie: string, id: string) {
+    update((s) => ({ ...s, inzet: { ...(s.inzet ?? {}), [wie]: (s.inzet?.[wie] ?? []).filter((x) => x.id !== id) } }));
   },
   addTasks(list: Omit<Task, "id">[]) {
     const withIds = list.map((t, i) => ({ ...t, id: newId("t") + i }));

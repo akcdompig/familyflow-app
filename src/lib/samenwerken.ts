@@ -3,7 +3,7 @@
   Los van store.ts gehouden; gebruikt dezelfde update (badges, stempel, opslaan in de cloud).
 */
 
-import { addXp, metFeed, newId, wijzig } from "./store";
+import { addXp, metFeed, newId, stand, wijzig } from "./store";
 import { todayKey } from "./tasks";
 import { OVERSLAAN, volgende } from "./verdeling";
 import type { Afspraken, Bezwaar, EigenTaak, FamilyState, PlanRegel, SamenMoment, TaakGevoel, Uitdaging } from "./types";
@@ -159,7 +159,7 @@ export const samenwerken = {
       const anderen = x.wie.filter((w) => w !== door).map((w) => naam(s, w));
       const met = [...anderen, ...(x.vrienden ? [x.vrienden] : [])];
       return metFeed(uit, x.wie.includes(door) ? door : x.wie[0], `deed samen${met.length ? ` met ${met.join(" en ")}` : ""}: ${x.titel.toLowerCase()} 💞`, 10);
-    });
+    }, () => { const x = (stand().samen ?? []).find((m) => m.id === id); return x ? `Samen: ${x.titel}` : "Samen iets gedaan"; });
   },
   reactie(id: string, wie: string, r: "😐" | "🙂" | "😍") {
     wijzig((s) => ({ ...s, samen: (s.samen ?? []).map((m) => (m.id === id ? { ...m, reactie: { ...(m.reactie ?? {}), [wie]: r } } : m)) }));

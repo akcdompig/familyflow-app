@@ -3,16 +3,19 @@
 import { useEffect, useState } from "react";
 import { Avatar } from "@/components/avatar/Avatar";
 import { ClaimViering } from "@/components/screens/Viering";
+import { AfsprakenOpDag } from "@/components/screens/Afspraak";
 import { Herinneringen } from "@/components/screens/Herinneringen";
 import { DAGDELEN, DOEL, begroeting, dagLog, dagdeel, datumTijd, reeks, type Dagdeel } from "@/lib/dag";
 import { dagprogramma, nuDoen, voortgang, type Stap } from "@/lib/dagprogramma";
 import { expressionFor } from "@/lib/mood";
 import { actions } from "@/lib/store";
-import { geclaimd, teClaimen } from "@/lib/xp";
+import type { OpenRegel } from "@/lib/herkomst";
+import { teClaimen } from "@/lib/xp";
 import { OngezondKnop } from "./Voeding";
 import { SchermKind } from "./Scherm";
 import { KlusSheet, antwoordTekst, vraagVan } from "@/components/screens/KlusSheet";
 import { klusStatus } from "@/lib/huis";
+import { iso } from "@/lib/planner";
 import type { FamilyState, Member, MoodLevel, Oordeel } from "@/lib/types";
 import { OORDEEL, actief, teEvalueren } from "@/lib/afspraken";
 
@@ -38,7 +41,7 @@ export function Vandaag({ state, me, onToast, onMeerGevoel, onWie, onSamenVerder
   const nuDeel = dagdeel();
   const [open, setOpen] = useState<Dagdeel>(nuDeel);
   const [pop, setPop] = useState<{ id: string; n: number } | null>(null);
-  const [claim, setClaim] = useState<{ van: number; n: number } | null>(null);
+  const [claim, setClaim] = useState<{ van: number; n: number; regels: OpenRegel[] } | null>(null);
   const [klusOpen, setKlusOpen] = useState<string | null>(null);
   const [pushLater, setPushLater] = useState(() => {
     try {
@@ -138,10 +141,10 @@ export function Vandaag({ state, me, onToast, onMeerGevoel, onWie, onSamenVerder
           <div className="v2-tellers">
             {/* Water, fruit en snoep zitten achter één knop: minder prikkels boven "Nu doen". */}
             <button className="v2-teller" aria-expanded={tellers} onClick={() => setTellers(!tellers)} aria-label={`Eten en drinken: water ${log.water} van ${DOEL.water}, fruit ${log.fruit} van ${DOEL.fruit}`}>
-              💧🍎 <b>{log.water + log.fruit}</b>/{DOEL.water + DOEL.fruit} {tellers ? "▴" : "▾"}
+              💧🍎 Eten en drinken <b>{log.water + log.fruit}</b>/{DOEL.water + DOEL.fruit} {tellers ? "▴" : "▾"}
             </button>
             {kist > 0 && (
-              <button className="v2-teller is-kist" onClick={() => { const van = geclaimd(state, me.id); const c = actions.claimPunten(me.id); if (c) setClaim({ van, n: c }); }}>
+              <button className="v2-teller is-kist" onClick={() => { const c = actions.claim(me.id); if (c) setClaim({ van: c.van, n: c.totaal, regels: c.regels }); }}>
                 💎 <b>+{kist}</b> claim
               </button>
             )}
@@ -214,6 +217,11 @@ export function Vandaag({ state, me, onToast, onMeerGevoel, onWie, onSamenVerder
           </button>
         );
       })()}
+
+      {/* Losse afspraken van vandaag: alleen als je er hebt. Geen vinkje, geen punten. */}
+      {(state.agenda?.[me.id] ?? []).some((a) => a.datum === iso(new Date())) && (
+        <AfsprakenOpDag state={state} me={me} datum={iso(new Date())} onToast={onToast} alleenIk titel="📅 Jouw afspraken vandaag" />
+      )}
 
       {/* Hoe voel je je: één tik */}
       <section className="v2-gevoel" aria-label="Hoe voel je je?">
@@ -290,7 +298,7 @@ export function Vandaag({ state, me, onToast, onMeerGevoel, onWie, onSamenVerder
         <button className="v2-menu-rij" onClick={onPlanner}><span aria-hidden="true">📚</span><b className="ff-grow">Huiswerk en toetsen plannen</b><span aria-hidden="true">›</span></button>
       )}
 
-      {claim && <ClaimViering me={me} van={claim.van} n={claim.n} onKlaar={() => setClaim(null)} />}
+      {claim && <ClaimViering me={me} van={claim.van} n={claim.n} regels={claim.regels} onKlaar={() => setClaim(null)} />}
       <KlusSheet state={state} me={me} klus={klusOpen ? klusStatus(state).find((k) => k.key === klusOpen) ?? null : null} onClose={() => setKlusOpen(null)} onToast={onToast} />
     </div>
   );

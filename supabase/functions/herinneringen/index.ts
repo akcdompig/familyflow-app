@@ -178,9 +178,9 @@ function wieIsBezig(st: State, id: string, nu = new Date()): string {
   return ` ${namen.slice(0, 2).join(" en ")} ${namen.length > 1 ? "zijn" : "is"} al lekker bezig.`;
 }
 
-function slaapt(st: State, id: string) {
+function slaapt(st: State, id: string, nu = new Date()) {
   const at = st.sleep?.[id];
-  return !!at && Date.now() - new Date(at).getTime() < 14 * 3600e3;
+  return !!at && nu.getTime() - new Date(at).getTime() < 14 * 3600e3;
 }
 function inVakantie(st: State, id: string, datum: string) {
   // deno-lint-ignore no-explicit-any
@@ -239,7 +239,7 @@ function koelkastNodig(st: State, nl: ReturnType<typeof nuNL>): boolean {
 function beslis(st: State, s: Sub, nu: Date): { titel: string; tekst: string; soort: string } | null {
   // deno-lint-ignore no-explicit-any
   const m = st.members?.find((x: any) => x.id === s.member_id);
-  if (!m || slaapt(st, m.id)) return null;
+  if (!m || slaapt(st, m.id, nu)) return null;
   const nl = nuNL(nu);
   const kind = m.role !== "ouder";
   const bed = mins(m.bedtime, kind ? 22 * 60 : 23 * 60);

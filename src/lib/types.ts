@@ -270,6 +270,12 @@ export interface FamilyState {
   /** Schermtijd-afspraak per kind: hoeveel minuten per dag is het doel. */
   schermAfspraak?: Record<string, { doel: number }>;
   /** Groeidoelen per kind: welke vaardigheden, en de terugblik per week (maandag → vaardigheid → hoe ging het). */
+  /** Waar komen je punten vandaan? Per lid, nieuwste achteraan. Een regel met claim = al geïnd bij die claim. */
+  xpLog?: Record<string, XpRegel[]>;
+  /** Losse afspraken in de agenda, per lid. Geen taak: niks af te vinken, geen punten. */
+  agenda?: Record<string, AgendaItem[]>;
+  /** Inzet die je zichtbaar wilt maken (extra werk, een pitch, rust nemen). Waardering, geen punten. */
+  inzet?: Record<string, InzetItem[]>;
   doelen?: Record<string, { vaardigheden: string[]; terugblik?: Record<string, Record<string, "goed" | "beter" | "lastig">>; /** Wat zou thuis beter mogen, in eigen woorden. */ wens?: string; /** Per taak: leuk, wil ik leren, kan ik zelf, hulp nodig. */ taken?: Record<string, TaakGevoel> }>;
 }
 
@@ -399,5 +405,39 @@ export interface PotItem {
   by: string;
   /** Bij een beloning: voor welk kind. Bij statiegeld/inleg: wie het bijdroeg. */
   voor?: string;
+  at: string;
+}
+
+/** Eén keer punten verdiend: hoeveel, waarvoor, wanneer. claim = tijdstip van de claim waarbij ze zijn geïnd. */
+export interface XpRegel {
+  id: string;
+  n: number;
+  wat: string;
+  at: string;
+  claim?: string;
+}
+
+export type AfspraakSoort = "persoonlijk" | "zakelijk" | "sociaal" | "familie";
+/** Een losse afspraak: "Ontbijten met Akram, 11.00–12.00". Telt niet als werk en niet als taak. */
+export interface AgendaItem {
+  id: string;
+  titel: string;
+  datum: string;
+  van: string;
+  tot: string;
+  soort: AfspraakSoort;
+  met?: string;
+  waar?: string;
+  notitie?: string;
+  at: string;
+  gewijzigd?: string;
+}
+
+export type InzetSoort = "project" | "pitch" | "verantwoordelijkheid" | "ontwikkeling" | "familie" | "rust";
+export interface InzetItem {
+  id: string;
+  soort: InzetSoort;
+  datum: string;
+  tekst?: string;
   at: string;
 }

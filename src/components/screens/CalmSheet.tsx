@@ -39,6 +39,7 @@ export function CalmSheet({ open, onClose, me, plan, onDone }: { open: boolean; 
         </div>
         <p className="ff-calm-phase" aria-live="polite">{left > 0 ? phase : "Hoe gaat het nu?"}</p>
         <p className="ff-small ff-muted ff-center">4 tellen in, 4 tellen uit{left > 0 ? ` · nog ${left} sec` : ""}</p>
+        {left > 0 && <button className="ff-link ff-center" onClick={() => setLeft(0)}>Stoppen met tellen</button>}
 
         {(p.helps.length > 0 || p.place || p.needs.length > 0) ? (
           <div className="ff-card ff-stack-s">

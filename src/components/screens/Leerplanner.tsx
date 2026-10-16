@@ -60,7 +60,7 @@ export function Leerplanner({ state, me, onClose, onToast }: { state: FamilyStat
       <header className="ff-top">
         <div>
           <div className="ff-eyebrow">Leerplanner{me.role === "ouder" ? ` · ${whoName}` : ""}</div>
-          <h1 className="ff-h2">{stage === "week" ? "Mijn leerweek" : stage === "plak" ? "Somtoday-week plakken" : stage === "check" ? "Klopt dit?" : "Zo ga je het doen"}</h1>
+          <h1 className="ff-h2">{stage === "week" ? (me.role === "ouder" ? `Leerweek van ${whoName}` : "Mijn leerweek") : stage === "plak" ? "Somtoday-week plakken" : stage === "check" ? "Klopt dit?" : "Zo ga je het doen"}</h1>
         </div>
         <button className="ff-iconbtn" onClick={stage === "week" ? onClose : () => setStage(stage === "voorstel" ? "check" : "week")} aria-label={stage === "week" ? "Sluiten" : "Terug"}>
           <Icon name={stage === "week" ? "sluit" : "terug"} />
