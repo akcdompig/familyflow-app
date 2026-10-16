@@ -373,6 +373,8 @@ export interface SamenMoment {
   at: string;
   /** Wanneer het gedaan is (ISO). Leeg = nog gepland. */
   gedaan?: string;
+  /** Wie echt meedeed (en de punten kreeg). Leeg bij oude momenten: dan telt "wie". */
+  deden?: string[];
   /** Hoe was het? Per lid. */
   reactie?: Record<string, "😐" | "🙂" | "😍">;
 }

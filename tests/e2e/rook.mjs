@@ -235,6 +235,7 @@ await scenario("v2: samen iets plannen, doen en terugkijken", v2, "16:00", async
   const gepland = p.getByRole("region", { name: "Gepland" });
   assert.match(await gepland.innerText(), /Samen koken/);
   await gepland.getByRole("button", { name: "Gedaan" }).first().click();
+  await gepland.getByRole("button", { name: "Klopt, gedaan" }).click();
   const hoe = p.getByRole("region", { name: "Hoe was het?" });
   await hoe.getByRole("button", { name: /😍/ }).first().click();
   assert.match(await p.getByRole("region", { name: "Jouw band" }).innerText(), /Lina/);
@@ -708,6 +709,41 @@ await scenario("v3.3: kind vindt hulp en uitleg zonder ouder", v2, "16:00", asyn
   await tab(p, /^Ik/).click();
   assert.match(await p.locator(".v2-ik-kop").innerText(), /niveau/);
   assert.ok(!/\blevel\b/i.test(await p.locator(".v2-ik-kop").innerText()), "geen 'level' meer");
+});
+
+// ---------- 3.4: samen-momenten terugdraaien en aanpassen ----------
+await scenario("v3.4: samen trainen per ongeluk gedaan → terugzetten → gedaan zonder wie niet meeging", v2, "18:00", async (p) => {
+  await wissel(p, "Papa");
+  const xpNoah = async () => { await wissel(p, "Noah"); await tab(p, /^Ik/).click(); const t = await p.locator(".ff-schatkist").innerText(); await wissel(p, "Papa"); return t; };
+  const noahVoor = await xpNoah();
+  await gezinTab(p, /Week/);
+  await p.getByRole("button", { name: "Vorige week" }).click();
+  await p.getByRole("tab", { name: /Vrijdag 9/ }).click();
+  const samen = p.getByRole("region", { name: "Samen op deze dag" });
+  await samen.getByText("Samen trainen ✓").waitFor();
+  await samen.getByRole("button", { name: "Klopt niet? Terugzetten" }).click();
+  assert.match(await samen.innerText(), /punten gaan er weer af bij jij, Noah, Lina/);
+  await samen.getByRole("button", { name: "Ja, terugzetten" }).click();
+  await samen.getByRole("button", { name: "Gedaan", exact: true }).click();
+  await samen.getByRole("button", { name: /Noah/ }).click();
+  await samen.getByRole("button", { name: "Klopt, gedaan" }).click();
+  assert.ok(await p.getByText(/\+10 punten voor jij, Lina/).isVisible());
+  assert.doesNotMatch(await samen.innerText(), /Noah/, "Noah staat er niet meer bij");
+  const noahNa = await xpNoah();
+  assert.notEqual(noahNa, noahVoor, "Noah heeft 10 punten minder");
+});
+
+await scenario("v3.4: gepland moment aanpassen: wie gaat mee en hoe laat", v2, "10:00", async (p) => {
+  await wissel(p, "Papa");
+  await gezinTab(p, /Samen/);
+  const gepland = p.getByRole("region", { name: "Gepland" });
+  await gepland.getByRole("button", { name: "Aanpassen" }).click();
+  await gepland.getByRole("button", { name: /Noah/ }).click();
+  await gepland.getByLabel(/Hoe laat/).fill("18:30");
+  await gepland.getByRole("button", { name: "Opslaan" }).click();
+  const tekst = await gepland.innerText();
+  assert.match(tekst, /18\.30|18:30/);
+  assert.doesNotMatch(tekst, /Noah,|, Noah/);
 });
 
 await browser.close();

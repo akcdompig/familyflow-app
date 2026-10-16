@@ -1166,3 +1166,12 @@ button.ff-afspraak:hover { background: var(--ff-lucht-zacht); }
 .v2-uitleg-tekst p { margin: 0; line-height: 1.5; }
 .v2-gevoel-woord { font-weight: 700; }
 .ff-nodig { text-transform: none; letter-spacing: 0; font-weight: 600; color: var(--ff-tekst-zacht); }
+
+/* ---- 3.4: samen-momenten aanpassen en terugzetten ---- */
+.v2-gepland-blok { display: grid; gap: 6px; }
+.v2-samen-actie { gap: 8px; flex-wrap: wrap; padding-left: 44px; }
+button.v2-samen-actie { justify-self: start; min-height: 34px; padding-left: 0; margin-left: 44px; }
+.v2-samen-keuze { display: grid; gap: 8px; padding: 10px 12px; margin-left: 44px; border-radius: var(--ff-rond-m); background: var(--ff-wolk); }
+.v2-samen-keuze .ff-row { gap: 8px; }
+.v2-samen-tijd .ff-field { min-width: 0; }
+@media (max-width: 360px) { .v2-samen-actie, .v2-samen-keuze { margin-left: 0; padding-left: 0; } }

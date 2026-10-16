@@ -26,7 +26,8 @@ export const XP = {
 import type { FamilyState } from "./types";
 
 /** Punten die je al geclaimd hebt. Daarop telt je level. */
-export const geclaimd = (s: FamilyState, id: string) => s.claim?.[id] ?? s.xp[id] ?? 0;
+// Nooit meer dan je echt hebt: werd iets teruggedraaid na een claim, dan zakt dit mee.
+export const geclaimd = (s: FamilyState, id: string) => Math.min(s.claim?.[id] ?? s.xp[id] ?? 0, s.xp[id] ?? 0);
 /** Punten die in je schatkist wachten om geclaimd te worden. */
 export const teClaimen = (s: FamilyState, id: string) => Math.max(0, (s.xp[id] ?? 0) - geclaimd(s, id));
 

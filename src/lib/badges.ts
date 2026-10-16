@@ -73,7 +73,7 @@ export const BADGES: BadgeDef[] = [
   },
   {
     id: "samen-sterk", naam: "Samen sterk", emoji: "💞", uitleg: "3 keer iets samen gedaan in twee weken", herhaal: 14, punten: 25,
-    stand: (s, id, sinds, nu) => ({ n: (s.samen ?? []).filter((x) => x.gedaan && x.wie.includes(id) && new Date(x.gedaan).getTime() > Math.max(sinds, nu.getTime() - 14 * DAG)).length, doel: 3 }),
+    stand: (s, id, sinds, nu) => ({ n: (s.samen ?? []).filter((x) => x.gedaan && (x.deden ?? x.wie).includes(id) && new Date(x.gedaan).getTime() > Math.max(sinds, nu.getTime() - 14 * DAG)).length, doel: 3 }),
   },
   {
     id: "teamspeler", naam: "Teamspeler", emoji: "🤝", uitleg: "3 taken samen met iemand gedaan in twee weken", herhaal: 14, punten: 25,
