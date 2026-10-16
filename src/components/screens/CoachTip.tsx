@@ -52,7 +52,7 @@ export function CoachTip({ state, me, onToast }: { state: FamilyState; me: Membe
       ) : (
         <section className="ff-card ff-coachtip ff-stack-s">
           <div className="ff-row" style={{ justifyContent: "space-between" }}>
-            <b>{tip.onderwerp.emoji} Coach-tip · {tip.onderwerp.label.toLowerCase()}</b>
+            <b>{tip.onderwerp.emoji} Tip van vandaag · {tip.onderwerp.label.toLowerCase()}</b>
             <button className="ff-link ff-small" onClick={() => setKiezen(true)}>Aanpassen</button>
           </div>
           <p style={{ margin: 0 }}>{tip.tekst}</p>

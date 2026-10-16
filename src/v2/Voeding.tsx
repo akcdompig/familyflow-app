@@ -10,7 +10,7 @@ import type { FamilyState, Member } from "@/lib/types";
 
 /*
   Eten en drinken in getallen. Ouders zien per kind hoeveel water, fruit, maaltijden,
-  en hoeveel ongezond (snoep/snack en zoet drinken). Kinderen geven ongezond aan met één knop.
+  en hoeveel ongezond (snoep/snack en drinken met suiker). Kinderen geven ongezond aan met één knop.
 */
 
 type Soort = "snoep" | "zoet";
@@ -94,7 +94,7 @@ export function VoedingOverzicht({ state, onOpen }: { state: FamilyState; onOpen
           </button>
         );
       })}
-      <span className="ff-small ff-muted">✓ gegeten · ✗ gemist · 🍬 snoep of snack · 🥤 zoet drinken</span>
+      <span className="ff-small ff-muted">✓ gegeten · ✗ gemist · 🍬 snoep of snack · 🥤 drinken met suiker</span>
     </section>
   );
 }
