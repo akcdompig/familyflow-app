@@ -153,7 +153,7 @@ $$;
 
 /** Wat een kind opslaat, samengevoegd met de bestaande stand volgens de rechten van een kind. */
 create or replace function public.ff_kind_merge(oud jsonb, nieuw jsonb, me text) returns jsonb
-language plpgsql immutable as $$
+language plpgsql immutable set search_path = public as $$
 declare
   uit jsonb := nieuw;
   k text;
