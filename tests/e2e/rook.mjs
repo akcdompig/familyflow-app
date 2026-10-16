@@ -606,8 +606,8 @@ await scenario("v3.2: losse afspraak toevoegen zonder werkdag, aanpassen met 'di
   await p.getByRole("button", { name: "Afspraak opslaan" }).click();
   assert.match(await p.getByRole("alert").innerText(), /naam/);
   await p.getByRole("textbox", { name: "Wat" }).fill("Lunch met Sanne");
-  await p.getByRole("dialog").getByLabel("Van", { exact: true }).fill("12:30");
-  await p.getByRole("dialog").getByLabel("Tot", { exact: true }).fill("13:30");
+  await p.getByRole("dialog").getByLabel(/^Van/).fill("12:30");
+  await p.getByRole("dialog").getByLabel(/^Tot/).fill("13:30");
   await p.getByRole("button", { name: /Sociaal/ }).click();
   const opslaan = p.getByRole("button", { name: "Afspraak opslaan" });
   // Twee keer snel achter elkaar op opslaan (zelfde knop, voordat het blad dicht is).
@@ -617,7 +617,7 @@ await scenario("v3.2: losse afspraak toevoegen zonder werkdag, aanpassen met 'di
   assert.equal(await lijst.getByText("Lunch met Sanne").count(), 1, "één afspraak, ook na dubbelklik");
   assert.ok(await lijst.getByText("Ontbijten met Akram").isVisible(), "afspraak van papa blijft staan");
   await lijst.getByRole("button", { name: /Lunch met Sanne/ }).click();
-  await p.getByRole("dialog").getByLabel("Tot", { exact: true }).fill("14:00");
+  await p.getByRole("dialog").getByLabel(/^Tot/).fill("14:00");
   await p.getByRole("button", { name: "Opslaan", exact: true }).click();
   const check = p.getByRole("region", { name: "Dit verandert" });
   assert.match(await check.innerText(), /Eind:\s*13\.30\s*→\s*14\.00/);
@@ -634,8 +634,8 @@ await scenario("v3.2: zakelijke afspraak geeft geen punten; inzet staat bij Ik z
   await p.getByRole("tab", { name: /Week/ }).click();
   await p.getByRole("button", { name: "+ Afspraak toevoegen" }).click();
   await p.getByRole("textbox", { name: "Wat" }).fill("Pitch bij klant");
-  await p.getByRole("dialog").getByLabel("Van", { exact: true }).fill("09:00");
-  await p.getByRole("dialog").getByLabel("Tot", { exact: true }).fill("10:00");
+  await p.getByRole("dialog").getByLabel(/^Van/).fill("09:00");
+  await p.getByRole("dialog").getByLabel(/^Tot/).fill("10:00");
   await p.getByRole("button", { name: /Zakelijk/ }).click();
   await p.getByRole("button", { name: "Afspraak opslaan" }).click();
   await tab(p, /^Ik/).click();
@@ -661,6 +661,54 @@ for (const breed of [390, 1280]) {
     assert.ok(breedte, "geen horizontaal scrollen");
   });
 }
+
+// ---------- 3.3: uitleg op het juiste moment ----------
+await scenario("v3.3: uitleg bij de eerste keer, sluiten, en via Hulp opnieuw bekijken", v2, "10:00", async (p) => {
+  const kaart = p.getByRole("region", { name: /^Uitleg: Dit is je dag/ });
+  assert.ok(await kaart.isVisible(), "eerste keer op Vandaag: korte uitleg");
+  await kaart.getByRole("button", { name: "Snap ik" }).click();
+  assert.equal(await p.getByRole("region", { name: /^Uitleg: Dit is je dag/ }).count(), 0);
+  await p.reload(); await p.waitForSelector(".ff-nav");
+  assert.equal(await p.getByRole("region", { name: /^Uitleg: Dit is je dag/ }).count(), 0, "na herladen niet opnieuw");
+  await tab(p, /Hulp/).click();
+  await p.getByRole("button", { name: /Hoe werkt de app\?/ }).click();
+  assert.ok(await p.getByRole("heading", { name: "Hoe werkt de app?" }).isVisible());
+  await p.getByRole("button", { name: /Een afspraak toevoegen/ }).click();
+  assert.match(await p.locator("body").innerText(), /ontbijten met Akram/);
+  await p.getByRole("button", { name: "Laat de uitleg per scherm opnieuw zien" }).click();
+  await tab(p, /Vandaag/).click();
+  assert.ok(await p.getByRole("region", { name: /^Uitleg: Dit is je dag/ }).isVisible(), "uitleg komt terug");
+});
+
+await scenario("v3.3: afspraak en week altijd vanaf Vandaag, info-knopje toont één zin", v2, "10:00", async (p) => {
+  await wissel(p, "Mama");
+  await knop(p, "Afspraak toevoegen").click();
+  const blad = p.getByRole("dialog");
+  assert.match(await blad.innerText(), /Nodig: wat, datum en hoe laat/);
+  await blad.getByRole("textbox", { name: /Wat/ }).fill("Huisarts");
+  await blad.getByLabel(/^Van/).fill("15:00");
+  await blad.getByLabel(/^Tot/).fill("15:15");
+  await blad.getByRole("button", { name: "Afspraak opslaan" }).click();
+  assert.ok(await p.getByText("Afspraak gezet 📅").isVisible());
+  assert.ok(await p.getByRole("region", { name: "Afspraken" }).getByText("Huisarts").isVisible());
+  const info = p.getByRole("button", { name: "Wat betekent dit getal?" });
+  await info.click();
+  assert.match(await p.getByRole("note").innerText(), /routine, eten, taken en klussen/);
+  await knop(p, "Bekijk de week").click();
+  assert.ok(await p.getByRole("tablist", { name: "Dagen van de week" }).isVisible(), "week staat open");
+});
+
+await scenario("v3.3: kind vindt hulp en uitleg zonder ouder", v2, "16:00", async (p) => {
+  await wissel(p, "Noah");
+  await tab(p, /^Ik/).click();
+  await knop(p, /Hoe werkt de app\?/).click();
+  await p.getByRole("button", { name: /Een taak afronden/ }).click();
+  assert.match(await p.locator("body").innerText(), /Tik op het rondje/);
+  await p.getByRole("button", { name: "‹ Terug" }).click();
+  await tab(p, /^Ik/).click();
+  assert.match(await p.locator(".v2-ik-kop").innerText(), /niveau/);
+  assert.ok(!/\blevel\b/i.test(await p.locator(".v2-ik-kop").innerText()), "geen 'level' meer");
+});
 
 await browser.close();
 if (fouten) {

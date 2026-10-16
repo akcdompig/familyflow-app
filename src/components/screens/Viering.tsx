@@ -95,7 +95,7 @@ export function ClaimViering({ me, van, n, regels = [], onKlaar }: { me: Member;
           </ul>
         )}
         <p className={`ff-claim-totaal${klaar ? " is-in" : ""}`} aria-live="polite">{klaar ? <>Je hebt in totaal <b>{n} punten</b> verdiend</> : " "}</p>
-        {klaar && nieuw > oud && <b className="ff-viering-titel">Level {nieuw}! 🎉</b>}
+        {klaar && nieuw > oud && <b className="ff-viering-titel">Niveau {nieuw}! 🎉</b>}
         <button className="ff-btn ff-btn-primary ff-btn-wide" onClick={onKlaar}>{klaar ? "Top!" : "Sla over"}</button>
       </div>
     </div>

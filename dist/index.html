@@ -1223,4 +1223,22 @@ button.ff-afspraak:hover { background: var(--ff-lucht-zacht); }
 .ff-inzet-lijst { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .ff-inzet-lijst li { display: flex; align-items: center; gap: 10px; font-size: var(--ff-t-s); font-weight: 600; min-height: 32px; }
 .ff-inzet-weg { border: 0; background: var(--ff-wolk); border-radius: 50%; width: 32px; height: 32px; font: inherit; font-size: 18px; color: var(--ff-tekst-zacht); cursor: pointer; }
-</style></head><body><div id="root"></div><script src="/config.js"></script><script src="/assets/app-eb2f7fa66460.js"></script><script>if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("/sw.js");</script></body></html>
+
+/* ---- 3.3: uitleg op het juiste moment ---- */
+.v2-eerste-wrap { padding: 12px 16px 0; }
+.v2-eerste { display: flex; gap: 12px; align-items: flex-start; background: var(--ff-zon-zacht); border: 2px solid var(--ff-zon); }
+.v2-eerste-icoon { font-size: 22px; line-height: 1; }
+.v2-eerste-knoppen { gap: 14px; align-items: center; margin-top: 6px; }
+.v2-eerste .ff-link, .ff-info-knop { min-height: 34px; }
+.ff-info { display: inline; }
+.ff-info-knop { display: inline-grid; place-items: center; width: 34px; min-width: 34px; height: 34px; vertical-align: middle; border: 0; border-radius: 50%; background: transparent; color: var(--ff-lucht-donker); font: inherit; font-weight: 800; font-size: 13px; cursor: pointer; position: relative; }
+.ff-info-knop::before { content: ""; position: absolute; width: 20px; height: 20px; border-radius: 50%; border: 2px solid currentColor; }
+.ff-info-knop[aria-expanded="true"] { color: var(--ff-nacht); }
+.ff-info-tekst { display: block; margin-top: 4px; padding: 8px 10px; border-radius: 12px; background: var(--ff-lucht-zacht); color: var(--ff-tekst); font-size: var(--ff-t-s); font-weight: 600; line-height: 1.4; text-align: left; }
+.v2-uitleg { padding: 0; overflow: hidden; }
+.v2-uitleg-kop { display: flex; gap: 12px; align-items: center; width: 100%; min-height: 56px; padding: 12px 16px; border: 0; background: none; font: inherit; color: var(--ff-tekst); text-align: left; cursor: pointer; }
+.v2-uitleg-tekst { padding: 0 16px 14px 50px; }
+.v2-uitleg-tekst p { margin: 0; line-height: 1.5; }
+.v2-gevoel-woord { font-weight: 700; }
+.ff-nodig { text-transform: none; letter-spacing: 0; font-weight: 600; color: var(--ff-tekst-zacht); }
+</style></head><body><div id="root"></div><script src="/config.js"></script><script src="/assets/app-6c860c03c8ef.js"></script><script>if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("/sw.js");</script></body></html>
