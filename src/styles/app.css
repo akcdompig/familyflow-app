@@ -1293,3 +1293,6 @@ button.v2-samen-actie { justify-self: start; min-height: 34px; padding-left: 0; 
 .v2-weekouder .v2-weekregels, .v2-weekouder .v2-samen-keuze { width: 100%; box-sizing: border-box; margin-left: 0; }
 .v2-weekouder .ff-row { flex-wrap: wrap; }
 .v2-weekouder .v2-weekregels li { gap: 8px; }
+.v2-regel-weg { flex: none; width: 36px; height: 36px; border: 0; border-radius: 50%; background: var(--ff-vlak); color: var(--ff-tekst-zacht); font: inherit; font-weight: 800; cursor: pointer; }
+.v2-regel-zeker { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.v2-afspraak { flex-wrap: wrap; }

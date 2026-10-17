@@ -1059,6 +1059,22 @@ await scenario("v3.10: ouder stelt twee treden in met een snelknop, sluit af en 
   }
 });
 
+await scenario("v3.10: ouder haalt een huisregel weg (na bevestigen); kind ziet geen weghaalknop", v2, "16:00", async (p) => {
+  await wissel(p, "Noah");
+  await tab(p, /Gezin/).click();
+  assert.equal(await p.getByRole("region", { name: "Huisregels" }).getByRole("button", { name: /^Huisregel weghalen/ }).count(), 0, "kind kan niet weghalen");
+  await wissel(p, "Papa");
+  await tab(p, /Gezin/).click();
+  const regels = p.getByRole("region", { name: "Huisregels" });
+  assert.match(await regels.innerText(), /Kloppen voordat je/);
+  await regels.getByRole("button", { name: /^Huisregel weghalen: Kloppen/ }).click();
+  await regels.getByRole("group", { name: "Weghalen?" }).getByRole("button", { name: "Nee" }).click();
+  assert.match(await regels.innerText(), /Kloppen voordat je/, "nee = blijft staan");
+  await regels.getByRole("button", { name: /^Huisregel weghalen: Kloppen/ }).click();
+  await regels.getByRole("group", { name: "Weghalen?" }).getByRole("button", { name: "Ja" }).click();
+  assert.ok(!/Kloppen voordat je/.test(await regels.innerText()), "weg");
+});
+
 await browser.close();
 if (fouten) {
   console.log(`\n${fouten} scenario('s) mislukt`);

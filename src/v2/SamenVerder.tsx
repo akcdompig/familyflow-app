@@ -32,6 +32,7 @@ const geleden = (iso: string) => {
 export function Huisregels({ state, me, onToast, onKlussen }: { state: FamilyState; me: Member; onToast: (m: string) => void; onKlussen: () => void }) {
   const isOuder = me.role === "ouder";
   const [nieuw, setNieuw] = useState("");
+  const [weg, setWeg] = useState<string | null>(null);
   const lijst = actief(state).slice().reverse();
   const kinderen = state.members.filter((m) => m.role !== "ouder" && m.joined !== false);
   return (
@@ -47,6 +48,15 @@ export function Huisregels({ state, me, onToast, onKlussen }: { state: FamilySta
               <span className="ff-small ff-muted">{herkomst(a)} · {geleden(a.at)}</span>
             </span>
             <span className={`v2-oordeel is-${o?.oordeel ?? "open"}`}>{o ? `${OORDEEL[o.oordeel].emoji} ${o.oordeel === "ja" ? "helpt" : o.oordeel === "beetje" ? "een beetje" : "nog niet"}` : "nog niet bekeken"}</span>
+            {/* Alleen ouders kunnen een huisregel weghalen. Eerst even bevestigen. */}
+            {isOuder && weg !== a.id && <button className="v2-regel-weg" aria-label={`Huisregel weghalen: ${a.text}`} onClick={() => setWeg(a.id)}>✕</button>}
+            {isOuder && weg === a.id && (
+              <span className="v2-regel-zeker" role="group" aria-label="Weghalen?">
+                <span className="ff-small">Weghalen?</span>
+                <button className="ff-btn ff-btn-ghost ff-btn-s" onClick={() => setWeg(null)}>Nee</button>
+                <button className="ff-btn ff-btn-primary ff-btn-s" onClick={() => { actions.removeAfspraak(a.id); setWeg(null); onToast("Huisregel weggehaald"); }}>Ja</button>
+              </span>
+            )}
           </div>
         );
       })}
