@@ -54,5 +54,23 @@ test("restjes in de koelkast: één keer per avond, niet voor de kok", () => {
   assert.equal(beslis(st, sub("k1"), at("20:50"))?.soort, "koelkast");
   assert.equal(beslis(st, sub("p1"), at("20:50")), null);
   assert.equal(beslis(st, sub("k1", at("20:50").toISOString(), "koelkast"), at("21:00")), null);
-  assert.equal(beslis({ ...st, klusLog: [{ klus: "koelkast", by: "p2", at: at("20:40").toISOString() }] }, sub("k1"), at("20:50")), null);
+  // Restjes al weg: geen koelkastmelding meer (wel de gewone "bijna bedtijd").
+  assert.notEqual(beslis({ ...st, klusLog: [{ klus: "koelkast", by: "p2", at: at("20:40").toISOString() }] }, sub("k1"), at("20:50"))?.soort, "koelkast");
+});
+
+test("eigen wektijd: 'Ben je op?' binnen het uur, één keer", () => {
+  const ledenWek = leden.map((m) => (m.id === "k1" ? { ...m, wektijd: "06:45" } : m));
+  const st = { members: ledenWek, vakanties: {} };
+  assert.equal(beslis(st, sub("k1"), at("06:40"))?.soort, undefined);
+  assert.equal(beslis(st, sub("k1"), at("06:50"))?.soort, "op");
+  assert.equal(beslis(st, { ...sub("k1"), last_sent: at("06:50").toISOString(), last_kind: "op" }, at("07:10"))?.soort === "op", false);
+});
+
+test("bijna bedtijd: één avondmelding voor kinderen", () => {
+  const st = { members: leden, vakanties: {}, actief: { k1: at("16:00").toISOString() } };
+  const bed = leden.find((m) => m.id === "k1")!.bedtime ?? "21:30";
+  const [h, mm] = bed.split(":").map(Number);
+  const t = `${String(h - 1).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+  assert.equal(beslis(st, sub("k1"), at(t))?.soort, "avond");
+  assert.notEqual(beslis(st, { ...sub("k1"), last_sent: at(t).toISOString(), last_kind: "avond" }, at(t))?.soort, "avond");
 });

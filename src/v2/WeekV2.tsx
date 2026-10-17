@@ -21,7 +21,7 @@ import { AfsprakenOpDag } from "@/components/screens/Afspraak";
 const DAG = ["zo", "ma", "di", "wo", "do", "vr", "za"];
 const DAG_LANG = ["Zondag", "Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag"];
 const Kop = ({ m, size = 24 }: { m: Member; size?: number }) => <Avatar config={m.avatar} expression="neutraal" headOnly size={size} animate={false} label="" />;
-const STAND = { af: { kleur: "is-af", tekst: "dag af" }, half: { kleur: "is-half", tekst: "half" }, niks: { kleur: "is-niks", tekst: "nog veel open" }, leeg: { kleur: "", tekst: "" } } as const;
+const STAND = { af: { kleur: "is-af", tekst: "dag af" }, half: { kleur: "is-half", tekst: "half" }, niks: { kleur: "is-niks", tekst: "nog veel open" }, leeg: { kleur: "is-leeg", tekst: "niet ingevuld" } } as const;
 
 export function WeekV2({ state, me, onToast, onOpenLid }: { state: FamilyState; me: Member; onToast: (m: string) => void; onOpenLid: (id: string) => void }) {
   const vandaag = iso(new Date());

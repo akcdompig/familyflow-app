@@ -17,8 +17,10 @@ export const STANDAARD_DOEL = 120;
 /** Is je dag af (tot nu toe)? Routine, klussen en taken van dit dagdeel en eerder. */
 export function dagAf(s: FamilyState, id: string, nu = new Date()): { af: boolean; open: string[] } {
   const tot = VOLGORDE.indexOf(dagdeel(nu));
+  // Wat een ouder op overgeslagen of "ging niet door" zette, hoeft niet meer.
+  const status = s.taakStatus?.[id]?.[iso(nu)] ?? {};
   const open = dagprogramma(s, id, nu)
-    .filter((x) => (x.soort === "routine" || x.soort === "klus" || x.soort === "taak") && !x.klaar && !x.later && VOLGORDE.indexOf(x.deel) <= tot)
+    .filter((x) => (x.soort === "routine" || x.soort === "klus" || x.soort === "taak") && !x.klaar && !x.later && !status[x.id] && VOLGORDE.indexOf(x.deel) <= tot)
     .map((x) => x.titel.replace(/ \(alvast\)$/, ""));
   return { af: open.length === 0, open };
 }

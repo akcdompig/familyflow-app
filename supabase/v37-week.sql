@@ -1,14 +1,14 @@
--- FamilyFlow 3.6: oefening van vandaag (oefenDag) per kind. Alleen 'create or replace', niks wordt gewist.
--- Kinderen wijzigen alleen hun eigen oefenDag en zien die van broers/zussen niet.
+-- FamilyFlow 3.6 + 3.7: oefenDag, oefentoetsen (per kind), taakStatus, weekAfspraak, weekAfsluiting (alleen ouders).
+-- Alleen 'create or replace', niks wordt gewist. Vervangt v36-oefendag.sql (die zit hier ook in).
 
 create or replace function public.ff_kind_merge(oud jsonb, nieuw jsonb, me text) returns jsonb
 language plpgsql immutable set search_path = public as $$
 declare
   uit jsonb := nieuw;
   k text;
-  ouder_velden text[] := array['family', 'rewards', 'pros', 'consent', 'proNotes', 'goals', 'allesAan', 'startedAt', 'meetings', 'pet', 'checked', 'badgesStart', 'version', 'klusAfspraken', 'vrijstelling', 'bezwaarAntwoord', 'schermtijd', 'schermAfspraak'];
+  ouder_velden text[] := array['family', 'rewards', 'pros', 'consent', 'proNotes', 'goals', 'allesAan', 'startedAt', 'meetings', 'pet', 'checked', 'badgesStart', 'version', 'klusAfspraken', 'vrijstelling', 'bezwaarAntwoord', 'schermtijd', 'schermAfspraak', 'taakStatus', 'weekAfspraak', 'weekAfsluiting'];
   -- 3.2: xpLog (waar komen je punten vandaan), agenda (losse afspraken) en inzet: ieder alleen de eigen.
-  per_lid text[] := array['checkins', 'history', 'plans', 'coach', 'played', 'werk', 'somtoday', 'vakanties', 'rooster', 'interesses', 'reading', 'actief', 'sleep', 'doelen', 'xpLog', 'agenda', 'inzet', 'oefenDag'];
+  per_lid text[] := array['checkins', 'history', 'plans', 'coach', 'played', 'werk', 'somtoday', 'vakanties', 'rooster', 'interesses', 'reading', 'actief', 'sleep', 'doelen', 'xpLog', 'agenda', 'inzet', 'oefenDag', 'oefentoetsen'];
 begin
   -- Ouder-instellingen: altijd de bestaande waarde.
   foreach k in array ouder_velden loop
@@ -72,6 +72,10 @@ language sql immutable as $$
       'xpLog', public.ff_eigen('{}', coalesce(st -> 'xpLog', '{}'), me),
       'inzet', public.ff_eigen('{}', coalesce(st -> 'inzet', '{}'), me),
       'oefenDag', public.ff_eigen('{}', coalesce(st -> 'oefenDag', '{}'), me),
+      'oefentoetsen', public.ff_eigen('{}', coalesce(st -> 'oefentoetsen', '{}'), me),
+      'taakStatus', public.ff_eigen('{}', coalesce(st -> 'taakStatus', '{}'), me),
+      'weekAfspraak', public.ff_eigen('{}', coalesce(st -> 'weekAfspraak', '{}'), me),
+      'weekAfsluiting', public.ff_eigen('{}', coalesce(st -> 'weekAfsluiting', '{}'), me),
       -- Afspraken: je eigen helemaal, die van ouders zonder notitie, die van broers en zussen niet.
       'agenda', (select coalesce(jsonb_object_agg(e.key, case when e.key = me then e.value
                    else (select coalesce(jsonb_agg(a - 'notitie'), '[]'::jsonb) from jsonb_array_elements(case when jsonb_typeof(e.value) = 'array' then e.value else '[]'::jsonb end) a) end), '{}'::jsonb)

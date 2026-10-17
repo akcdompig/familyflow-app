@@ -243,8 +243,10 @@ function beslis(st: State, s: Sub, nu: Date): { titel: string; tekst: string; so
   const nl = nuNL(nu);
   const kind = m.role !== "ouder";
   const bed = mins(m.bedtime, kind ? 22 * 60 : 23 * 60);
+  // Eigen wektijd (kinderen, ingesteld door een ouder): daar mag de dag ook iets eerder beginnen, vanaf 6.30.
+  const wek = kind && m.wektijd ? Math.max(6 * 60 + 30, mins(m.wektijd, 7 * 60)) : null;
   // Nooit 's nachts of vlak voor bedtijd.
-  if (nl.min < 7 * 60 || nl.min > bed - 30) return null;
+  if (nl.min < Math.min(7 * 60, wek ?? 7 * 60) || nl.min > bed - 30) return null;
   const werk = werkStand(st, m.id, nl);
   // Op school: geen meldingen. Staan er geen lestijden in de app, dan doordeweeks 8.15–15.00.
   const heeftSchooltijden = (st.rooster?.[m.id] ?? []).length > 0 || (st.werk?.[m.id] ?? []).some((w: { look?: string; naam?: string }) => w.look === "school" || /school|roc|college/i.test(w.naam ?? ""));
@@ -257,11 +259,19 @@ function beslis(st: State, s: Sub, nu: Date): { titel: string; tekst: string; so
   const vandaagGemeld = !!s.last_sent && nuNL(new Date(s.last_sent)).datum === nl.datum;
   const naam = m.name;
 
+  // 0a) Op je eigen wektijd: "Ben je op?" Eén keer, binnen het uur na je wektijd, als je nog niks deed.
+  if (wek !== null && !vandaagActief && nl.min >= wek && nl.min < wek + 60 && !(vandaagGemeld && s.last_kind === "op")) {
+    return { titel: `Goedemorgen ${naam}! ☀️`, tekst: "Ben je op? Tik in de app hoe je je voelt. Tien seconden, dan begint je dag.", soort: "op" };
+  }
   // 0) Restjes in de koelkast: één keer per avond, voor wie thuis is (niet de kok, niet wie werkt).
   if (koelkastNodig(st, nl) && !werk.bezig && st.koken[nl.datum].kok !== m.id && !(vandaagGemeld && s.last_kind === "koelkast")) {
     return { titel: "Restjes al in de koelkast? 🧊", tekst: "Er is vanavond gekookt. Zet de restjes even weg voor het slapen, dan kunnen we morgen restjes eten.", soort: "koelkast" };
   }
 
+  // 0b) Bijna bedtijd (kinderen): nog iets gedaan maar vergeten af te vinken? Daarna telefoon aan de lader. Eén keer per avond.
+  if (kind && nl.min >= bed - 75 && nl.min <= bed - 30 && sindsMelding >= 60 && !(vandaagGemeld && s.last_kind === "avond")) {
+    return { titel: `Bijna bedtijd, ${naam} 🌙`, tekst: "Nog iets gedaan maar vergeten af te vinken? Doe het nu. Daarna telefoon aan de lader en welterusten.", soort: "avond" };
+  }
   // 1) Wekmelding voor kinderen: om 9 uur nog niks gedaan (niet op schooldagen). Daarna elk uur, niet pas na 2 uur.
   if (kind && !schooldag && !vandaagActief && nl.min >= 9 * 60) {
     if (vandaagGemeld && sindsMelding < 60) return null;

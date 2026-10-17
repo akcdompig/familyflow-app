@@ -11,9 +11,11 @@ import { controleer as controleerAfspraak, isDubbel, schoon as schoonAfspraak, t
 import { markeerGeclaimd, metHerkomst, openRegels, type OpenRegel, type Wat } from "./herkomst";
 import { verdeling } from "./verdeling";
 import { DAG_OEFENING_XP } from "./oefendag";
+import { weekDicht } from "./week";
+import { klusById as verdeelKlus } from "./huis";
 import { SCENARIOS } from "./scenarios";
 const routineAf = (l: DagLog) => ROUTINE.filter((r) => r.gewicht > 0).every((r) => l.routine.includes(r.id));
-import type { AgendaItem, InzetItem, InzetSoort, Kookplan, PotItem, Dienst, WerkItem, CoachRun, Quest, AvatarConfig, CalmPlan, CheckIn, Conflict, ConflictSide, FamilyState, Meeting, ProKind, Task } from "./types";
+import type { OefenToets, AgendaItem, InzetItem, InzetSoort, Kookplan, PotItem, Dienst, WerkItem, CoachRun, Quest, AvatarConfig, CalmPlan, CheckIn, Conflict, ConflictSide, FamilyState, Meeting, ProKind, Task } from "./types";
 
 /*
   Eén store voor demo en echt.
@@ -603,6 +605,83 @@ export const actions = {
       };
     }, `Oefening van vandaag: ${titel}`);
   },
+  /* ---------- Ouders helpen het vergeet-kind, en de week afsluiten ---------- */
+
+  /** Overgeslagen of ging niet door (of weer gewoon). Telt dan niet mee. Niet meer in een afgesloten week. */
+  zetStatus(kind: string, d: string, itemId: string, status: "overgeslagen" | "nietdoor" | null): boolean {
+    if (weekDicht(state, kind, d)) return false;
+    update((s) => {
+      const dag = { ...(s.taakStatus?.[kind]?.[d] ?? {}) };
+      if (status) dag[itemId] = status;
+      else delete dag[itemId];
+      return { ...s, taakStatus: { ...(s.taakStatus ?? {}), [kind]: { ...(s.taakStatus?.[kind] ?? {}), [d]: dag } } };
+    });
+    return true;
+  },
+  /** Een ouder vinkt vandaag iets af voor een kind ("wel gedaan, vergeten aan te vinken"). Punten gaan naar het kind. */
+  ouderAfvinken(kind: string, itemId: string): boolean {
+    const d = todayKey();
+    if (weekDicht(state, kind, d)) return false;
+    if (itemId.startsWith("taak:")) {
+      const t = state.tasks.find((x) => x.id === itemId.slice(5));
+      if (!t) return false;
+      if (!state.done[d]?.[t.id]) actions.toggleTask(t, kind);
+      return true;
+    }
+    if (itemId.startsWith("klus:")) {
+      const key = itemId.slice(5);
+      const k = verdeelKlus(state, key);
+      if (!k) return false;
+      actions.klusGedaan(key, kind, k.xp, k.label);
+      return true;
+    }
+    return false;
+  },
+  /** Toch niet gedaan: het vinkje van vandaag weer weg (taak of huistaak), met de punten. */
+  ouderTerug(kind: string, itemId: string): boolean {
+    const d = todayKey();
+    if (weekDicht(state, kind, d)) return false;
+    if (itemId.startsWith("taak:")) {
+      const t = state.tasks.find((x) => x.id === itemId.slice(5));
+      if (t && state.done[d]?.[t.id]) actions.toggleTask(t, kind);
+      return !!t;
+    }
+    if (itemId.startsWith("klus:")) {
+      const key = itemId.slice(5);
+      const log = [...(state.klusLog ?? [])].reverse().find((x) => x.klus === key && x.by === kind && new Date(x.at).toLocaleDateString("sv-SE") === d);
+      if (log) actions.klusWeg(log.id, verdeelKlus(state, key)?.xp ?? 0);
+      return !!log;
+    }
+    return false;
+  },
+  /** Weekafspraak, vooraf: vanaf welk percentage is de week gehaald, en wat staat er tegenover (vrije tekst, geen rekensom per vinkje). */
+  setWeekAfspraak(kind: string, drempel: number, beloning: string) {
+    update((s) => ({ ...s, weekAfspraak: { ...(s.weekAfspraak ?? {}), [kind]: { drempel: Math.max(50, Math.min(100, Math.round(drempel))), ...(beloning.trim() ? { beloning: beloning.trim() } : {}) } } }));
+  },
+  /** Week afsluiten: de stand van nu staat vast. Al afgesloten? Dan verandert er niks. */
+  weekAfsluiten(kind: string, door: string, k: { maandag: string; af: number; totaal: number; pct: number; gehaald: boolean; beloning?: string }): boolean {
+    if (state.weekAfsluiting?.[kind]?.[k.maandag]) return false;
+    const at = new Date().toISOString();
+    update((s) => {
+      if (s.weekAfsluiting?.[kind]?.[k.maandag]) return s;
+      const uit = { ...s, weekAfsluiting: { ...(s.weekAfsluiting ?? {}), [kind]: { ...(s.weekAfsluiting?.[kind] ?? {}), [k.maandag]: { af: k.af, totaal: k.totaal, pct: k.pct, gehaald: k.gehaald, beloning: k.gehaald ? k.beloning : undefined, door, at } } } };
+      return metFeed(uit, kind, k.gehaald ? `heeft de week gehaald (${k.pct}%) 🏁` : `sloot de week af met ${k.pct}%`, 0);
+    });
+    return true;
+  },
+  /** Oefentoets opslaan (een ouder plakt hem, na controle). */
+  bewaarToets(kind: string, toets: Omit<OefenToets, "id" | "at" | "pogingen">): string {
+    const id = newId("ot");
+    update((s) => ({ ...s, oefentoetsen: { ...(s.oefentoetsen ?? {}), [kind]: [...(s.oefentoetsen?.[kind] ?? []), { ...toets, id, at: new Date().toISOString() }].slice(-30) } }));
+    return id;
+  },
+  verwijderToets(kind: string, id: string) {
+    update((s) => ({ ...s, oefentoetsen: { ...(s.oefentoetsen ?? {}), [kind]: (s.oefentoetsen?.[kind] ?? []).filter((t) => t.id !== id) } }));
+  },
+  /** Een poging: hoeveel goed, welke fout. Geen cijfer, alleen om te zien wat nog geoefend moet. */
+  toetsPoging(kind: string, id: string, goed: number, totaal: number, fout: number[]) {
+    update((s) => ({ ...s, oefentoetsen: { ...(s.oefentoetsen ?? {}), [kind]: (s.oefentoetsen?.[kind] ?? []).map((t) => (t.id === id ? { ...t, pogingen: [...(t.pogingen ?? []), { at: new Date().toISOString(), goed, totaal, fout }].slice(-20) } : t)) } }));
+  },
   startConflict(c: Omit<Conflict, "id" | "at" | "status">) {
     const extra = { id: newId("c"), at: new Date().toISOString(), status: "wacht" as const };
     update((s) => ({ ...s, conflicts: [...s.conflicts, { ...c, ...extra }].slice(-100) }));
@@ -649,6 +728,9 @@ export const actions = {
   },
   saveProNote(kind: ProKind, text: string) {
     update((s) => ({ ...s, proNotes: { ...s.proNotes, [kind]: text } }));
+  },
+  setWektijd(memberId: string, wektijd: string) {
+    update((s) => ({ ...s, members: s.members.map((m) => (m.id === memberId ? { ...m, wektijd: wektijd || undefined } : m)) }));
   },
   setBedtime(memberId: string, bedtime: string) {
     update((s) => ({

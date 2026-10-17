@@ -18,19 +18,42 @@ const DAG = ["zo", "ma", "di", "wo", "do", "vr", "za"];
 /** Voor het kind, op Vandaag. */
 export function SchermKind({ state, me }: { state: FamilyState; me: Member }) {
   const { af, open } = dagAf(state, me.id);
+  const [laat, setLaat] = useState(false);
   const gisteren = state.schermtijd?.[me.id]?.[addDays(iso(new Date()), -1)];
   const doel = doelVan(state, me.id);
   return (
     <section className={`v2-scherm${af ? " is-af" : ""}`} aria-label="Schermtijd">
       <span className="v2-scherm-icoon" aria-hidden="true">{af ? "🔓" : "📱"}</span>
       <span className="ff-grow ff-stack-xs">
-        <b>{af ? "Je dag is af! Je mag om extra schermtijd vragen" : "Eerst je dag, dan je scherm"}</b>
+        <b>{af ? "Je dag is af! Scherm vrij" : "Eerst je dag, dan je scherm"}</b>
         <span className="ff-small">
-          {af ? "Vraag het via Schermtijd op je telefoon. Papa of mama ziet dat je dag af is." : `Nog ${open.length === 1 ? "1 ding" : `${open.length} dingen`}: ${open.slice(0, 3).join(", ").toLowerCase()}${open.length > 3 ? " …" : ""}`}
+          {af ? "Laat het groene scherm zien. Papa of mama ziet het ook in de app." : `Nog ${open.length === 1 ? "1 ding" : `${open.length} dingen`}: ${open.slice(0, 3).join(", ").toLowerCase()}${open.length > 3 ? " …" : ""}`}
         </span>
         {gisteren && <span className="ff-small ff-muted">Gisteren {uurMin(gisteren.totaal)} op je scherm{gisteren.totaal <= doel ? " · binnen de afspraak 👍" : ` · afspraak is ${uurMin(doel)}`}</span>}
+        {af && <button className="ff-btn ff-btn-primary ff-btn-s v2-dagoef-start" onClick={() => setLaat(true)}>Laat zien: scherm vrij</button>}
       </span>
+      {laat && <SchermVrij me={me} onKlaar={() => setLaat(false)} />}
     </section>
+  );
+}
+
+/**
+  "Scherm vrij": het groene scherm dat je laat zien. De app kan de telefoon niet zelf ontgrendelen (het is een webapp);
+  dit is de sleutel voor de gezinsregel "eerst je dag, dan je scherm". Met tijd en naam, zodat het niet van gisteren is.
+*/
+export function SchermVrij({ me, onKlaar }: { me: Member; onKlaar: () => void }) {
+  const nu = new Date();
+  return (
+    <div className="v2-schermvrij" role="dialog" aria-modal="true" aria-label="Scherm vrij">
+      <div className="v2-schermvrij-in">
+        <span className="v2-schermvrij-vink" aria-hidden="true">✓</span>
+        <b className="v2-schermvrij-titel">Scherm vrij</b>
+        <span className="v2-schermvrij-wie">{me.name} · je dag is af</span>
+        <span className="v2-schermvrij-tijd">{nu.toLocaleDateString("nl-NL", { weekday: "long", day: "numeric", month: "long" })} · {nu.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" })}</span>
+        <span className="v2-schermvrij-uitleg">Laat dit zien aan papa of mama.</span>
+        <button className="ff-btn ff-btn-wide v2-schermvrij-knop" onClick={onKlaar}>Sluiten</button>
+      </div>
+    </div>
   );
 }
 

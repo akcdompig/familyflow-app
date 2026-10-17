@@ -37,6 +37,8 @@ export interface Member {
   joined?: boolean;
   /** Bedtijd "21:30". De telefoon gaat een uur eerder aan de lader. */
   bedtime?: string;
+  /** Wektijd (kinderen), voor de melding "Ben je op?". */
+  wektijd?: string;
   /** Alleen bij het aanmaken, om de uitnodiging te kunnen mailen. */
   email?: string;
 }
@@ -274,6 +276,14 @@ export interface FamilyState {
   xpLog?: Record<string, XpRegel[]>;
   /** Losse afspraken in de agenda, per lid. Geen taak: niks af te vinken, geen punten. */
   agenda?: Record<string, AgendaItem[]>;
+  /** Door een ouder gemarkeerd: taakStatus[lid][datum][itemId] = overgeslagen of ging niet door. Telt niet mee. */
+  taakStatus?: Record<string, Record<string, Record<string, "overgeslagen" | "nietdoor">>>;
+  /** Weekafspraak per kind, vooraf door een ouder: vanaf welk percentage is de week gehaald, en wat staat ertegenover. */
+  weekAfspraak?: Record<string, { drempel: number; beloning?: string }>;
+  /** Afgesloten weken per kind (maandag als sleutel). Wat afgesloten is, staat vast. */
+  weekAfsluiting?: Record<string, Record<string, { af: number; totaal: number; pct: number; gehaald: boolean; beloning?: string; door: string; at: string }>>;
+  /** Oefentoetsen per kind, door een ouder geplakt (gemaakt met eigen AI uit de echte lesstof). */
+  oefentoetsen?: Record<string, OefenToets[]>;
   /** Oefening van vandaag per kind per datum: welke, en of hij echt is afgemaakt. */
   oefenDag?: Record<string, Record<string, { oefening: number; gedaan?: string; xp?: number; eerste?: boolean }>>;
   /** Inzet die je zichtbaar wilt maken (extra werk, een pitch, rust nemen). Waardering, geen punten. */
@@ -444,4 +454,18 @@ export interface InzetItem {
   datum: string;
   tekst?: string;
   at: string;
+}
+
+export interface ToetsVraag {
+  v: string;
+  a: string;
+  opties?: string[];
+}
+export interface OefenToets {
+  id: string;
+  titel: string;
+  vragen: ToetsVraag[];
+  door: string;
+  at: string;
+  pogingen?: { at: string; goed: number; totaal: number; fout: number[] }[];
 }

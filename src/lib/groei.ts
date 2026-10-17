@@ -27,11 +27,21 @@ export type Stand = "af" | "half" | "niks" | "leeg";
 
 /** Hoe ging dag d voor dit lid: ochtendroutine, ingedeelde klussen en taken. Ook voor dagen in het verleden. */
 export interface DagItem {
+  /** Zelfde id als op Vandaag: "routine", "eten:lunch", "taak:<id>", "klus:<key>". */
+  id: string;
   soort: "routine" | "eten" | "taak" | "klus";
   titel: string;
   emoji: string;
   klaar: boolean;
+  /** Door een ouder gemarkeerd: telt niet mee in het totaal (en is niet erg). */
+  status?: ItemStatus;
 }
+export type ItemStatus = "overgeslagen" | "nietdoor";
+export const STATUS_TEKST: Record<ItemStatus, string> = { overgeslagen: "overgeslagen", nietdoor: "ging niet door" };
+const metStatus = (s: FamilyState, id: string, d: string, items: DagItem[]) => {
+  const st = s.taakStatus?.[id]?.[d];
+  return st ? items.map((x) => (st[x.id] && !x.klaar ? { ...x, status: st[x.id] } : x)) : items;
+};
 
 /**
  * Eén lijst voor "je dag", overal hetzelfde: de ring op Vandaag, Gezin › Week en het weekverhaal.
@@ -40,16 +50,16 @@ export interface DagItem {
  */
 export function dagLijst(s: FamilyState, id: string, d: string): DagItem[] {
   if (d === iso(new Date())) {
-    return dagprogramma(s, id).filter(telt).map((st) => ({ soort: st.soort as DagItem["soort"], titel: st.titel, emoji: st.emoji, klaar: st.klaar }));
+    return metStatus(s, id, d, dagprogramma(s, id).filter(telt).map((st) => ({ id: st.id, soort: st.soort as DagItem["soort"], titel: st.titel, emoji: st.emoji, klaar: st.klaar })));
   }
   const log = dagLog(s, id, d);
   const items: DagItem[] = [];
   const nodig = ROUTINE.filter((r) => r.gewicht > 0);
-  items.push({ soort: "routine", titel: "Ochtendroutine", emoji: "🚿", klaar: nodig.every((r) => log.routine.includes(r.id)) });
-  for (const e of ETEN) items.push({ soort: "eten", titel: e.label, emoji: e.emoji, klaar: gegeten(log, e.id) });
+  items.push({ id: "routine", soort: "routine", titel: "Ochtendroutine", emoji: "🚿", klaar: nodig.every((r) => log.routine.includes(r.id)) });
+  for (const e of ETEN) items.push({ id: `eten:${e.id}`, soort: "eten", titel: e.label, emoji: e.emoji, klaar: gegeten(log, e.id) });
   for (const t of tasksFor(s, id, d)) {
     if (t.cat === "werk") continue;
-    items.push({ soort: "taak", titel: t.title, emoji: t.study ? "📚" : "✅", klaar: isDone(s, t.id, d) });
+    items.push({ id: `taak:${t.id}`, soort: "taak", titel: t.title, emoji: t.study ? "📚" : "✅", klaar: isDone(s, t.id, d) });
   }
   const v = verdeling(s, d);
   const log2 = (s.klusLog ?? []).filter((k) => iso(new Date(k.at)) === d && k.by === id);
@@ -59,17 +69,21 @@ export function dagLijst(s: FamilyState, id: string, d: string): DagItem[] {
   for (const key of gedaan) keys.add(key); // ook wat je extra deed
   for (const key of keys) {
     const k = klusById(s, key);
-    items.push({ soort: "klus", titel: k ? (k.perKind ? "Eigen kamer" : k.label.split(" (")[0]) : key, emoji: k?.emoji ?? "🧹", klaar: gedaan.has(key) });
+    items.push({ id: `klus:${key}`, soort: "klus", titel: k ? (k.perKind ? "Eigen kamer" : k.label.split(" (")[0]) : key, emoji: k?.emoji ?? "🧹", klaar: gedaan.has(key) });
   }
-  return items;
+  return metStatus(s, id, d, items);
 }
 
 export function dagStand(s: FamilyState, id: string, d: string): { stand: Stand; af: number; totaal: number; items: DagItem[] } {
   const items = dagLijst(s, id, d);
-  const af = items.filter((x) => x.klaar).length;
-  const totaal = items.length;
+  // Overgeslagen of ging niet door: telt niet mee, ook niet in het totaal.
+  const tellen = items.filter((x) => !x.status);
+  const af = tellen.filter((x) => x.klaar).length;
+  const totaal = tellen.length;
+  // Niks ingevuld op een dag die voorbij is (of nog moet komen) = "niet ingevuld", niet "slecht".
   const leegDag = af === 0 && !s.dag?.[d]?.[id];
-  if (leegDag && d > iso(new Date())) return { stand: "leeg", af, totaal, items };
+  if (leegDag && d !== iso(new Date())) return { stand: "leeg", af, totaal, items };
+  if (!totaal) return { stand: "af", af, totaal, items };
   const stand: Stand = af >= totaal ? "af" : af / totaal >= 0.5 ? "half" : "niks";
   return { stand, af, totaal, items };
 }

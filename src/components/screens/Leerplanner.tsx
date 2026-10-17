@@ -7,6 +7,7 @@ import { addDays, dayLabel, herken, iso, plan, SOORT, VAKKEN, type PlanItem, typ
 import { blokNaarTaak } from "@/lib/somtoday";
 import { isDone } from "@/lib/tasks";
 import { SomtodayKaart } from "@/components/screens/SomtodayKaart";
+import { Toetsen } from "@/components/screens/Toets";
 import { MaandOverzicht } from "@/components/screens/MaandOverzicht";
 import type { FamilyState, Member, Task } from "@/lib/types";
 
@@ -97,6 +98,7 @@ export function Leerplanner({ state, me, onClose, onToast }: { state: FamilyStat
             </section>
           )}
           {whoMember && <SomtodayKaart who={whoMember} me={me} onToast={onToast} />}
+          {whoMember && <Toetsen state={state} me={me} kind={whoMember} onToast={onToast} />}
           <button className="ff-btn ff-btn-primary ff-btn-wide" onClick={() => setStage("plak")}>Somtoday-week plakken</button>
           <button className="ff-btn ff-btn-ghost ff-btn-wide" onClick={() => { setItems([newItem()]); setStage("check"); }}>Zelf een toets of opdracht toevoegen</button>
         </>

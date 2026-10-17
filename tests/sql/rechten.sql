@@ -159,6 +159,22 @@ select pg_temp.als('00000000-0000-0000-0000-00000000000a');
 select state as st from public.families \gset
 select pg_temp.eis((:'st'::jsonb #>> '{oefenDag,k1,2026-10-17,oefening}') = '1' and (:'st'::jsonb #>> '{oefenDag,k2,2026-10-17,oefening}') = '3', 'kind bewaart zijn eigen oefening, die van zus blijft staan');
 
+-- ===== 3.7: weekafspraak en afsluiting alleen door ouders; ieder ziet alleen de eigen =====
+select rev from public.families \gset
+select public.save_family(:'st'::jsonb || '{"weekAfspraak":{"k1":{"drempel":80,"beloning":"5 euro"},"k2":{"drempel":80,"beloning":"7 euro"}},"weekAfsluiting":{"k1":{"2026-10-12":{"af":8,"totaal":10,"pct":80,"gehaald":true,"door":"p1","at":"x"}}},"taakStatus":{"k1":{"2026-10-17":{"routine":"nietdoor"}}},"oefentoetsen":{"k1":[{"id":"t1","titel":"Duits","vragen":[{"v":"a","a":"b"}],"door":"p1","at":"x"}]}}'::jsonb, :rev);
+select pg_temp.als('00000000-0000-0000-0000-00000000000b');
+select (public.load_family() ->> 'state')::jsonb as kian, (public.load_family() ->> 'rev')::int as rev \gset
+select pg_temp.eis(not (:'kian'::jsonb -> 'weekAfspraak') ? 'k2', 'kind ziet de weekafspraak van zus niet');
+select public.save_family(:'kian'::jsonb
+  || '{"weekAfspraak":{"k1":{"drempel":50,"beloning":"100 euro"}},"weekAfsluiting":{"k1":{"2026-10-12":{"af":10,"totaal":10,"pct":100,"gehaald":true,"door":"k1","at":"y"}}},"taakStatus":{"k1":{"2026-10-17":{"taak:x":"overgeslagen"}}}}'::jsonb
+  || jsonb_build_object('oefentoetsen', jsonb_build_object('k1', jsonb_build_array(((:'kian'::jsonb #> '{oefentoetsen,k1,0}') || '{"pogingen":[{"at":"z","goed":1,"totaal":1,"fout":[]}]}'::jsonb)))), :rev);
+select pg_temp.als('00000000-0000-0000-0000-00000000000a');
+select state as st from public.families \gset
+select pg_temp.eis((:'st'::jsonb #>> '{weekAfspraak,k1,drempel}') = '80' and (:'st'::jsonb #>> '{weekAfspraak,k1,beloning}') = '5 euro', 'kind kan zijn weekafspraak niet wijzigen');
+select pg_temp.eis((:'st'::jsonb #>> '{weekAfsluiting,k1,2026-10-12,pct}') = '80', 'kind kan een afgesloten week niet aanpassen');
+select pg_temp.eis(not (:'st'::jsonb #> '{taakStatus,k1,2026-10-17}') ? 'taak:x', 'kind kan zelf niks op overgeslagen zetten');
+select pg_temp.eis(jsonb_array_length(:'st'::jsonb #> '{oefentoetsen,k1,0,pogingen}') = 1, 'kind bewaart zijn eigen oefenpoging');
+
 -- ===== Schermtijd: alleen ouders vullen in, kind ziet alleen zijn eigen =====
 select rev from public.families \gset
 select public.save_family(:'st'::jsonb || '{"schermtijd":{"k1":{"2026-10-15":{"totaal":276,"sociaal":233,"door":"p1","at":"1"}},"k2":{"2026-10-15":{"totaal":60,"door":"p1","at":"1"}}},"schermAfspraak":{"k1":{"doel":120}}}'::jsonb, :rev);

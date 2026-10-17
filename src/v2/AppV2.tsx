@@ -14,6 +14,7 @@ import { Ik } from "@/components/screens/Ik";
 import { Leerplanner } from "@/components/screens/Leerplanner";
 import { Play } from "@/components/screens/Oefenen";
 import { LidDag } from "@/components/screens/LidDag";
+import { WeekOuder } from "@/components/screens/WeekKaart";
 import { DUUR, oefeningVanVandaag } from "@/lib/oefendag";
 import { iso } from "@/lib/planner";
 import { EersteKeer, UitlegPagina, type UitlegTab } from "@/components/screens/Uitleg";
@@ -235,7 +236,8 @@ export function AppV2() {
               <Avatar config={sel.avatar} expression={zzz ? "slaap" : expressionFor(ci)} bezig={werk?.look} walm={!zzz && walm(state, sel.id)} dorst={!zzz && dorst(state, sel.id)} honger={!zzz && !werk && honger(state, sel.id)} energy={sel.energy} size={130} seed={5} label={sel.name} />
               <h2 className="ff-h2">{sel.id === me.id ? "Jij" : sel.name}</h2>
               <p className="ff-muted">{zzz ? "Slaapt" : werk ? `${werk.look === "school" ? "Op school" : werk.werk.naam} · ${restTekst(werk.rest)}` : ci ? `${moodLabel(ci)} · ${timeLabel(ci.at)}` : "Nog niet ingecheckt"}</p>
-              {sel.joined !== false && <LidDag state={state} lid={sel} me={me} />}
+              {sel.joined !== false && <LidDag state={state} lid={sel} me={me} onToast={setToast} />}
+              {sel.joined !== false && isOuder && sel.role !== "ouder" && <WeekOuder state={state} kind={sel} me={me} onToast={setToast} />}
               {sel.joined !== false && <div style={{ width: "100%" }}><Meters state={state} id={sel.id} /></div>}
               {sel.joined !== false && (isOuder || sel.id === me.id) && <div style={{ width: "100%" }}><VoedingKaart state={state} id={sel.id} kanAanpassen={isOuder || sel.id === me.id} /></div>}
               {sel.joined !== false && sel.role !== "ouder" && (isOuder || sel.id === me.id) && <div className="v2-groei-kaart" style={{ width: "100%" }}><Groei state={state} lid={sel} me={me} onToast={setToast} compact /></div>}

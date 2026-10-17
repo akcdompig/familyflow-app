@@ -232,13 +232,14 @@ export function Gezin({ state, me, onToast, onOefenen, onCoachNu, instellen = fa
       </section>
 
       <section className="ff-card ff-stack-s">
-        <h2 className="ff-h2">Bedtijden</h2>
-        <p className="ff-small ff-muted">De telefoon gaat een uur voor bedtijd aan de lader. Die taak past zich vanzelf aan.</p>
+        <h2 className="ff-h2">Wektijd en bedtijd</h2>
+        <p className="ff-small ff-muted">Op de wektijd komt "Ben je op?", een uur voor bedtijd "Gedaan maar vergeten? Daarna welterusten". De telefoon gaat een uur voor bedtijd aan de lader.</p>
         {state.members.filter((m) => m.role !== "ouder").map((k) => (
           <label key={k.id} className="ff-reward-edit">
             <b className="ff-grow">{k.name}</b>
             <span className="ff-small ff-muted">telefoon {phoneTime(k.bedtime ?? "21:30")}</span>
-            <input type="time" style={{ flex: "0 0 auto", width: 132 }} value={k.bedtime ?? "21:30"} onChange={(e) => e.target.value && actions.setBedtime(k.id, e.target.value)} aria-label={`Bedtijd van ${k.name}`} />
+            <input type="time" style={{ flex: "0 0 auto", width: 112 }} value={k.wektijd ?? ""} onChange={(e) => actions.setWektijd(k.id, e.target.value)} aria-label={`Wektijd van ${k.name}`} />
+            <input type="time" style={{ flex: "0 0 auto", width: 112 }} value={k.bedtime ?? "21:30"} onChange={(e) => e.target.value && actions.setBedtime(k.id, e.target.value)} aria-label={`Bedtijd van ${k.name}`} />
           </label>
         ))}
       </section>

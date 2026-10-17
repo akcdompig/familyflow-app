@@ -1270,4 +1270,47 @@ button.v2-samen-actie { justify-self: start; min-height: 34px; padding-left: 0; 
 .ff-lijst-dag li.is-af .ff-lijst-titel { text-decoration: line-through; }
 .ff-lijst-soort { margin-left: auto; font-size: var(--ff-t-xs); color: var(--ff-tekst-zacht); font-weight: 600; }
 .v2-teller-uitleg > summary { cursor: pointer; min-height: 32px; list-style: none; }
-</style></head><body><div id="root"></div><script src="/config.js"></script><script src="/assets/app-794756db29f4.js"></script><script>if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("/sw.js");</script></body></html>
+.v2-stand.is-leeg { background: var(--ff-wolk); color: var(--ff-tekst-zacht); font-weight: 600; }
+
+/* ---- 3.7: week, helpen, scherm vrij, momenten ---- */
+.ff-lijst-dag li.is-helpen { flex-wrap: wrap; }
+.ff-lijst-dag li.is-status .ff-lijst-titel { color: var(--ff-tekst-zacht); }
+.v2-lid-item { display: flex; gap: 8px; align-items: center; width: 100%; min-height: 34px; border: 0; background: none; padding: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.v2-lid-acties { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 0 8px 26px; width: 100%; }
+.v2-weekbalk { position: relative; display: block; height: 10px; border-radius: 999px; background: var(--ff-wolk); overflow: visible; }
+.v2-weekbalk i { position: absolute; inset: 0 auto 0 0; border-radius: 999px; background: linear-gradient(90deg, var(--ff-zon), var(--ff-munt)); }
+.v2-weekbalk b { position: absolute; top: -3px; width: 2px; height: 16px; background: var(--ff-nacht); border-radius: 2px; }
+.v2-mijnweek-kort { display: grid; gap: 8px; }
+.v2-mijnweek-kort.is-gehaald { border: 2px solid var(--ff-munt); background: var(--ff-munt-zacht); }
+.v2-mijnweek-knop { display: flex; gap: 8px; align-items: center; width: 100%; border: 0; background: none; padding: 0; font: inherit; color: inherit; cursor: pointer; min-height: 40px; }
+.v2-weekregels { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.v2-weekregels li { display: flex; gap: 8px; font-size: var(--ff-t-s); font-weight: 600; }
+.v2-week-dicht { font-weight: 700; }
+.v2-weekouder .ff-btn-s { justify-self: start; }
+.v2-gevoel.is-ochtend { border: 2px solid var(--ff-zon); background: var(--ff-zon-zacht); }
+.v2-avond { display: flex; gap: 12px; align-items: flex-start; background: var(--ff-nacht); color: #fff; }
+.v2-avond .ff-small { color: #e6e3ff; }
+.v2-avond .ff-btn-ghost { color: #fff; border-color: #fff; }
+.v2-avond.is-slaap { align-items: center; }
+.v2-avond .ff-muted { color: #cfcaf5; }
+.v2-schermvrij { position: fixed; inset: 0; z-index: 220; display: grid; place-items: center; padding: 16px; background: #0f7a55; color: #fff; }
+.v2-schermvrij-in { display: grid; justify-items: center; gap: 10px; text-align: center; width: min(360px, 100%); }
+.v2-schermvrij-vink { width: 120px; height: 120px; border-radius: 50%; background: #fff; color: #0f7a55; display: grid; place-items: center; font-size: 72px; font-weight: 800; }
+.v2-schermvrij-titel { font-family: var(--ff-font-speels); font-size: 2.6rem; line-height: 1.1; }
+.v2-schermvrij-wie { font-size: 1.2rem; font-weight: 700; }
+.v2-schermvrij-tijd { font-size: 1rem; font-weight: 600; text-transform: capitalize; }
+.v2-schermvrij-uitleg { opacity: .9; }
+.v2-schermvrij-knop { background: #fff; color: #0f7a55; margin-top: 12px; }
+.v2-toets-rij { display: flex; gap: 8px; align-items: center; }
+.v2-toets-stappen { margin: 0; padding-left: 20px; display: grid; gap: 4px; font-size: var(--ff-t-s); }
+.v2-toets-opdracht { white-space: pre-wrap; font: inherit; font-size: var(--ff-t-xs); background: var(--ff-wolk); border-radius: 12px; padding: 10px 12px; margin: 0; max-height: 160px; overflow: auto; }
+.v2-toets-check { margin: 0; padding-left: 20px; display: grid; gap: 8px; }
+.v2-toets-check li > span { display: inline-flex; }
+.v2-toets-check li { font-size: var(--ff-t-s); }
+.v2-toets-check li { display: list-item; }
+.v2-toets-uitslag { font-family: var(--ff-font-speels); font-size: 1.5rem; font-weight: 600; }
+.v2-toets-feedback { display: grid; gap: 4px; padding: 10px 12px; border-radius: 12px; background: var(--ff-koraal-zacht); }
+.v2-toets-feedback.is-goed { background: var(--ff-munt-zacht); }
+.ff-choice.is-goed { border-color: var(--ff-munt); background: var(--ff-munt-zacht); }
+.v2-toets-klaar { border: 2px solid var(--ff-lucht); }
+</style></head><body><div id="root"></div><script src="/config.js"></script><script src="/assets/app-afcace5558b0.js"></script><script>if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("/sw.js");</script></body></html>

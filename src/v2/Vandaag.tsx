@@ -15,10 +15,13 @@ import { teClaimen } from "@/lib/xp";
 import { OngezondKnop } from "./Voeding";
 import { CoachTip } from "@/components/screens/CoachTip";
 import { SchermKind } from "./Scherm";
+import { MijnWeekKort } from "@/components/screens/WeekKaart";
+import { slaapt } from "@/lib/status";
 import { KlusSheet, antwoordTekst, vraagVan } from "@/components/screens/KlusSheet";
 import { klusStatus } from "@/lib/huis";
 import { iso } from "@/lib/planner";
 import { DUUR, gedaanVandaag, oefeningVanVandaag } from "@/lib/oefendag";
+import { OEFENINGEN_PER_WEEK, oefeningenDezeWeek } from "@/lib/week";
 import type { FamilyState, Member, MoodLevel, Oordeel } from "@/lib/types";
 import { OORDEEL, actief, teEvalueren } from "@/lib/afspraken";
 
@@ -54,12 +57,30 @@ export function Vandaag({ state, me, onToast, onMeerGevoel, onWie, onSamenVerder
       return false;
     }
   });
-  const stappen = dagprogramma(state, me.id);
+  // Wat een ouder op "overgeslagen" of "ging niet door" zette, staat niet meer in je lijst en telt niet mee.
+  const status = state.taakStatus?.[me.id]?.[iso(new Date())] ?? {};
+  const stappen = dagprogramma(state, me.id).filter((st) => st.klaar || !status[st.id]);
   const v = voortgang(stappen);
   const volgende = nuDoen(stappen);
   const log = dagLog(state, me.id);
   const ci = state.checkins[me.id];
   const vandaagIn = !!ci && new Date(ci.at).toDateString() === new Date().toDateString();
+  // Vaste momenten: 's ochtends "Ben je op?", 's avonds "Welterusten". Tien seconden, op een vast moment: zo wordt het een gewoonte.
+  const nuMin = new Date().getHours() * 60 + new Date().getMinutes();
+  const ochtendStart = !vandaagIn && nuMin >= 5 * 60 && nuMin < 12 * 60;
+  const bedMin = (() => { const [h, m] = (me.bedtime ?? (me.role === "ouder" ? "23:00" : "21:30")).split(":").map(Number); return h * 60 + m; })();
+  const avond = nuMin >= Math.min(bedMin - 90, 21 * 60) || nuMin < 4 * 60;
+  const gevoelSectie = (
+      <section className={`v2-gevoel${ochtendStart ? " is-ochtend" : ""}`} aria-label="Hoe voel je je?">
+        <span className="ff-small"><b>{ochtendStart ? "☀️ Goedemorgen! Ben je op? Tik hoe je je voelt" : vandaagIn ? "Je voelt je" : "Hoe voel je je?"}</b>{vandaagIn && ci && !ci.rest && MOODS.find((x) => x.m === ci.mood) ? <span className="v2-gevoel-woord"> {GEVOEL_WOORD[ci.mood]}</span> : null}</span>
+        <div className="v2-gevoel-rij">
+          {MOODS.map((x) => (
+            <button key={x.m} className="v2-face" aria-pressed={vandaagIn && ci?.mood === x.m && !ci.rest} aria-label={x.l} onClick={() => { actions.checkIn(me.id, { mood: x.m, rest: false, topics: [], wantsTalk: false }); if (x.m <= 2) onMeerGevoel(); else onToast(vandaagIn ? "Bijgewerkt" : "Ingecheckt ✓"); }}>{x.e}</button>
+          ))}
+          <button className="v2-face is-meer" onClick={onMeerGevoel} aria-label="Meer: rust, praten">⋯</button>
+        </div>
+      </section>
+  );
   const kist = teClaimen(state, me.id);
   const r = reeks(state, me.id);
 
@@ -152,6 +173,10 @@ export function Vandaag({ state, me, onToast, onMeerGevoel, onWie, onSamenVerder
         </div>
       </section>
 
+      {ochtendStart && gevoelSectie}
+      {me.role !== "ouder" && <MijnWeekKort state={state} me={me} />}
+      {avond && <Welterusten state={state} me={me} onToast={onToast} />}
+
       {/* Water en fruit: altijd in beeld, met glazen. Tik op een glas = zoveel gehad; nog een keer tikken = één terug. */}
       <Drinken state={state} me={me} onToast={onToast} />
 
@@ -189,6 +214,11 @@ export function Vandaag({ state, me, onToast, onMeerGevoel, onWie, onSamenVerder
       {/* Oefening van vandaag: kinderen, één korte oefening per dag. Gemist is niet erg; terugdraaien kan. */}
       {me.role !== "ouder" && onDagOefening && <DagOefeningKaart state={state} me={me} onStart={onDagOefening} onToast={onToast} />}
 
+      {/* Een oefentoets die klaarstaat (gemaakt door papa of mama van de echte lesstof). */}
+      {me.role !== "ouder" && onPlanner && (state.oefentoetsen?.[me.id] ?? []).filter((t) => !t.pogingen?.length).slice(0, 1).map((t) => (
+        <button key={t.id} className="v2-menu-rij v2-toets-klaar" onClick={onPlanner}><span aria-hidden="true">📝</span><b className="ff-grow">Oefentoets klaar: {t.titel}</b><span aria-hidden="true">›</span></button>
+      ))}
+
       {/* Onze afspraak: de actie uit de afsprakenlus. Na een week meteen "hielp het?". */}
       {(() => {
         const vraag = teEvalueren(state, me.id)[0];
@@ -218,16 +248,8 @@ export function Vandaag({ state, me, onToast, onMeerGevoel, onWie, onSamenVerder
         <AfsprakenOpDag state={state} me={me} datum={iso(new Date())} onToast={onToast} alleenIk toevoegen={false} titel="📅 Jouw afspraken vandaag" />
       )}
 
-      {/* Hoe voel je je: één tik */}
-      <section className="v2-gevoel" aria-label="Hoe voel je je?">
-        <span className="ff-small"><b>{vandaagIn ? "Je voelt je" : "Hoe voel je je?"}</b>{vandaagIn && ci && !ci.rest && MOODS.find((x) => x.m === ci.mood) ? <span className="v2-gevoel-woord"> {GEVOEL_WOORD[ci.mood]}</span> : null}</span>
-        <div className="v2-gevoel-rij">
-          {MOODS.map((x) => (
-            <button key={x.m} className="v2-face" aria-pressed={vandaagIn && ci?.mood === x.m && !ci.rest} aria-label={x.l} onClick={() => { actions.checkIn(me.id, { mood: x.m, rest: false, topics: [], wantsTalk: false }); if (x.m <= 2) onMeerGevoel(); else onToast(vandaagIn ? "Bijgewerkt" : "Ingecheckt ✓"); }}>{x.e}</button>
-          ))}
-          <button className="v2-face is-meer" onClick={onMeerGevoel} aria-label="Meer: rust, praten">⋯</button>
-        </div>
-      </section>
+      {/* Hoe voel je je: één tik. 's Ochtends staat dit bovenaan als "Ben je op?". */}
+      {!ochtendStart && gevoelSectie}
 
       {me.role !== "ouder" && <SchermKind state={state} me={me} />}
 
@@ -347,13 +369,28 @@ function DagOefeningKaart({ state, me, onStart, onToast }: { state: FamilyState;
   const sc = oefeningVanVandaag(state, me.id, d);
   const af = gedaanVandaag(state, me.id, d);
   const [terug, setTerug] = useState(false);
+  const [toch, setToch] = useState(false);
+  // Weekritme: 3 per week, jij kiest wanneer. Een dag overslaan bestaat dus niet.
+  const n = oefeningenDezeWeek(state, me.id);
+  if (!af && n >= OEFENINGEN_PER_WEEK && !toch) {
+    return (
+      <section className="ff-card v2-dagoef is-af" aria-label="Oefening van vandaag">
+        <span className="v2-dagoef-icoon" aria-hidden="true">🎯</span>
+        <span className="ff-grow ff-stack-xs">
+          <b>{n} van {OEFENINGEN_PER_WEEK} oefeningen deze week ✓</b>
+          <span className="ff-small ff-muted">Je weekdoel is gehaald. Zin in nog eentje? Mag, hoeft niet.</span>
+          <button className="ff-link ff-small v2-dagoef-terug" onClick={() => setToch(true)}>Nog een oefening doen</button>
+        </span>
+      </section>
+    );
+  }
   if (af) {
     return (
       <section className="ff-card v2-dagoef is-af" aria-label="Oefening van vandaag">
         <span className="v2-dagoef-icoon" aria-hidden="true">✅</span>
         <span className="ff-grow ff-stack-xs">
           <b>Oefening van vandaag gedaan</b>
-          <span className="ff-small ff-muted">{sc.title}. Morgen staat er een nieuwe klaar.</span>
+          <span className="ff-small ff-muted">{sc.title} · {Math.min(n, OEFENINGEN_PER_WEEK)} van {OEFENINGEN_PER_WEEK} deze week.</span>
           {!terug ? (
             <button className="ff-link ff-small v2-dagoef-terug" onClick={() => setTerug(true)}>Per ongeluk? Ongedaan maken</button>
           ) : (
@@ -371,10 +408,34 @@ function DagOefeningKaart({ state, me, onStart, onToast }: { state: FamilyState;
     <section className="ff-card v2-dagoef" aria-label="Oefening van vandaag">
       <span className="v2-dagoef-icoon" aria-hidden="true">🎯</span>
       <span className="ff-grow ff-stack-xs">
-        <span className="ff-eyebrow">Jouw oefening van vandaag · {DUUR}</span>
+        <span className="ff-eyebrow">Oefening · {Math.min(n, OEFENINGEN_PER_WEEK)} van {OEFENINGEN_PER_WEEK} deze week · {DUUR}</span>
         <b>{sc.title}</b>
-        <span className="ff-small">Neem twee minuten om te oefenen wat je kunt doen als dit gebeurt. Dan gaat het in het echt makkelijker.</span>
+        <span className="ff-small">Neem twee minuten om te oefenen wat je kunt doen als dit gebeurt. Dan gaat het in het echt makkelijker. Drie keer per week, jij kiest wanneer.</span>
         <button className="ff-btn ff-btn-primary ff-btn-s v2-dagoef-start" onClick={onStart}>Start oefening</button>
+      </span>
+    </section>
+  );
+}
+
+/** 's Avonds: telefoon aan de lader en welterusten. Eén tik. Slaap je al? Dan kun je je weer wakker tikken. */
+function Welterusten({ state, me, onToast }: { state: FamilyState; me: Member; onToast: (m: string) => void }) {
+  const zzz = slaapt(state, me.id);
+  if (zzz) {
+    return (
+      <section className="ff-card v2-avond is-slaap" aria-label="Welterusten">
+        <span className="v2-dagoef-icoon" aria-hidden="true">😴</span>
+        <span className="ff-grow ff-stack-xs"><b>Slaap lekker</b><span className="ff-small ff-muted">Morgen staat je dag weer klaar.</span></span>
+        <button className="ff-btn ff-btn-ghost ff-btn-s" onClick={() => actions.wakeUp(me.id)}>Toch wakker</button>
+      </section>
+    );
+  }
+  return (
+    <section className="ff-card v2-avond" aria-label="Welterusten">
+      <span className="v2-dagoef-icoon" aria-hidden="true">🌙</span>
+      <span className="ff-grow ff-stack-xs">
+        <b>Bijna bedtijd{me.bedtime ? ` (${me.bedtime.replace(":", ".")})` : ""}</b>
+        <span className="ff-small">Nog iets gedaan maar vergeten af te vinken? Doe het nu. Daarna telefoon aan de lader.</span>
+        <button className="ff-btn ff-btn-primary ff-btn-s v2-dagoef-start" onClick={() => { actions.goToSleep(me.id); onToast("Welterusten 🌙"); }}>Welterusten</button>
       </span>
     </section>
   );

@@ -188,6 +188,16 @@ export function demoFamily(): FamilyState {
       p1: [{ id: "ag1", titel: "Ontbijten met Akram", datum: new Date(daysAgo(0, 12)).toLocaleDateString("sv-SE"), van: "11:00", tot: "12:00", soort: "sociaal", met: "Akram", waar: "Café de Haven", at: daysAgo(1, 20) }],
     },
     inzet: { p1: [{ id: "iz1", soort: "pitch", datum: new Date(daysAgo(1, 12)).toLocaleDateString("sv-SE"), tekst: "pitch voor een nieuwe klant", at: daysAgo(1, 21) }] },
+    // Weekafspraak (vooraf, vast) en een oefentoets die papa plakte.
+    weekAfspraak: { k1: { drempel: 80, beloning: "€ 5 weekgeld" }, k2: { drempel: 80, beloning: "€ 7,50 weekgeld" } },
+    oefentoetsen: {
+      k1: [{ id: "ot1", titel: "Duits H4 woordjes", door: "p1", at: daysAgo(1, 20), vragen: [
+        { v: "Wat betekent 'der Hund'?", a: "de hond", opties: ["de kat", "het huis", "de boom"] },
+        { v: "Wat betekent 'die Schule'?", a: "de school", opties: ["de schoen", "de tafel", "de straat"] },
+        { v: "Vertaal: het boek", a: "das Buch" },
+        { v: "Wat betekent 'schnell'?", a: "snel", opties: ["langzaam", "groot", "koud"] },
+      ] }],
+    },
     xpLog: {
       k1: [
         { id: "x1", n: 10, wat: "Korte oefening gedaan", at: daysAgo(4, 17), claim: daysAgo(3, 19) },
