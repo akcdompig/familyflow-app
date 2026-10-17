@@ -70,7 +70,7 @@ export function CoachNu({ state, me, onClose, onToast, onPractice, onSamen, star
   const toggle = (v: string) => setMee((l) => (l.includes(v) ? l.filter((x) => x !== v) : [...l, v]));
   const finish = () => {
     if (sc) actions.logCoach(me.id, sc.id, licht ?? "groen");
-    onToast(bewaard ? "Goed gedaan. De afspraak staat bij Gezin" : "Goed gedaan, allemaal");
+    onToast(bewaard ? "Goed gedaan. De huisregel staat bij Gezin" : "Goed gedaan, allemaal");
     onClose();
   };
 
@@ -316,13 +316,13 @@ export function CoachNu({ state, me, onClose, onToast, onPractice, onSamen, star
             <p className="ff-small ff-muted">{GEEN_SORRY_DWANG}</p>
           </div>
           <div className="ff-card ff-stack-s">
-            <b>Welke afspraak maken jullie?</b>
+            <b>Welke huisregel maken jullie?</b>
             <p className="ff-small ff-muted">Kies er één, of schrijf je eigen. Klein en haalbaar.</p>
             <div className="ff-stack-s">
               {sc.prevention.map((p) => <button key={p} className="ff-choice" aria-pressed={afspraak === p} onClick={() => setAfspraak(p)}>{p}</button>)}
             </div>
             <label className="ff-field">
-              <span className="ff-eyebrow">Of eigen afspraak</span>
+              <span className="ff-eyebrow">Of een eigen huisregel</span>
               <input value={afspraak} maxLength={120} onChange={(e) => setAfspraak(e.target.value)} placeholder="Bijv. bij oranje zeggen we: pauze" />
             </label>
             <button
@@ -330,7 +330,7 @@ export function CoachNu({ state, me, onClose, onToast, onPractice, onSamen, star
               disabled={!afspraak.trim() || bewaard}
               onClick={() => { actions.addAfspraak(afspraak, me.id, sc.id); setBewaard(true); onToast("Afspraak bewaard bij Gezin"); }}
             >
-              {bewaard ? "Bewaard als gezinsafspraak" : "Bewaar als gezinsafspraak"}
+              {bewaard ? "Bewaard als huisregel" : "Bewaar als huisregel"}
             </button>
           </div>
           <button className="ff-btn ff-btn-primary ff-btn-wide" onClick={() => setStage("s6")}>Verder</button>
@@ -346,7 +346,7 @@ export function CoachNu({ state, me, onClose, onToast, onPractice, onSamen, star
           </div>
           <div className="ff-card ff-stack-s">
             <b>Wat doen we als de spanning weer oploopt?</b>
-            <p className="ff-small">{bewaard && afspraak ? `Jullie afspraak: ${afspraak}` : "Bij oranje: even pauze. Bij rood: eerst rust, later praten."}</p>
+            <p className="ff-small">{bewaard && afspraak ? `Jullie huisregel: ${afspraak}` : "Bij oranje: even pauze. Bij rood: eerst rust, later praten."}</p>
           </div>
           {sc.practice && (
             <button className="ff-level" onClick={() => onPractice(sc.practice!)}>

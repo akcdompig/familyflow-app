@@ -1,2 +1,2 @@
-export const VERSION = "3.8";
-export const VERSION_NAME = "Eerst je lijst";
+export const VERSION = "3.9";
+export const VERSION_NAME = "Rustig overzicht";

@@ -14,12 +14,12 @@ export function Welkom({ onParent, onCode }: { onParent: (mode: "nieuw" | "inlog
       <div className="ff-onb-hero">
         <Flo size={96} />
         <h1 className="ff-h1">Welkom bij FamilyFlow</h1>
-        <p className="ff-muted">Minder gedoe thuis. Eerlijk verdeelde klussen, een rustige dag voor de kinderen, en samen afspraken maken die echt werken.</p>
+        <p className="ff-muted">Minder gedoe thuis. Eerlijk verdeelde klussen, een rustige dag voor de kinderen, en samen huisregels maken die echt werken.</p>
       </div>
       <ul className="ff-onb-punten">
         <li>🧹 Wie doet wat, eerlijk verdeeld naar ieders rooster</li>
-        <li>✅ Kinderen zien één ding tegelijk: wat nu</li>
-        <li>🤝 Bij ruzie: rust, praten, een afspraak, en na een week kijken of het helpt</li>
+        <li>✅ Kinderen zien meteen wat er nu moet, zonder te zoeken</li>
+        <li>🤝 Bij ruzie: rust, praten, een huisregel, en na een week kijken of hij helpt</li>
       </ul>
       <button className="ff-onb-choice" onClick={onCode}>
         <span className="ff-onb-ic"><Icon name="ik" size={26} /></span>

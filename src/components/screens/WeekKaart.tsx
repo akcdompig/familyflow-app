@@ -24,8 +24,8 @@ function Balk({ pct, drempel }: { pct: number; drempel: number }) {
 }
 
 /** Kort, bovenaan Vandaag voor kinderen: hoe staat mijn week ervoor? Tik voor de hele kaart. */
-export function MijnWeekKort({ state, me }: { state: FamilyState; me: Member }) {
-  const [open, setOpen] = useState(false);
+export function MijnWeekKort({ state, me, startOpen = false }: { state: FamilyState; me: Member; startOpen?: boolean }) {
+  const [open, setOpen] = useState(startOpen);
   const k = weekKaart(state, me.id);
   if (!k.totaal) return null;
   const nog = Math.max(0, Math.ceil((k.drempel / 100) * k.totaal) - k.af);
@@ -33,8 +33,9 @@ export function MijnWeekKort({ state, me }: { state: FamilyState; me: Member }) 
     <section className={`ff-card v2-mijnweek-kort${k.gehaald ? " is-gehaald" : ""}`} aria-label="Mijn week">
       <button className="v2-mijnweek-knop" aria-expanded={open} onClick={() => setOpen(!open)}>
         <span className="ff-grow ff-stack-xs" style={{ textAlign: "left" }}>
-          <b>{k.gesloten ? (k.gesloten.gehaald ? "🏁 Week gehaald!" : "Week afgesloten") : k.gehaald ? "🏁 Je week is gehaald!" : `Je week: ${k.dagenGoed} van ${k.dagen} ${k.dagen === 1 ? "dag" : "dagen"} goed`}</b>
-          <span className="ff-small ff-muted">{k.pct}% gedaan{k.gehaald || k.gesloten ? "" : ` · nog ${nog} tot ${k.drempel}%`}{k.beloning ? ` · ${k.beloning}` : ""}</span>
+          {/* Positief geformuleerd: wat je nog nodig hebt, niet hoeveel dagen "mislukt" zijn. De week loopt nog. */}
+          <b>{k.gesloten ? (k.gesloten.gehaald ? "🏁 Week gehaald!" : "Week afgesloten") : k.gehaald ? "🏁 Je week is gehaald!" : `Je week: nog ${nog} ${nog === 1 ? "vinkje" : "vinkjes"} tot je doel`}</b>
+          <span className="ff-small ff-muted">{k.pct}% gedaan{k.dagenGoed > 0 ? ` · ${k.dagenGoed} ${k.dagenGoed === 1 ? "dag" : "dagen"} helemaal af` : ""}{k.beloning ? ` · ${k.beloning}` : ""}</span>
         </span>
         <span aria-hidden="true">{open ? "▴" : "▾"}</span>
       </button>

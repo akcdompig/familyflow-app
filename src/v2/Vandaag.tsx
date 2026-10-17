@@ -203,6 +203,11 @@ export function Vandaag({ state, me, onToast, onMeerGevoel, onWie, onPlanner, on
         <div>
           <div className="ff-eyebrow">{datumTijd()}</div>
           <h1 className="ff-h1">{begroeting()}, {me.name}</h1>
+          {!ochtendStart && (
+            <button className="v2-gevoel-chip" onClick={onMeerGevoel} aria-label={vandaagIn && ci && !ci.rest ? `Je voelt je ${GEVOEL_WOORD[ci.mood]}. Aanpassen` : "Hoe voel je je? Inchecken"}>
+              {vandaagIn && ci && !ci.rest ? <>{MOODS.find((x) => x.m === ci.mood)?.e} Je voelt je {GEVOEL_WOORD[ci.mood]} <span className="ff-muted">· aanpassen</span></> : <>🙂 Hoe voel je je? <span className="ff-muted">· tik</span></>}
+            </button>
+          )}
         </div>
         <button className="v2-ik" onClick={onWie} aria-label={`Je bent ${me.name}`}>
           <Avatar config={me.avatar} expression={expressionFor(ci)} size={40} headOnly animate={false} label={me.name} />
@@ -259,7 +264,6 @@ export function Vandaag({ state, me, onToast, onMeerGevoel, onWie, onPlanner, on
 
       <Drinken state={state} me={me} onToast={onToast} />
 
-      {!ochtendStart && gevoelSectie}
 
       {/* Oefening van vandaag en een klaarstaande oefentoets. */}
       {me.role !== "ouder" && onDagOefening && <DagOefeningKaart state={state} me={me} onStart={onDagOefening} onToast={onToast} />}
@@ -388,9 +392,7 @@ function DagOefeningKaart({ state, me, onStart, onToast }: { state: FamilyState;
       <span className="v2-dagoef-icoon" aria-hidden="true">🎯</span>
       <span className="ff-grow ff-stack-xs">
         <span className="ff-eyebrow">Oefening · {Math.min(n, OEFENINGEN_PER_WEEK)} van {OEFENINGEN_PER_WEEK} deze week · {DUUR}</span>
-        <b>{sc.title}</b>
-        <span className="ff-small">Neem twee minuten om te oefenen wat je kunt doen als dit gebeurt. Dan gaat het in het echt makkelijker. Drie keer per week, jij kiest wanneer.</span>
-        <button className="ff-btn ff-btn-primary ff-btn-s v2-dagoef-start" onClick={onStart}>Start oefening</button>
+        <span className="ff-row v2-dagoef-rij"><b className="ff-grow">{sc.title}</b><button className="ff-btn ff-btn-primary ff-btn-s" onClick={onStart}>Start oefening</button></span>
       </span>
     </section>
   );

@@ -5,6 +5,9 @@
   --ff-koraal: #ff6b57;        /* merk, illustraties */
   --ff-koraal-knop: #c43a26;   /* knoppen, links, actieve tab: 5,3:1 op wit, 4,5:1 op koraal-zacht (WCAG 1.4.3) */
   --ff-koraal-zacht: #ffe9e4;
+  /* 3.9: knoppen en links in één vaste actiekleur. Rood (koraal-knop) alleen nog voor boos en waarschuwen. 6,9:1 op wit. */
+  --ff-actie: #3d52b8;
+  --ff-actie-zacht: #e8edff;
   --ff-nacht: #23204a;         /* tekst, donkere vlakken */
   --ff-nacht-2: #3a3670;
   --ff-zon: #ffc845;           /* XP, beloningen */
@@ -61,7 +64,7 @@
   /* Schaduw */
   --ff-schaduw-s: 0 2px 8px rgba(35, 32, 74, 0.08);
   --ff-schaduw-m: 0 10px 30px rgba(35, 32, 74, 0.12);
-  --ff-schaduw-knop: 0 10px 24px rgba(217, 68, 47, 0.32);
+  --ff-schaduw-knop: 0 8px 20px rgba(61, 82, 184, 0.28);
 
   /* Beweging */
   --ff-snel: 160ms;

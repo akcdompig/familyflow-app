@@ -10,9 +10,9 @@ import type { ConflictSide, FamilyState, Member } from "@/lib/types";
 
 export const TOPICS = ["Spullen pakken of lenen", "Taken in huis", "Plagen of uitlachen", "Iets eerlijk verdelen", "Fysiek: duwen, slaan, schoppen", "Iets anders"];
 /** Tussen ouder en kind: andere onderwerpen, en geen \"fysiek\" (dat hoort bij de veiligheidscheck van de coach). */
-export const TOPICS_OUDER = ["Gamen of schermtijd", "Huiswerk", "Taken in huis", "Een afspraak die niet lukt", "Niet naar elkaar luisteren", "Iets anders"];
+export const TOPICS_OUDER = ["Gamen of schermtijd", "Huiswerk", "Taken in huis", "Een huisregel die niet lukt", "Niet naar elkaar luisteren", "Iets anders"];
 const FEEL = ["Boos", "Verdrietig", "Oneerlijk behandeld", "Gekwetst", "Schuldig"];
-const WANT = ["Sorry horen", "Een eerlijke verdeling", "Met rust gelaten worden", "Het weer goedmaken", "Een afspraak maken"];
+const WANT = ["Sorry horen", "Een eerlijke verdeling", "Met rust gelaten worden", "Het weer goedmaken", "Een huisregel maken"];
 export const SOLUTIONS = ["Sorry zeggen, als we het menen", "We spreken een regel af", "Om de beurt", "Het goedmaken met een actie", "Een ouder helpt ons"];
 
 interface Props {
@@ -170,11 +170,11 @@ export function Ruzie({ state, me, conflictId, onClose, onToast, onAfter, met }:
           {regel !== null && (
             <div className="ff-card ff-stack-s">
               <label className="ff-field">
-                <span className="ff-eyebrow">Welke afspraak maken jullie?</span>
+                <span className="ff-eyebrow">Welke huisregel maken jullie?</span>
                 <input value={regel} maxLength={120} onChange={(e) => setRegel(e.target.value)} placeholder="Bijv. we vragen eerst of we iets mogen lenen" />
               </label>
-              <p className="ff-small ff-muted">De afspraak komt bij Samen verder. Over een week vraagt de app of hij helpt.</p>
-              <button className="ff-btn ff-btn-primary ff-btn-wide" disabled={!regel.trim()} onClick={() => solve("We spreken een regel af", regel)}>Afspraak bewaren</button>
+              <p className="ff-small ff-muted">De huisregel komt bij Gezin. Over een week vraagt de app of hij helpt.</p>
+              <button className="ff-btn ff-btn-primary ff-btn-wide" disabled={!regel.trim()} onClick={() => solve("We spreken een regel af", regel)}>Huisregel bewaren</button>
             </div>
           )}
         </section>

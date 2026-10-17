@@ -42,16 +42,15 @@ import { Vandaag } from "./Vandaag";
 import { VoedingKaart } from "./Voeding";
 import { Groei } from "./Groei";
 import { SchermOuder } from "./Scherm";
-import { SamenVerder } from "./SamenVerder";
+import { WeekTab } from "./WeekTab";
 
-type Tab = "vandaag" | "gezin" | "samen" | "hulp" | "ik";
-type Pagina = null | "avatar" | "werk" | "meer" | "ouders" | "planner" | "privacy" | "uitleg";
+type Tab = "vandaag" | "week" | "gezin" | "ik";
+type Pagina = null | "avatar" | "werk" | "meer" | "ouders" | "planner" | "privacy" | "uitleg" | "rust";
 
 const NAV: { id: Tab; label: string; icon: IconName }[] = [
   { id: "vandaag", label: "Vandaag", icon: "taken" },
+  { id: "week", label: "Week", icon: "groei" },
   { id: "gezin", label: "Gezin", icon: "huis" },
-  { id: "samen", label: "Samen verder", icon: "groei" },
-  { id: "hulp", label: "Hulp", icon: "chat" },
   { id: "ik", label: "Ik", icon: "ik" },
 ];
 
@@ -65,12 +64,12 @@ const OPENERS: Record<string, string> = {
 };
 
 /**
-  FamilyFlow 3.0: vijf tabbladen.
-  - Vandaag: jouw dagprogramma, één ding tegelijk, en de acties uit jullie afspraken.
-  - Gezin: de huiskamer, klussen, samen-momenten (en voor ouders week en eten).
-  - Samen verder: afspraken en doelen op één plek, "hielp het?", het weekoverleg en het weekverhaal.
-  - Hulp: rust, ruzie, opvoedvragen en oefenen.
-  - Ik: jezelf, tips en instellingen.
+  FamilyFlow 3.9: vier tabbladen en een vaste Rust-knop.
+  - Vandaag: jouw lijst van nu bovenaan. Ouders zien eerst de kinderen.
+  - Week: weekkaart, de dagen van de week, "hielp de huisregel?", weekoverleg en hoe de week ging.
+  - Gezin: de huiskamer, wie zijn dag af heeft, de huisregels; klussen, samen en eten achter één klik.
+  - Ik: jezelf, punten, tips en instellingen.
+  - Rust (rechtsonder, op elk scherm): boos, ruzie, opvoedvragen en oefenen. Altijd één tik weg.
 */
 export function AppV2() {
   const raw = useFamily();
@@ -179,14 +178,15 @@ export function AppV2() {
         <>
           {pagina === "meer" && terug(<Ik state={state} me={me} onEditAvatar={() => setPagina("avatar")} onCalm={() => setCalm(true)} onToast={setToast} />)}
           {pagina === "privacy" && <Privacy state={state} me={me} onToast={setToast} onTerug={() => setPagina(null)} />}
-          {pagina === "ouders" && terug(<Gezin instellen state={state} me={me} onToast={setToast} onOefenen={() => { setPagina(null); setTab("hulp"); }} onCoachNu={() => setCoachNu("")} />)}
+          {pagina === "ouders" && terug(<Gezin instellen state={state} me={me} onToast={setToast} onOefenen={() => setPagina("rust")} onCoachNu={() => setCoachNu("")} />)}
           {/* Eerste keer op een tabblad: één korte uitleg. Daarna niet meer (terug te halen via Hoe werkt de app?). */}
-          {!pagina && <EersteKeer key={`${tab}-${me.id}`} tab={tab as UitlegTab} me={me} onMeer={() => setPagina("uitleg")} />}
-          {!pagina && tab === "vandaag" && <Vandaag state={state} me={me} onToast={setToast} onMeerGevoel={() => setCheckIn(true)} onWie={() => (live ? setTab("ik") : setWie(true))} onSamenVerder={() => setTab("samen")} onPlanner={() => setPagina("planner")} onWeek={() => { setGezinTab("week"); setTab("gezin"); }} onDagOefening={() => setDagOefening(true)} onLid={setLid} />}
-          {!pagina && tab === "samen" && <SamenVerder state={state} me={me} onToast={setToast} onCoach={(id) => setCoachNu(id)} onKlussen={() => { setGezinTab("klussen"); setTab("gezin"); }} />}
-          {!pagina && tab === "gezin" && <GezinV2 key={gezinTab ?? "nu"} startTab={gezinTab} state={state} me={me} onToast={setToast} onOuders={() => setPagina("ouders")} onOpenLid={setLid} onTips={setTips} onRuzie={(id) => setRuzie(id ?? "")} onCheckIn={() => setCheckIn(true)} />}
-          {!pagina && tab === "hulp" && (
-            <Oefenen state={state} me={me} titel="Hulp" onToast={setToast} onCalm={() => setCalm(true)} onRuzie={() => setRuzie("")} onCoach={setCoach} onCoachNu={() => setCoachNu("")}
+          {/* 3.9: één uitlegkaart, alleen op Vandaag. Niet meer op elk tabblad opnieuw. */}
+          {!pagina && tab === "vandaag" && <EersteKeer key={`vandaag-${me.id}`} tab={"vandaag" as UitlegTab} me={me} onMeer={() => setPagina("uitleg")} />}
+          {!pagina && tab === "vandaag" && <Vandaag state={state} me={me} onToast={setToast} onMeerGevoel={() => setCheckIn(true)} onWie={() => (live ? setTab("ik") : setWie(true))} onPlanner={() => setPagina("planner")} onWeek={() => setTab("week")} onDagOefening={() => setDagOefening(true)} onLid={setLid} />}
+          {!pagina && tab === "week" && <WeekTab state={state} me={me} onToast={setToast} onOpenLid={setLid} onCoach={(id) => setCoachNu(id)} onPlanner={!isOuder || state.members.some((m) => m.role !== "ouder") ? () => setPagina("planner") : undefined} />}
+          {!pagina && tab === "gezin" && <GezinV2 key={gezinTab ?? "nu"} startTab={gezinTab} state={state} me={me} onToast={setToast} onOuders={() => setPagina("ouders")} onOpenLid={setLid} onTips={setTips} onRuzie={(id) => setRuzie(id ?? "")} onCheckIn={() => setCheckIn(true)} onWeek={() => setTab("week")} />}
+          {pagina === "rust" && terug(
+            <Oefenen state={state} me={me} titel="Rust" onToast={setToast} onCalm={() => setCalm(true)} onRuzie={() => setRuzie("")} onCoach={setCoach} onCoachNu={() => setCoachNu("")}
               onder={
                 <>
                   {isOuder && (
@@ -201,6 +201,11 @@ export function AppV2() {
           )}
           {!pagina && tab === "ik" && <IkV2 state={state} me={me} onToast={setToast} onAvatar={() => setPagina("avatar")} onWerk={() => setPagina("werk")} onMeer={() => setPagina("meer")} onPrivacy={() => setPagina("privacy")} onUitleg={() => setPagina("uitleg")} onOuders={isOuder ? () => setPagina("ouders") : undefined} onPlanner={isOuder && state.members.some((m) => m.role !== "ouder") ? () => setPagina("planner") : undefined} />}
 
+          {pagina !== "rust" && (
+            <button className="v2-rust-knop" onClick={() => setPagina("rust")} aria-label="Rust: hulp bij boosheid en ruzie">
+              <span aria-hidden="true">🌋</span><span>Rust</span>
+            </button>
+          )}
           <nav className="ff-nav v2-nav" aria-label="Hoofdmenu" style={{ gridTemplateColumns: `repeat(${NAV.length}, minmax(0, 1fr))` }}>
             {NAV.map((n) => {
               const cur = tab === n.id && !pagina;

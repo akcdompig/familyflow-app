@@ -167,14 +167,14 @@ export function Gezin({ state, me, onToast, onOefenen, onCoachNu, instellen = fa
 
       {!instellen && <section className="ff-card ff-stack-s">
         <div className="ff-row" style={{ justifyContent: "space-between" }}>
-          <h2 className="ff-h2">Onze afspraken</h2>
+          <h2 className="ff-h2">Huisregels</h2>
           <button className="ff-link" onClick={onCoachNu}>Conflictcoach</button>
         </div>
         {(state.afspraken ?? []).length ? (
           (state.afspraken ?? []).map((a) => (
             <div key={a.id} className="ff-afspraak">
               <span className="ff-grow">{a.text}</span>
-              <button className="ff-task-del" aria-label={`Afspraak weghalen: ${a.text}`} onClick={() => { actions.removeAfspraak(a.id); onToast("Afspraak weggehaald"); }}><Icon name="sluit" size={14} /></button>
+              <button className="ff-task-del" aria-label={`Huisregel weghalen: ${a.text}`} onClick={() => { actions.removeAfspraak(a.id); onToast("Huisregel weggehaald"); }}><Icon name="sluit" size={14} /></button>
             </div>
           ))
         ) : (
@@ -260,7 +260,7 @@ export function Gezin({ state, me, onToast, onOefenen, onCoachNu, instellen = fa
   );
 }
 
-const STEPS = ["Wat ging goed?", "Hoe gaat het thuis?", "Onze doelen", "Onze afspraken", "Eén ding oplossen", "Iets leuks plannen"];
+const STEPS = ["Wat ging goed?", "Hoe gaat het thuis?", "Onze doelen", "Huisregels", "Eén ding oplossen", "Iets leuks plannen"];
 
 export function Overleg({ state, onClose, onToast }: { state: FamilyState; onClose: () => void; onToast: (m: string) => void }) {
   const [step, setStep] = useState(0);
@@ -337,8 +337,8 @@ export function Overleg({ state, onClose, onToast }: { state: FamilyState; onClo
 
       {step === 3 && (
         <section className="ff-stack">
-          <p>Helpen jullie afspraken? Kies samen. Werkt er een niet, dan zoeken jullie in de volgende stap een betere.</p>
-          {!lopend.length && <p className="ff-small ff-muted">Nog geen afspraken. Die maken jullie in de volgende stap, of met de coach bij Hulp.</p>}
+          <p>Helpen jullie huisregels? Kies samen. Werkt er een niet, dan zoeken jullie in de volgende stap een betere.</p>
+          {!lopend.length && <p className="ff-small ff-muted">Nog geen huisregels. Die maken jullie in de volgende stap, of met de coach (knop Rust).</p>}
           {lopend.map((a) => (
             <div key={a.id} className="ff-card ff-stack-s">
               <b>{a.text}</b>

@@ -28,14 +28,61 @@ const geleden = (iso: string) => {
   return d === 0 ? "vandaag" : d === 1 ? "gisteren" : d < 14 ? `${d} dagen geleden` : `${Math.round(d / 7)} weken geleden`;
 };
 
-export function SamenVerder({ state, me, onToast, onCoach, onKlussen }: { state: FamilyState; me: Member; onToast: (m: string) => void; onCoach: (id: string) => void; onKlussen: () => void }) {
+/** Huisregels (heette "Onze afspraken"): staat bij Gezin. "Afspraak" is voortaan alleen iets in de agenda. */
+export function Huisregels({ state, me, onToast, onKlussen }: { state: FamilyState; me: Member; onToast: (m: string) => void; onKlussen: () => void }) {
+  const isOuder = me.role === "ouder";
+  const [nieuw, setNieuw] = useState("");
+  const lijst = actief(state).slice().reverse();
+  const kinderen = state.members.filter((m) => m.role !== "ouder" && m.joined !== false);
+  return (
+    <section className="ff-card ff-stack-s" aria-label="Huisregels">
+      <b>🏠 Huisregels</b>
+      {!lijst.length && <span className="ff-small ff-muted">Nog geen huisregels. Maak er een met de coach (knop Rust), na een ruzie, in het weekoverleg, of hieronder.</span>}
+      {lijst.map((a) => {
+        const o = laatsteOordeel(a);
+        return (
+          <div key={a.id} className="v2-afspraak">
+            <span className="ff-grow ff-stack-xs">
+              <b>{a.text}</b>
+              <span className="ff-small ff-muted">{herkomst(a)} · {geleden(a.at)}</span>
+            </span>
+            <span className={`v2-oordeel is-${o?.oordeel ?? "open"}`}>{o ? `${OORDEEL[o.oordeel].emoji} ${o.oordeel === "ja" ? "helpt" : o.oordeel === "beetje" ? "een beetje" : "nog niet"}` : "nog niet bekeken"}</span>
+          </div>
+        );
+      })}
+      <div className="v2-afspraak is-vast">
+        <span className="ff-grow ff-stack-xs">
+          <b>🧹 Klussen</b>
+          <span className="ff-small ff-muted">{state.klusAfspraken?.vastgelegd ? "afgesproken door jullie ouders" : "nog een voorstel van de app"}</span>
+        </span>
+        <button className="ff-link ff-small" onClick={onKlussen}>Bekijken</button>
+      </div>
+      {(isOuder ? kinderen : kinderen.filter((k) => k.id === me.id)).filter((k) => state.schermAfspraak?.[k.id]).map((k) => (
+        <div key={k.id} className="v2-afspraak is-vast">
+          <span className="ff-grow ff-stack-xs">
+            <b>📱 Schermtijd{isOuder ? ` ${k.name}` : ""}</b>
+            <span className="ff-small ff-muted">hooguit {uurMin(state.schermAfspraak![k.id].doel)} per dag, eerst je dag af</span>
+          </span>
+        </div>
+      ))}
+      <div className="ff-row v2-nieuwe-afspraak">
+        <input className="ff-grow" value={nieuw} maxLength={120} onChange={(e) => setNieuw(e.target.value)} placeholder="Nieuwe huisregel" aria-label="Nieuwe huisregel" />
+        <button className="ff-btn ff-btn-primary ff-btn-sm" disabled={!nieuw.trim()} onClick={() => { actions.addAfspraak(nieuw, me.id); setNieuw(""); onToast("Huisregel toegevoegd. Over een week vragen we of hij helpt."); }}>Toevoegen</button>
+      </div>
+    </section>
+  );
+}
+
+/**
+  Wat bij de week hoort: "hielp de huisregel?" (na 7 dagen), het weekoverleg, doelen en wensen, en hoe de week ging.
+  Staat bij Week. Doelen en wensen zitten achter één klik: ze zijn voor het overleg, niet voor elke dag.
+*/
+export function WeekVerder({ state, me, onToast, onCoach }: { state: FamilyState; me: Member; onToast: (m: string) => void; onCoach: (id: string) => void }) {
   const isOuder = me.role === "ouder";
   const [overleg, setOverleg] = useState(false);
-  const [nieuw, setNieuw] = useState("");
   const [themas, setThemas] = useState<string[] | null>(null);
-  const lijst = actief(state).slice().reverse();
   const vragen = teEvalueren(state, me.id);
-  // Zei je net "nee, nog niet"? Dan blijft de kaart staan met de volgende stap (ook als je het op Vandaag zei).
+  // Zei je net "nee, nog niet"? Dan blijft de kaart staan met de volgende stap.
   const vervolg = actief(state).filter((a) => {
     const e = (a.evaluaties ?? []).filter((x) => x.by === me.id).at(-1);
     return e?.oordeel === "nee" && Date.now() - new Date(e.at).getTime() < 3 * DAG && !vragen.includes(a);
@@ -43,24 +90,24 @@ export function SamenVerder({ state, me, onToast, onCoach, onKlussen }: { state:
   const terug = isOuder ? herhaling(state) : [];
   const doelen = state.goals.filter(Boolean);
   const last = state.meetings[state.meetings.length - 1];
-  const kinderen = state.members.filter((m) => m.role !== "ouder" && m.joined !== false);
 
   if (overleg) return <Overleg state={state} onClose={() => setOverleg(false)} onToast={onToast} />;
 
   return (
-    <div className="ff-screen v2-screen">
-      <header className="v2-top">
-        <div>
-          <div className="ff-eyebrow">Afspraken, doelen en hoe het gaat</div>
-          <h1 className="ff-h1">Samen verder</h1>
-        </div>
-      </header>
-
-      {/* 1. Hielp het? Eerst wat nu gevraagd wordt. */}
+    <>
       {vragen.map((a) => <HieltHet key={a.id} a={a} me={me} onCoach={onCoach} onToast={onToast} />)}
       {vervolg.map((a) => <HieltHet key={a.id} a={a} me={me} onCoach={onCoach} onToast={onToast} startNee />)}
 
-      {/* 2. Wat komt vaker terug (alleen ouders). */}
+      {isOuder && (
+        <section className="ff-card v2-overleg" aria-label="Weekoverleg">
+          <span className="ff-grow ff-stack-xs">
+            <b>🗓️ Weekoverleg</b>
+            <span className="ff-small ff-muted">{last ? `Laatste keer ${geleden(last.at)}.` : "Nog niet gedaan."} Een kwartier, iedereen doet mee: wat ging goed, helpen de huisregels, wat pakken we aan.</span>
+          </span>
+          <button className="ff-btn ff-btn-primary" onClick={() => setOverleg(true)}>Starten</button>
+        </section>
+      )}
+
       {terug.length > 0 && (
         <section className="ff-card ff-stack-s v2-herhaling" aria-label="Komt vaker terug">
           <b>🔁 Dit komt vaker terug</b>
@@ -70,93 +117,44 @@ export function SamenVerder({ state, me, onToast, onCoach, onKlussen }: { state:
               <button className="ff-btn ff-btn-ghost ff-btn-sm" onClick={() => onCoach(h.scenario ?? "")}>Aanpak bekijken</button>
             </div>
           ))}
-          <span className="ff-small ff-muted">Kijk samen of er een afspraak bij hoort, of dat een bestaande afspraak anders moet. Loopt het steeds vaker uit de hand, bespreek het dan met de huisarts, het wijkteam of de mentor.</span>
+          <span className="ff-small ff-muted">Kijk samen of er een huisregel bij hoort, of dat een bestaande regel anders moet. Loopt het steeds vaker uit de hand, bespreek het dan met de huisarts, het wijkteam of de mentor.</span>
         </section>
       )}
 
-      {/* 3. Waar werken we aan: de gezinsdoelen (worden elke week gescoord in het overleg). */}
-      <section className="ff-card ff-stack-s" aria-label="Waar werken we aan">
-        <div className="ff-row">
-          <b className="ff-grow">🎯 Waar werken we aan</b>
-          {isOuder && doelen.length > 0 && themas === null && <button className="ff-link ff-small" onClick={() => setThemas(doelen)}>Wijzigen</button>}
-        </div>
-        {themas !== null || (isOuder && !doelen.length) ? (
-          <>
-            <span className="ff-small ff-muted">Kies 1 tot 3 dingen, het liefst samen met de kinderen. Jullie geven er elke week in het overleg een cijfer voor.</span>
-            <div className="ff-chips">
-              {THEMAS.map((t) => {
-                const gekozen = (themas ?? []).includes(t);
-                return <button key={t} className="ff-chip" aria-pressed={gekozen} disabled={!gekozen && (themas ?? []).length >= 3} onClick={() => setThemas(gekozen ? (themas ?? []).filter((x) => x !== t) : [...(themas ?? []), t])}>{t}</button>;
-              })}
-            </div>
-            <button className="ff-btn ff-btn-primary ff-btn-wide" disabled={!(themas ?? []).length} onClick={() => { actions.setGoals(themas ?? []); setThemas(null); onToast("Opgeslagen 🎯"); }}>Opslaan</button>
-          </>
-        ) : doelen.length ? (
-          <>
-            <ul className="v2-doelen">{doelen.map((d, i) => <li key={d}><i style={{ background: GOAL_COLORS[i] }} />{d}</li>)}</ul>
-            {isOuder && state.meetings.length > 1 && <LineChart series={goalSeries(state)} colors={GOAL_COLORS} dashed={thermSeries(state)} label="Cijfers voor de gezinsdoelen per week" />}
-          </>
-        ) : (
-          <span className="ff-small ff-muted">Je ouders kiezen dit samen met jullie.</span>
-        )}
-      </section>
-
-      {/* 4. Onze afspraken: alles op één plek. */}
-      <section className="ff-card ff-stack-s" aria-label="Onze afspraken">
-        <b>🤝 Onze afspraken</b>
-        {!lijst.length && <span className="ff-small ff-muted">Nog geen afspraken. Maak er een met de coach bij Hulp, na een ruzie, in het overleg, of hieronder.</span>}
-        {lijst.map((a) => {
-          const o = laatsteOordeel(a);
-          return (
-            <div key={a.id} className="v2-afspraak">
-              <span className="ff-grow ff-stack-xs">
-                <b>{a.text}</b>
-                <span className="ff-small ff-muted">{herkomst(a)} · {geleden(a.at)}</span>
-              </span>
-              <span className={`v2-oordeel is-${o?.oordeel ?? "open"}`}>{o ? `${OORDEEL[o.oordeel].emoji} ${o.oordeel === "ja" ? "helpt" : o.oordeel === "beetje" ? "een beetje" : "nog niet"}` : "nog niet bekeken"}</span>
-            </div>
-          );
-        })}
-        <div className="v2-afspraak is-vast">
-          <span className="ff-grow ff-stack-xs">
-            <b>🧹 Klussen</b>
-            <span className="ff-small ff-muted">{state.klusAfspraken?.vastgelegd ? "afgesproken door jullie ouders" : "nog een voorstel van de app"}</span>
-          </span>
-          <button className="ff-link ff-small" onClick={onKlussen}>Bekijken</button>
-        </div>
-        {(isOuder ? kinderen : kinderen.filter((k) => k.id === me.id)).filter((k) => state.schermAfspraak?.[k.id]).map((k) => (
-          <div key={k.id} className="v2-afspraak is-vast">
-            <span className="ff-grow ff-stack-xs">
-              <b>📱 Schermtijd{isOuder ? ` ${k.name}` : ""}</b>
-              <span className="ff-small ff-muted">hooguit {uurMin(state.schermAfspraak![k.id].doel)} per dag, eerst je dag af</span>
-            </span>
+      <details className="v2-meer-details" open={themas !== null || undefined}>
+        <summary><b>🎯 Doelen en wensen</b> <span className="ff-small ff-muted">{isOuder ? "waar werken jullie aan, voor het overleg" : "je groeidoel en wat jij thuis beter wilt"}</span></summary>
+        <section className="ff-stack-s" aria-label="Waar werken we aan">
+          <div className="ff-row">
+            <b className="ff-grow">Waar werken we aan</b>
+            {isOuder && doelen.length > 0 && themas === null && <button className="ff-link ff-small" onClick={() => setThemas(doelen)}>Wijzigen</button>}
           </div>
-        ))}
-        <div className="ff-row v2-nieuwe-afspraak">
-          <input className="ff-grow" value={nieuw} maxLength={120} onChange={(e) => setNieuw(e.target.value)} placeholder="Zelf een afspraak toevoegen" aria-label="Nieuwe afspraak" />
-          <button className="ff-btn ff-btn-primary ff-btn-sm" disabled={!nieuw.trim()} onClick={() => { actions.addAfspraak(nieuw, me.id); setNieuw(""); onToast("Afspraak toegevoegd. Over een week vragen we of hij helpt."); }}>Toevoegen</button>
-        </div>
-      </section>
-
-      {/* 5. Het wekelijkse moment. */}
-      {isOuder && (
-        <section className="ff-card v2-overleg" aria-label="Weekoverleg">
-          <span className="ff-grow ff-stack-xs">
-            <b>🗓️ Weekoverleg</b>
-            <span className="ff-small ff-muted">{last ? `Laatste keer ${geleden(last.at)}.` : "Nog niet gedaan."} Een kwartier, iedereen doet mee: wat ging goed, helpen de afspraken, wat pakken we aan.</span>
-          </span>
-          <button className="ff-btn ff-btn-primary" onClick={() => setOverleg(true)}>Starten</button>
+          {themas !== null || (isOuder && !doelen.length) ? (
+            <>
+              <span className="ff-small ff-muted">Kies 1 tot 3 dingen, het liefst samen met de kinderen. Jullie geven er elke week in het overleg een cijfer voor.</span>
+              <div className="ff-chips">
+                {THEMAS.map((t) => {
+                  const gekozen = (themas ?? []).includes(t);
+                  return <button key={t} className="ff-chip" aria-pressed={gekozen} disabled={!gekozen && (themas ?? []).length >= 3} onClick={() => setThemas(gekozen ? (themas ?? []).filter((x) => x !== t) : [...(themas ?? []), t])}>{t}</button>;
+                })}
+              </div>
+              <button className="ff-btn ff-btn-primary ff-btn-wide" disabled={!(themas ?? []).length} onClick={() => { actions.setGoals(themas ?? []); setThemas(null); onToast("Opgeslagen 🎯"); }}>Opslaan</button>
+            </>
+          ) : doelen.length ? (
+            <>
+              <ul className="v2-doelen">{doelen.map((d, i) => <li key={d}><i style={{ background: GOAL_COLORS[i] }} />{d}</li>)}</ul>
+              {isOuder && state.meetings.length > 1 && <LineChart series={goalSeries(state)} colors={GOAL_COLORS} dashed={thermSeries(state)} label="Cijfers voor de gezinsdoelen per week" />}
+            </>
+          ) : (
+            <span className="ff-small ff-muted">Je ouders kiezen dit samen met jullie.</span>
+          )}
         </section>
-      )}
+        {!isOuder && <Groei state={state} lid={me} me={me} onToast={onToast} />}
+        <Wensen state={state} me={me} onToast={onToast} />
+      </details>
 
-      {/* 6. Groeidoel (kinderen) en wat ieder beter zou willen thuis. */}
-      {!isOuder && <Groei state={state} lid={me} me={me} onToast={onToast} />}
-      <Wensen state={state} me={me} onToast={onToast} />
-
-      {/* 7. Hoe ging de week. */}
       <h2 className="ff-h2 v2-sectie">Zo ging jullie week</h2>
       <GroeiGezin state={state} me={me} onToast={onToast} />
-    </div>
+    </>
   );
 }
 
@@ -171,8 +169,8 @@ function HieltHet({ a, me, onCoach, onToast, startNee = false }: { a: Afspraak; 
   };
   const coachId = a.scenario && !a.scenario.startsWith("ruzie:") && a.scenario !== "overleg" ? a.scenario : "";
   return (
-    <section className="ff-card ff-stack-s v2-hielp" aria-label="Hielp de afspraak?">
-      <span className="ff-eyebrow">Jullie afspraak van een week geleden</span>
+    <section className="ff-card ff-stack-s v2-hielp" aria-label="Hielp de huisregel?">
+      <span className="ff-eyebrow">Jullie huisregel van een week geleden</span>
       <b className="v2-hielp-tekst">“{a.text}”</b>
       {!nee ? (
         <>
@@ -185,7 +183,7 @@ function HieltHet({ a, me, onCoach, onToast, startNee = false }: { a: Afspraak; 
         <>
           <span>Dat is goed om te weten. Wat doen jullie nu?</span>
           <button className="ff-choice" onClick={() => onCoach(coachId)}>Een andere aanpak kiezen <span className="ff-small ff-muted">met de coach</span></button>
-          <button className="ff-choice" onClick={() => { actions.stopAfspraak(a.id); onToast("Afspraak losgelaten. Bespreek in het overleg wat jullie in plaats daarvan doen."); }}>Deze afspraak loslaten</button>
+          <button className="ff-choice" onClick={() => { actions.stopAfspraak(a.id); onToast("Huisregel losgelaten. Bespreek in het overleg wat jullie in plaats daarvan doen."); }}>Deze huisregel loslaten</button>
           <button className="ff-choice" aria-expanded={hulp} onClick={() => setHulp(!hulp)}>Hulp zoeken</button>
           {hulp && <p className="ff-small">{ALGEMENE_HULP}</p>}
         </>
