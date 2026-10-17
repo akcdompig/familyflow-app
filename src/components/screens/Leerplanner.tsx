@@ -89,7 +89,7 @@ export function Leerplanner({ state, me, onClose, onToast }: { state: FamilyStat
                   {list.map((x, i) => <div key={i} className={`ff-planblok ${x.done ? "is-done" : ""}`}><span>{x.title}</span><span className="ff-small ff-muted">{x.min} min</span></div>)}
                 </div>
               ))}
-              <p className="ff-small ff-muted">De blokjes van vandaag staan ook bij je taken. Afvinken geeft XP.</p>
+              <p className="ff-small ff-muted">De blokjes van vandaag staan ook bij je taken. Afvinken geeft punten.</p>
             </section>
           ) : (
             <section className="ff-card ff-stack-s">

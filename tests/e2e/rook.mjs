@@ -111,12 +111,13 @@ await scenario("v2: ring op Vandaag telt hetzelfde als Gezin › Week", v2, "16:
   assert.equal(kop, ring);
 });
 
-await scenario("v2: Nu doen werkt de ochtend stap voor stap af", v2, "08:15", async (p) => {
+await scenario("v2: Nu doen werkt de ochtend stap voor stap af (3.8: in de lijst)", v2, "08:15", async (p) => {
   await wissel(p, "Lina");
-  const eerst = await p.locator(".v2-nu-titel").innerText();
-  await p.locator(".v2-check.is-groot").click();
+  // Het volgende ding om te doen heeft een rand in de lijst. Bij de ochtendroutine: het eerstvolgende stapje.
+  const eerst = await p.locator(".v2-sub-knop.is-volgende").innerText();
+  await p.locator(".v2-sub-knop.is-volgende").click();
   await p.waitForTimeout(200);
-  assert.notEqual(await p.locator(".v2-nu-titel").innerText(), eerst, "volgende stap verschijnt");
+  assert.notEqual(await p.locator(".v2-sub-knop.is-volgende").innerText(), eerst, "volgende stap verschijnt");
 });
 await scenario("v2: meekijken als school (demo)", v2, "10:00", async (p) => {
   await p.locator(".ff-demobar").getByRole("button", { name: /Mentor|School/ }).first().click();
@@ -134,8 +135,10 @@ await scenario("v3.5: water in glazen: altijd zichtbaar, tik = zoveel glazen, no
   assert.match(await blok.innerText(), /3 van 6 glazen/);
 });
 
-await scenario("v3.5: tip van vandaag staat op Vandaag, ook zonder zelf iets te kiezen", v2, "10:00", async (p) => {
+await scenario("v3.8: tip van vandaag staat bij Ik (niet meer tussen de taken op Vandaag)", v2, "10:00", async (p) => {
   await wissel(p, "Noah");
+  assert.ok(!/Tip van vandaag/.test(await p.locator("body").innerText()), "niet op Vandaag");
+  await tab(p, /^Ik/).click();
   assert.match(await p.locator("body").innerText(), /Tip van vandaag · (gezond eten en drinken|praten en ruzie oplossen)/);
 });
 
@@ -386,12 +389,13 @@ await scenario("v3: herhaling wordt opgemerkt en afspraken staan op één plek",
   assert.equal(await p.getByRole("region", { name: "Komt vaker terug" }).count(), 0, "kinderen krijgen geen herhalingsmelding");
 });
 
-await scenario("v3: kind zegt op Vandaag of de afspraak hielp", v2, "18:00", async (p) => {
+await scenario("v3.8: 'Hielp de afspraak?' staat op één plek: Samen verder, niet meer op Vandaag", v2, "18:00", async (p) => {
   await wissel(p, "Noah");
+  assert.equal(await p.getByRole("region", { name: "Hielp de afspraak?" }).count(), 0, "niet op Vandaag");
+  await tab(p, /Samen/).click();
   const kaart = p.getByRole("region", { name: "Hielp de afspraak?" });
   await kaart.getByRole("button", { name: /Ja, het helpt/ }).click();
   assert.equal(await p.getByRole("region", { name: "Hielp de afspraak?" }).count(), 0);
-  assert.match(await p.locator(".v2-afspraak-kaart").innerText(), /Onze afspraak/);
 });
 
 await scenario("v3: kind en ouder praten een ruzie samen uit, en maken een afspraak", v2, "18:00", async (p) => {
@@ -435,7 +439,7 @@ await scenario("v3: ouder met een opvoedvraag, en een rustiger huiskamer", v2, "
   assert.ok(await p.getByText("Eerst even checken").isVisible());
   await p.goto(v2); await p.waitForSelector(".ff-nav");
   await wissel(p, "Noah");
-  assert.notEqual((await p.locator(".v2-nu-titel").innerText()).trim(), "Douchen", "om 17.30 is douchen niet meer 'Nu doen'");
+  assert.equal(await p.locator(".v2-sub-knop.is-volgende", { hasText: "Douchen" }).count(), 0, "om 17.30 is douchen niet meer 'Nu doen'");
   await tab(p, /Gezin/).click();
   const gezin = await p.locator("body").innerText();
   assert.ok(!/pfoe/i.test(gezin), "niemand wordt aangesproken op douchen");
@@ -677,7 +681,7 @@ await scenario("v3.3: uitleg bij de eerste keer, sluiten, en via Hulp opnieuw be
   assert.equal(await p.getByRole("region", { name: /^Uitleg: Dit is je dag/ }).count(), 0);
   await p.reload(); await p.waitForSelector(".ff-nav");
   assert.equal(await p.getByRole("region", { name: /^Uitleg: Dit is je dag/ }).count(), 0, "na herladen niet opnieuw");
-  await tab(p, /Hulp/).click();
+  await tab(p, /^Ik/).click();
   await p.getByRole("button", { name: /Hoe werkt de app\?/ }).click();
   assert.ok(await p.getByRole("heading", { name: "Hoe werkt de app?" }).isVisible());
   await p.getByRole("button", { name: /Een afspraak toevoegen/ }).click();
@@ -757,7 +761,7 @@ await scenario("v3.6: oefening van vandaag: doen, telt één keer, en ongedaan m
   await wissel(p, "Noah");
   const kaart = p.getByRole("region", { name: "Oefening van vandaag" });
   assert.match(await kaart.innerText(), /Oefening · \d van 3 deze week · ± 2 minuten/i);
-  const kist = async () => (await p.locator(".v2-teller.is-kist").count()) ? await p.locator(".v2-teller.is-kist").innerText() : "0";
+  const kist = async () => (await p.locator(".v2-ophalen").count()) ? await p.locator(".v2-ophalen").innerText() : "0";
   const voor = await kist();
   await kaart.getByRole("button", { name: "Start oefening" }).click();
   assert.match(await p.locator(".ff-eyebrow").first().innerText(), /oefening van vandaag/i);
@@ -778,7 +782,7 @@ await scenario("v3.6: oefening van vandaag: doen, telt één keer, en ongedaan m
 
 await scenario("v3.6: gezinslid openen toont de dag (taken én huistaken), gelijk aan Vandaag", v2, "16:00", async (p) => {
   await wissel(p, "Noah");
-  const titel = (await p.locator(".v2-nu-titel").innerText()).trim();
+  const titel = (await p.locator(".v2-stap.is-volgende .v2-stap-titel").innerText()).trim();
   await wissel(p, "Papa");
   await tab(p, /Gezin/).click();
   await p.getByRole("region", { name: "Samen vandaag" }).getByRole("button", { name: /^Noah/ }).click();
@@ -928,6 +932,39 @@ await scenario("v3.7: ouder plakt een oefentoets, kind oefent en ziet wat nog mo
   const uit = p.getByRole("region", { name: "Uitslag" });
   assert.match(await uit.innerText(), /3 van 4 meteen goed/);
   assert.match(await uit.innerText(), /geen cijfer/);
+});
+
+// ---------- 3.8: Vandaag met de lijst bovenaan ----------
+await scenario("v3.8: kind ziet de lijst van nu bovenaan, zonder te scrollen; geen losse Nu doen-kaart en geen +2-labels", v2, "16:00", async (p) => {
+  await wissel(p, "Noah");
+  const uitleg = p.getByRole("region", { name: /^Uitleg: Dit is je dag/ });
+  if (await uitleg.count()) await uitleg.getByRole("button", { name: "Snap ik" }).click();
+  const eerste = p.locator(".v2-deel.is-nu .v2-stap").first();
+  const box = await eerste.boundingBox();
+  assert.ok(box && box.y + box.height < 756, `eerste vinkje in beeld zonder scrollen (y=${box && Math.round(box.y)})`);
+  assert.equal(await p.locator(".v2-nu:not(.is-bezig)").count(), 0, "geen aparte Nu doen-kaart");
+  assert.equal(await p.locator(".v2-punten").count(), 0, "geen +2 achter elk item");
+  assert.equal(await p.locator(".v2-stap.is-volgende").count(), 1, "één item is 'Nu doen'");
+  assert.ok(!/Lunch/.test(await p.locator(".v2-stap.is-volgende").innerText()), "om 16.00 is lunch niet meer 'Nu doen'");
+});
+
+await scenario("v3.8: ouder ziet de kinderen bovenaan Vandaag en opent met één tik hun dag", v2, "16:00", async (p) => {
+  await wissel(p, "Papa");
+  const rij = p.getByRole("region", { name: "De kinderen vandaag" });
+  assert.match(await rij.innerText(), /Noah[\s\S]*\d+ van \d+/);
+  await rij.getByRole("button", { name: /^Noah/ }).click();
+  const dag = p.getByRole("region", { name: "Vandaag van Noah" });
+  await dag.waitFor();
+  assert.ok(await dag.isVisible());
+});
+
+await scenario("v3.8: kind ziet bij een ander geen 'heeft honger', en Hulp heeft geen dubbele uitleg", v2, "16:00", async (p) => {
+  await wissel(p, "Noah");
+  await tab(p, /Gezin/).click();
+  const huis = await p.locator(".ff-slot", { hasText: "Lina" }).first().innerText();
+  assert.ok(!/honger/.test(huis), "honger van een ander alleen voor ouders");
+  await tab(p, /Hulp/).click();
+  assert.equal(await p.getByRole("button", { name: /Hoe werkt de app\?/ }).count(), 0, "uitleg staat bij Ik");
 });
 
 await browser.close();

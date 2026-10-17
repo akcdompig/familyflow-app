@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Avatar } from "@/components/avatar/Avatar";
-import { Interesses } from "@/components/screens/CoachTip";
+import { CoachTip, Interesses } from "@/components/screens/CoachTip";
 import { Herinneringen } from "@/components/screens/Herinneringen";
 import { ClaimViering } from "@/components/screens/Viering";
 import { PuntenHistorie } from "@/components/screens/Punten";
@@ -45,6 +45,14 @@ export function IkV2({ state, me, onToast, onAvatar, onWerk, onMeer, onOuders, o
         {!isOuder && volgendeBeloning && <span className="ff-small">🎁 Niveau {volgendeBeloning.level}: {volgendeBeloning.title} <span className="ff-muted">(nog {xpForLevel(volgendeBeloning.level) - xp})</span></span>}
       </section>
 
+      {/* Ouders: wat je voor het gezin regelt, staat bovenaan. */}
+      {isOuder && (onOuders || onPlanner) && (
+        <section className="v2-menu" aria-label="Gezin regelen">
+          {onOuders && <button className="v2-menu-rij" onClick={onOuders}><span aria-hidden="true">👨‍👩‍👧</span><b className="ff-grow">Gezin instellen: uitnodigen, beloningen, bedtijden</b><span aria-hidden="true">›</span></button>}
+          {onPlanner && <button className="v2-menu-rij" onClick={onPlanner}><span aria-hidden="true">📚</span><b className="ff-grow">Huiswerk en Somtoday van de kinderen</b><span aria-hidden="true">›</span></button>}
+        </section>
+      )}
+
       {kist > 0 && (
         <section className="ff-card ff-schatkist">
           <div className="ff-schatkist-bol" aria-hidden="true">💎<b>+{kist}</b></div>
@@ -77,6 +85,9 @@ export function IkV2({ state, me, onToast, onAvatar, onWerk, onMeer, onOuders, o
         {!alleBadges && <button className="ff-link ff-small" onClick={() => setAlleBadges(true)}>Alle achievements bekijken</button>}
       </section>
 
+      {/* De tip van vandaag staat hier, bij je tips. Op Vandaag was het leesvoer tussen de dingen die je moet doen. */}
+      <CoachTip state={state} me={me} onToast={onToast} />
+
       <section className="ff-card ff-stack-s">
         <b>🎯 Waar wil je tips over?</b>
         <Interesses state={state} me={me} onToast={onToast} compact />
@@ -86,12 +97,10 @@ export function IkV2({ state, me, onToast, onAvatar, onWerk, onMeer, onOuders, o
 
       <section className="v2-menu">
         <button className="v2-menu-rij" onClick={onAvatar}><span aria-hidden="true">🧑‍🎨</span><b className="ff-grow">Avatar aanpassen</b><span aria-hidden="true">›</span></button>
-        <button className="v2-menu-rij" onClick={onWerk}><span aria-hidden="true">{isOuder ? "💼" : "🎒"}</span><b className="ff-grow">{isOuder ? "Werk en roosters" : "School en bijbaan"}</b><span aria-hidden="true">›</span></button>
+        <button className="v2-menu-rij" onClick={onWerk}><span aria-hidden="true">{isOuder ? "💼" : "🎒"}</span><b className="ff-grow">{isOuder ? "Werk en roosters" : (me.age ?? 0) >= 15 ? "School en bijbaan" : "School"}</b><span aria-hidden="true">›</span></button>
         <button className="v2-menu-rij" onClick={onMeer}><span aria-hidden="true">🌿</span><b className="ff-grow">Mijn rustplan en meer</b><span aria-hidden="true">›</span></button>
         {onPrivacy && <button className="v2-menu-rij" onClick={onPrivacy}><span aria-hidden="true">🔒</span><b className="ff-grow">Privacy en gegevens</b><span aria-hidden="true">›</span></button>}
-        {isOuder && onPlanner && <button className="v2-menu-rij" onClick={onPlanner}><span aria-hidden="true">📚</span><b className="ff-grow">Huiswerk en Somtoday van de kinderen</b><span aria-hidden="true">›</span></button>}
         {onUitleg && <button className="v2-menu-rij" onClick={onUitleg}><span aria-hidden="true">❓</span><b className="ff-grow">Hoe werkt de app?</b><span aria-hidden="true">›</span></button>}
-        {isOuder && onOuders && <button className="v2-menu-rij" onClick={onOuders}><span aria-hidden="true">👨‍👩‍👧</span><b className="ff-grow">Gezin instellen: uitnodigen, beloningen, bedtijden</b><span aria-hidden="true">›</span></button>}
       </section>
 
       {claim && <ClaimViering me={me} van={claim.van} n={claim.n} regels={claim.regels} onKlaar={() => setClaim(null)} />}

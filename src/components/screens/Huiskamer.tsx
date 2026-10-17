@@ -91,7 +91,7 @@ export function Huiskamer({ state, me, onCheckIn, onOpenMember, onTalkTips, onWh
         {troep.map((t, i) => (
           <span key={i} className="ff-room-rommel" aria-hidden="true" style={ROMMEL_PLEK[i]}>{t}</span>
         ))}
-        {troep.length > 0 && <button className="ff-rommel-knop" onClick={onGoThuis}>{troep.length >= 3 ? "Wat een troep! Opruimen?" : "Er blijft iets liggen"}</button>}
+        {troep.length > 0 && <button className="ff-rommel-knop" onClick={onGoThuis}>{troep.length >= 3 ? "Even opruimen?" : "Er blijft iets liggen"}</button>}
 
         <Row members={back} row="achter" state={state} me={me} onOpen={onOpenMember} />
         <Row members={front} row="voor" state={state} me={me} onOpen={onOpenMember} />
@@ -150,7 +150,7 @@ export function Row({ members, row, state, me, onOpen }: { members: Member[]; ro
         const left = 50 + (i - (members.length - 1) / 2) * spread;
         // Elke persoon krijgt een eigen strook van de kamer; het label blijft daarbinnen (geen overlap bij lange namen).
         const style = { left: `${left}%`, width: `${spread}%` } as CSSProperties;
-        const status = m.joined === false ? "nog niet aangemeld" : zzz ? "slaapt" : werk ? null : stinkt ? "nog even douchen?" : hongerig ? "heeft honger…" : moodLabel(c);
+        const status = m.joined === false ? "nog niet aangemeld" : zzz ? "slaapt" : werk ? null : stinkt ? "nog even douchen?" : hongerig && (m.id === me.id || me.role === "ouder") ? "heeft honger…" : moodLabel(c);
         const waar = werk ? (werk.look === "school" ? "op school" : werk.werk.naam) : "";
         return (
           <button key={m.id} className={`ff-slot ff-slot-${row} ${m.joined === false ? "is-away" : ""}`} style={style} onClick={() => onOpen(m.id)} aria-label={`${m.name}: ${zzz ? "slaapt" : werk ? `${werk.look === "school" ? "op school" : `aan het werk bij ${werk.werk.naam}`}, ${restTekst(werk.rest)}` : moodLabel(c)}`}>
@@ -192,7 +192,7 @@ export function Attention({ state, me, onTalkTips, onCheckIn, onGoTasks, onRuzie
   const invite = state.conflicts.find((c) => c.status === "wacht" && c.with === me.id);
   const inviteKaart = invite ? (
     <Card tone="lucht" title={`${name(invite.from)} wil een ruzie uitpraten`} meta={timeLabel(invite.at)}>
-      <p>Over: {invite.topic.toLowerCase()}. Lees wat {name(invite.from)} zegt en vertel jouw kant.{me.role === "ouder" ? " Kies samen een oplossing." : " Lukt het samen, dan krijgen jullie allebei XP."}</p>
+      <p>Over: {invite.topic.toLowerCase()}. Lees wat {name(invite.from)} zegt en vertel jouw kant.{me.role === "ouder" ? " Kies samen een oplossing." : " Lukt het samen, dan krijgen jullie allebei punten."}</p>
       <button className="ff-btn ff-btn-primary" onClick={() => onRuzie(invite.id)}>Bekijken</button>
     </Card>
   ) : null;

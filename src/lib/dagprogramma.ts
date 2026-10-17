@@ -69,7 +69,7 @@ export function dagprogramma(s: FamilyState, id: string, nu = new Date()): Stap[
 
   // Taken (huiswerk, leren, vaste taken). De oude losse "Werkdag" niet meer: werk staat er al in.
   for (const t of tasksFor(s, id).filter((t) => !(t.cat === "werk" && /^werkdag$/i.test(t.title)))) {
-    stappen.push({ id: `taak:${t.id}`, deel: deelVoorTaak(t), titel: t.title, emoji: t.study ? "📚" : t.icon === "telefoon" ? "📱" : t.icon === "sport" ? "⚽" : "✅", soort: "taak", klaar: isDone(s, t.id), punten: t.xp, task: t });
+    stappen.push({ id: `taak:${t.id}`, deel: deelVoorTaak(t), titel: t.title, emoji: t.study ? "📚" : t.icon === "telefoon" ? "📱" : t.icon === "sport" ? "⚽" : "📌", soort: "taak", klaar: isDone(s, t.id), punten: t.xp, task: t });
   }
 
   // Klussen waar jij aan de beurt bent (alleen wat vandaag echt moet), plus wat je vandaag al deed.
@@ -94,7 +94,9 @@ export function nuDoen(stappen: Stap[], nu = new Date()): Stap | undefined {
   const deel = dagdeel(nu);
   const tot = VOLGORDE.indexOf(deel);
   // Routine en eten horen bij hun eigen dagdeel: om half zes is ontbijt of douchen niet meer "het ene ding van nu". Ze blijven wel in de lijst staan.
-  return stappen.find((s) => !s.klaar && !s.vanzelf && !s.later && s.soort !== "slapen" && !((s.soort === "routine" || s.soort === "eten") && s.deel !== deel) && VOLGORDE.indexOf(s.deel) <= tot);
+  // Lunch om vier uur is geen "nu" meer: die blijft in de lijst, maar wordt niet als volgende aangewezen.
+  const lunchVoorbij = nu.getHours() >= 15;
+  return stappen.find((s) => !s.klaar && !s.vanzelf && !s.later && s.soort !== "slapen" && !(lunchVoorbij && s.id === "eten:lunch") && !((s.soort === "routine" || s.soort === "eten") && s.deel !== deel) && VOLGORDE.indexOf(s.deel) <= tot);
 }
 
 /** Wat telt voor "je dag": alles wat je zelf afvinkt. Niet: slapen, werk/school (gaat vanzelf) en "alvast"-klussen die nog open staan. */

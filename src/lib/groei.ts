@@ -59,7 +59,7 @@ export function dagLijst(s: FamilyState, id: string, d: string): DagItem[] {
   for (const e of ETEN) items.push({ id: `eten:${e.id}`, soort: "eten", titel: e.label, emoji: e.emoji, klaar: gegeten(log, e.id) });
   for (const t of tasksFor(s, id, d)) {
     if (t.cat === "werk") continue;
-    items.push({ id: `taak:${t.id}`, soort: "taak", titel: t.title, emoji: t.study ? "📚" : "✅", klaar: isDone(s, t.id, d) });
+    items.push({ id: `taak:${t.id}`, soort: "taak", titel: t.title, emoji: t.study ? "📚" : "📌", klaar: isDone(s, t.id, d) });
   }
   const v = verdeling(s, d);
   const log2 = (s.klusLog ?? []).filter((k) => iso(new Date(k.at)) === d && k.by === id);

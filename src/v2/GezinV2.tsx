@@ -78,7 +78,7 @@ export function GezinV2({ state, me, onToast, onOuders, onOpenLid, onTips, onRuz
             <div className="ff-room-sofa" />
             <div className="ff-room-rug" />
             {troep.map((t, i) => <span key={i} className="ff-room-rommel" aria-hidden="true" style={ROMMEL_PLEK[i]}>{t}</span>)}
-            {troep.length > 0 && <button className="ff-rommel-knop" onClick={() => setTab("klussen")}>{troep.length >= 3 ? "Wat een troep! Opruimen?" : "Er blijft iets liggen"}</button>}
+            {troep.length > 0 && <button className="ff-rommel-knop" onClick={() => setTab("klussen")}>{troep.length >= 3 ? "Even opruimen?" : "Er blijft iets liggen"}</button>}
             <Row members={state.members.filter((m) => m.role === "ouder")} row="achter" state={state} me={me} onOpen={onOpenLid} />
             <Row members={state.members.filter((m) => m.role !== "ouder")} row="voor" state={state} me={me} onOpen={onOpenLid} />
           </section>
@@ -150,16 +150,13 @@ function SamenVandaag({ state, me, onOpen }: { state: FamilyState; me: Member; o
   const leden = state.members.filter((m) => m.joined !== false);
   if (leden.length < 2) return null;
   const st = leden.map((m) => ({ m, ...dagStand(state, m.id, vandaag) }));
-  const af = st.reduce((a, x) => a + x.af, 0);
-  const totaal = st.reduce((a, x) => a + x.totaal, 0);
   const klaar = st.filter((x) => x.stand === "af").length;
   return (
     <section className="ff-card ff-stack-s" aria-label="Samen vandaag">
       <div className="ff-row">
         <b className="ff-grow">Samen vandaag</b>
-        <span className="ff-small ff-muted">{af} van {totaal} gedaan</span>
+        <span className="ff-small ff-muted">{klaar} van {leden.length} {klaar === 1 ? "heeft" : "hebben"} de dag af</span>
       </div>
-      <span className="v2-samenbalk" aria-hidden="true"><i style={{ width: `${totaal ? Math.round((af / totaal) * 100) : 0}%` }} /></span>
       <div className="v2-samen-koppen">
         {st.map((x) => (
           <button key={x.m.id} className={`v2-samen-kop${x.stand === "af" ? " is-af" : ""}`} onClick={() => onOpen(x.m.id)} aria-label={`${x.m.id === me.id ? "Jij" : x.m.name}${x.stand === "af" ? ": dag af" : ""}`}>

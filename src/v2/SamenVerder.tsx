@@ -207,7 +207,7 @@ function Wensen({ state, me, onToast }: { state: FamilyState; me: Member; onToas
         <>
           <span className="ff-small ff-muted">Eén zin, in je eigen woorden. {me.role === "ouder" ? "De kinderen vullen dit ook in." : "Je ouders lezen dit, je broers en zussen niet."}</span>
           <div className="ff-row">
-            <input className="ff-grow" value={tekst} maxLength={140} onChange={(e) => setTekst(e.target.value)} placeholder="Bijv. dat we minder schreeuwen 's ochtends" aria-label="Mijn wens" />
+            <input className="ff-grow" value={tekst} maxLength={140} onChange={(e) => setTekst(e.target.value)} placeholder="Bijv. minder schreeuwen" aria-label="Mijn wens" />
             <button className="ff-btn ff-btn-primary ff-btn-sm" disabled={!tekst.trim()} onClick={() => { samenwerken.setWens(me.id, tekst); setBewerk(false); onToast("Dank je! Dit nemen jullie mee in het overleg."); }}>Bewaren</button>
           </div>
         </>

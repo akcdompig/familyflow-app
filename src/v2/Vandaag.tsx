@@ -13,7 +13,7 @@ import { actions } from "@/lib/store";
 import type { OpenRegel } from "@/lib/herkomst";
 import { teClaimen } from "@/lib/xp";
 import { OngezondKnop } from "./Voeding";
-import { CoachTip } from "@/components/screens/CoachTip";
+import { dagStand } from "@/lib/groei";
 import { SchermKind } from "./Scherm";
 import { MijnWeekKort } from "@/components/screens/WeekKaart";
 import { slaapt } from "@/lib/status";
@@ -22,8 +22,7 @@ import { klusStatus } from "@/lib/huis";
 import { iso } from "@/lib/planner";
 import { DUUR, gedaanVandaag, oefeningVanVandaag } from "@/lib/oefendag";
 import { OEFENINGEN_PER_WEEK, oefeningenDezeWeek } from "@/lib/week";
-import type { FamilyState, Member, MoodLevel, Oordeel } from "@/lib/types";
-import { OORDEEL, actief, teEvalueren } from "@/lib/afspraken";
+import type { FamilyState, Member, MoodLevel } from "@/lib/types";
 
 const GEVOEL_WOORD: Record<MoodLevel, string> = { 1: "slecht", 2: "niet zo goed", 3: "oké", 4: "goed", 5: "top" };
 const MOODS: { m: MoodLevel; e: string; l: string }[] = [
@@ -38,7 +37,7 @@ const MOODS: { m: MoodLevel; e: string; l: string }[] = [
   Vandaag: jouw dagprogramma. Bovenaan hoe ver je bent, je schatkist, water, fruit en hoe je je voelt.
   Dan "Nu doen": één ding tegelijk. Daaronder de hele dag, per dagdeel.
 */
-export function Vandaag({ state, me, onToast, onMeerGevoel, onWie, onSamenVerder, onPlanner, onWeek, onDagOefening }: { state: FamilyState; me: Member; onToast: (m: string) => void; onMeerGevoel: () => void; onWie: () => void; onSamenVerder?: () => void; onPlanner?: () => void; onWeek?: () => void; onDagOefening?: () => void }) {
+export function Vandaag({ state, me, onToast, onMeerGevoel, onWie, onPlanner, onWeek, onDagOefening, onLid }: { state: FamilyState; me: Member; onToast: (m: string) => void; onMeerGevoel: () => void; onWie: () => void; onSamenVerder?: () => void; onPlanner?: () => void; onWeek?: () => void; onDagOefening?: () => void; onLid?: (id: string) => void }) {
   const [, tik] = useState(0);
   useEffect(() => {
     const t = window.setInterval(() => tik((n) => n + 1), 60_000);
@@ -61,7 +60,8 @@ export function Vandaag({ state, me, onToast, onMeerGevoel, onWie, onSamenVerder
   const status = state.taakStatus?.[me.id]?.[iso(new Date())] ?? {};
   const stappen = dagprogramma(state, me.id).filter((st) => st.klaar || !status[st.id]);
   const v = voortgang(stappen);
-  const volgende = nuDoen(stappen);
+  // "Nu doen" komt bij voorkeur uit het dagdeel van nu: dat staat open. Anders het eerste open ding van eerder vandaag.
+  const volgende = nuDoen(stappen.filter((st) => st.deel === dagdeel())) ?? nuDoen(stappen);
   const log = dagLog(state, me.id);
   const ci = state.checkins[me.id];
   const vandaagIn = !!ci && new Date(ci.at).toDateString() === new Date().toDateString();
@@ -134,152 +134,34 @@ export function Vandaag({ state, me, onToast, onMeerGevoel, onWie, onSamenVerder
   const R = 46;
   const omtrek = 2 * Math.PI * R;
 
-  return (
-    <div className="ff-screen v2-screen">
-      <header className="v2-top">
-        <div>
-          <div className="ff-eyebrow">{datumTijd()}</div>
-          <h1 className="ff-h1">{begroeting()}, {me.name}</h1>
-        </div>
-        <button className="v2-ik" onClick={onWie} aria-label={`Je bent ${me.name}`}>
-          <Avatar config={me.avatar} expression={expressionFor(ci)} size={40} headOnly animate={false} label={me.name} />
-        </button>
-      </header>
-
-      {!pushLater && <Herinneringen compact onToast={onToast} onWeg={() => { setPushLater(true); try { localStorage.setItem("familyflow:push-later", String(Date.now())); } catch { /* */ } }} />}
-
-      {/* Hoe ver ben je vandaag */}
-      <section className="v2-hero">
-        <div className="v2-ring" aria-label={`${v.klaar} van ${v.totaal} klaar`}>
-          <svg viewBox="0 0 110 110" width="110" height="110" aria-hidden="true">
-            <circle cx="55" cy="55" r={R} fill="none" stroke="var(--v2-ring-bg)" strokeWidth="10" />
-            <circle cx="55" cy="55" r={R} fill="none" stroke="url(#v2g)" strokeWidth="10" strokeLinecap="round" strokeDasharray={omtrek} strokeDashoffset={omtrek * (1 - pct)} transform="rotate(-90 55 55)" style={{ transition: "stroke-dashoffset .6s ease" }} />
-            <defs>
-              <linearGradient id="v2g" x1="0" x2="1"><stop offset="0" stopColor="#ffc845" /><stop offset="1" stopColor="#3cc6a0" /></linearGradient>
-            </defs>
-          </svg>
-          <div className="v2-ring-av"><Avatar config={me.avatar} expression={pct >= 1 ? "blij" : expressionFor(ci)} size={64} headOnly animate={false} label="" /></div>
-        </div>
-        <div className="v2-hero-t">
-          <b className="v2-groot">{v.klaar}<span className="ff-muted">/{v.totaal}</span></b>
-          <span className="ff-small ff-muted">{pct >= 1 ? "Alles af! Topdag 🎉" : "klaar vandaag"}{r > 1 ? ` · 🔥 ${r} dagen` : ""} <Info label="Wat betekent dit getal?" tekst={`Zoveel dingen van je lijst zijn af: routine, eten, taken en klussen.${r > 1 ? " 🔥 = zoveel dagen op rij je ochtendroutine af." : ""}`} /></span>
-          <div className="v2-tellers">
-            {kist > 0 && (
-              <button className="v2-teller is-kist" onClick={() => { const c = actions.claim(me.id); if (c) setClaim({ van: c.van, n: c.totaal, regels: c.regels }); }}>
-                💎 <b>+{kist}</b> claim
-              </button>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {ochtendStart && gevoelSectie}
-      {me.role !== "ouder" && <MijnWeekKort state={state} me={me} />}
-      {avond && <Welterusten state={state} me={me} onToast={onToast} />}
-
-      {/* Water en fruit: altijd in beeld, met glazen. Tik op een glas = zoveel gehad; nog een keer tikken = één terug. */}
-      <Drinken state={state} me={me} onToast={onToast} />
-
-      {/* Eerst: het ene ding dat nu moet. Pas daarna gevoel en schermtijd. */}
-      {/* Aan het werk of op school: dat is nu je "ding". Daarna gaat het lijstje verder. */}
-      {bezigStap && (
-        <section className="v2-nu is-bezig">
-          <span className="ff-eyebrow">Nu bezig</span>
-          <div className="v2-nu-rij">
-            <span className="v2-nu-emoji" aria-hidden="true">{bezigStap.emoji}</span>
-            <span className="ff-grow">
-              <b className="v2-nu-titel">{bezigStap.titel}</b>
-              <span className="ff-bezig-balk" style={{ marginTop: 8 }}><i style={{ width: `${Math.round((bezigStap.bezig ?? 0) * 100)}%` }} /></span>
-              {volgende && <span className="ff-small ff-muted ff-block" style={{ marginTop: 6 }}>Straks: {volgendeSub?.label ?? volgende.titel}</span>}
-            </span>
-          </div>
-        </section>
-      )}
-
-      {/* Nu doen: één ding tegelijk */}
-      {volgende && !bezigStap && (
-        <section className="v2-nu">
-          <span className="ff-eyebrow">Nu doen</span>
-          <div className="v2-nu-rij">
-            <span className="v2-nu-emoji" aria-hidden="true">{volgendeSub?.emoji ?? volgende.emoji}</span>
-            <span className="ff-grow">
-              <b className="v2-nu-titel">{volgendeSub?.label ?? volgende.titel}</b>
-              {volgendeSub && <span className="ff-small ff-muted ff-block">Ochtendroutine · {volgende.sub!.filter((x) => x.klaar).length}/{volgende.sub!.length}</span>}
-            </span>
-            <button className="v2-check is-groot" onClick={() => (volgendeSub ? vinkSub(volgendeSub.id) : vink(volgende))} aria-label={`${volgendeSub?.label ?? volgende.titel} afvinken`}>✓</button>
-          </div>
-        </section>
-      )}
-
-      {/* Oefening van vandaag: kinderen, één korte oefening per dag. Gemist is niet erg; terugdraaien kan. */}
-      {me.role !== "ouder" && onDagOefening && <DagOefeningKaart state={state} me={me} onStart={onDagOefening} onToast={onToast} />}
-
-      {/* Een oefentoets die klaarstaat (gemaakt door papa of mama van de echte lesstof). */}
-      {me.role !== "ouder" && onPlanner && (state.oefentoetsen?.[me.id] ?? []).filter((t) => !t.pogingen?.length).slice(0, 1).map((t) => (
-        <button key={t.id} className="v2-menu-rij v2-toets-klaar" onClick={onPlanner}><span aria-hidden="true">📝</span><b className="ff-grow">Oefentoets klaar: {t.titel}</b><span aria-hidden="true">›</span></button>
-      ))}
-
-      {/* Onze afspraak: de actie uit de afsprakenlus. Na een week meteen "hielp het?". */}
-      {(() => {
-        const vraag = teEvalueren(state, me.id)[0];
-        const lopend = actief(state).slice(-1)[0];
-        if (vraag) {
-          return (
-            <section className="v2-afspraak-kaart" aria-label="Hielp de afspraak?">
-              <span className="ff-small"><b>🤝 Hielp jullie afspraak?</b> “{vraag.text}”</span>
-              <div className="v2-hielp-knoppen is-klein">
-                {(Object.keys(OORDEEL) as Oordeel[]).map((o) => (
-                  <button key={o} className="ff-chip" onClick={() => { actions.evalueerAfspraak(vraag.id, me.id, o); if (o === "nee") onSamenVerder?.(); else onToast("Dank je!"); }}>{OORDEEL[o].emoji} {OORDEEL[o].label}</button>
-                ))}
-              </div>
-            </section>
-          );
-        }
-        if (!lopend) return null;
+  // De lijst van het dagdeel van nu staat bovenaan. Het volgende ding om te doen krijgt een rand; geen aparte "Nu doen"-kaart meer.
+  const dagLijstJsx = (
+    <div className="v2-dag" aria-label="Je dag">
+      {DAGDELEN.map((d) => {
+        const lijst = stappen.filter((s) => s.deel === d.id);
+        if (!lijst.length) return null;
+        const af = lijst.filter((s) => s.klaar).length;
+        const isOpen = open === d.id;
         return (
-          <button className="v2-afspraak-kaart" onClick={onSamenVerder}>
-            <span className="ff-small"><b>🤝 Onze afspraak:</b> {lopend.text}</span>
-          </button>
-        );
-      })()}
-
-      {/* Losse afspraken van vandaag: alleen als je er hebt. Geen vinkje, geen punten. */}
-      {(state.agenda?.[me.id] ?? []).some((a) => a.datum === iso(new Date())) && (
-        <AfsprakenOpDag state={state} me={me} datum={iso(new Date())} onToast={onToast} alleenIk toevoegen={false} titel="📅 Jouw afspraken vandaag" />
-      )}
-
-      {/* Hoe voel je je: één tik. 's Ochtends staat dit bovenaan als "Ben je op?". */}
-      {!ochtendStart && gevoelSectie}
-
-      {me.role !== "ouder" && <SchermKind state={state} me={me} />}
-
-      {/* Tip van vandaag: gezond eten en drinken komt altijd voorbij, plus wat je zelf kiest. */}
-      <CoachTip state={state} me={me} onToast={onToast} />
-
-      {/* De hele dag, per dagdeel */}
-      <div className="v2-dag">
-        {DAGDELEN.map((d) => {
-          const lijst = stappen.filter((s) => s.deel === d.id);
-          if (!lijst.length) return null;
-          const af = lijst.filter((s) => s.klaar).length;
-          const isOpen = open === d.id;
-          return (
-            <section key={d.id} className={`v2-deel${d.id === nuDeel ? " is-nu" : ""}`}>
-              <button className="v2-deel-kop" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? ("" as Dagdeel) : d.id)}>
-                <span aria-hidden="true">{d.emoji}</span>
-                <b className="ff-grow">{d.label}{d.id === nuDeel ? <span className="v2-nu-label">nu</span> : null}</b>
-                <span className={`v2-deel-telling${af === lijst.length ? " is-af" : ""}`}>{af === lijst.length ? "✓" : `${af}/${lijst.length}`}</span>
-              </button>
-              {isOpen && (
-                <ul className="v2-lijst">
-                  {lijst.map((st) => (
-                    <li key={st.id} className={`v2-stap${st.klaar ? " is-klaar" : ""}${st.later ? " is-later" : ""}${st.bezig !== undefined ? " is-bezig" : ""}`}>
+          <section key={d.id} className={`v2-deel${d.id === nuDeel ? " is-nu" : ""}`}>
+            <button className="v2-deel-kop" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? ("" as Dagdeel) : d.id)}>
+              <span aria-hidden="true">{d.emoji}</span>
+              <b className="ff-grow">{d.label}{d.id === nuDeel ? <span className="v2-nu-label">nu</span> : null}</b>
+              <span className={`v2-deel-telling${af === lijst.length ? " is-af" : ""}`}>{af === lijst.length ? "✓" : `${af}/${lijst.length}`}</span>
+            </button>
+            {isOpen && (
+              <ul className="v2-lijst">
+                {lijst.map((st) => {
+                  const isVolgende = !bezigStap && volgende?.id === st.id;
+                  return (
+                    <li key={st.id} className={`v2-stap${st.klaar ? " is-klaar" : ""}${st.later ? " is-later" : ""}${st.bezig !== undefined ? " is-bezig" : ""}${isVolgende ? " is-volgende" : ""}`}>
                       <button className="v2-check" disabled={st.vanzelf} aria-pressed={st.klaar} onClick={() => vink(st)} aria-label={`${st.titel}${st.klaar ? ": klaar" : ""}`}>
                         {st.klaar ? "✓" : st.vanzelf ? st.emoji : ""}
                         {pop?.id === st.id && <span className="v2-pop">+{pop.n}</span>}
                       </button>
                       <span className="ff-grow v2-stap-t">
-                        <span><span aria-hidden="true">{st.vanzelf ? "" : `${st.emoji} `}</span><b>{st.titel}</b></span>
+                        {isVolgende && <span className="v2-volgende-label">Nu doen</span>}
+                        <span><span aria-hidden="true">{st.vanzelf ? "" : `${st.emoji} `}</span><b className="v2-stap-titel">{st.titel}</b></span>
                         {st.tijd && st.soort !== "slapen" && <span className="ff-small ff-muted"> {st.tijd.replace(":", ".")}</span>}
                         {st.later && <span className="ff-small ff-muted ff-block">na je werk of school</span>}
                         {st.soort === "klus" && !st.klaar && (() => {
@@ -295,7 +177,7 @@ export function Vandaag({ state, me, onToast, onMeerGevoel, onWie, onSamenVerder
                         {st.sub && !st.klaar && (
                           <span className="v2-sub">
                             {st.sub.map((x) => (
-                              <button key={x.id} className="v2-sub-knop" aria-pressed={x.klaar} onClick={() => vinkSub(x.id)}>
+                              <button key={x.id} className={`v2-sub-knop${isVolgende && x.id === volgendeSub?.id ? " is-volgende" : ""}`} aria-pressed={x.klaar} onClick={() => vinkSub(x.id)}>
                                 <span aria-hidden="true">{x.emoji}</span> {x.label}
                                 {pop?.id === `sub:${x.id}` && <span className="v2-pop">+2</span>}
                               </button>
@@ -303,22 +185,98 @@ export function Vandaag({ state, me, onToast, onMeerGevoel, onWie, onSamenVerder
                           </span>
                         )}
                       </span>
-                      {!!st.punten && !st.klaar && !st.vanzelf && <span className="v2-punten">+{st.punten}</span>}
                       {st.soort === "klus" && !st.klaar && <button className="v2-meer" onClick={() => setKlusOpen(st.klusKey!)} aria-label={`${st.titel}: ruilen, samen beslissen of lukt niet`}>⋯</button>}
                     </li>
-                  ))}
-                </ul>
-              )}
-            </section>
-          );
-        })}
-      </div>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
+        );
+      })}
+    </div>
+  );
 
-      {/* Altijd te vinden: een afspraak zetten en de week bekijken. */}
+  return (
+    <div className="ff-screen v2-screen">
+      <header className="v2-top">
+        <div>
+          <div className="ff-eyebrow">{datumTijd()}</div>
+          <h1 className="ff-h1">{begroeting()}, {me.name}</h1>
+        </div>
+        <button className="v2-ik" onClick={onWie} aria-label={`Je bent ${me.name}`}>
+          <Avatar config={me.avatar} expression={expressionFor(ci)} size={40} headOnly animate={false} label={me.name} />
+        </button>
+      </header>
+
+      {/* Ouders openen de app vooral om naar de kinderen te kijken: die staan bovenaan. */}
+      {me.role === "ouder" && onLid && <KinderRij state={state} onLid={onLid} />}
+
+      {/* Hoe ver ben je vandaag: één getal. Punten ophalen kan, maar staat niet meer in de weg. */}
+      <section className="v2-hero is-compact">
+        <div className="v2-ring" aria-label={`${v.klaar} van ${v.totaal} klaar`}>
+          <svg viewBox="0 0 110 110" width="76" height="76" aria-hidden="true">
+            <circle cx="55" cy="55" r={R} fill="none" stroke="var(--v2-ring-bg)" strokeWidth="10" />
+            <circle cx="55" cy="55" r={R} fill="none" stroke="url(#v2g)" strokeWidth="10" strokeLinecap="round" strokeDasharray={omtrek} strokeDashoffset={omtrek * (1 - pct)} transform="rotate(-90 55 55)" style={{ transition: "stroke-dashoffset .6s ease" }} />
+            <defs>
+              <linearGradient id="v2g" x1="0" x2="1"><stop offset="0" stopColor="#ffc845" /><stop offset="1" stopColor="#3cc6a0" /></linearGradient>
+            </defs>
+          </svg>
+          <div className="v2-ring-av"><Avatar config={me.avatar} expression={pct >= 1 ? "blij" : expressionFor(ci)} size={44} headOnly animate={false} label="" /></div>
+        </div>
+        <div className="v2-hero-t">
+          <b className="v2-groot">{v.klaar}<span className="ff-muted">/{v.totaal}</span></b>
+          <span className="ff-small ff-muted">{pct >= 1 ? "Alles af! Topdag 🎉" : "klaar vandaag"}{r > 1 ? ` · 🔥 ${r} dagen` : ""} <Info label="Wat betekent dit getal?" tekst={`Zoveel dingen van je lijst zijn af: routine, eten, taken en klussen.${r > 1 ? " 🔥 = zoveel dagen op rij je ochtendroutine af." : ""} Elk vinkje geeft punten. Die haal je op met de knop eronder of bij Ik.`} /></span>
+          {kist > 0 && (
+            <button className="v2-ophalen" onClick={() => { const c = actions.claim(me.id); if (c) setClaim({ van: c.van, n: c.totaal, regels: c.regels }); }}>
+              💎 {kist} punten ophalen
+            </button>
+          )}
+        </div>
+      </section>
+
+      {ochtendStart && gevoelSectie}
+      {avond && <Welterusten state={state} me={me} onToast={onToast} />}
+
+      {/* Aan het werk of op school: dat is nu je "ding". */}
+      {bezigStap && (
+        <section className="v2-nu is-bezig is-klein">
+          <div className="v2-nu-rij">
+            <span className="v2-nu-emoji" aria-hidden="true">{bezigStap.emoji}</span>
+            <span className="ff-grow">
+              <b>{bezigStap.titel}</b>
+              <span className="ff-bezig-balk" style={{ marginTop: 6 }}><i style={{ width: `${Math.round((bezigStap.bezig ?? 0) * 100)}%` }} /></span>
+            </span>
+          </div>
+        </section>
+      )}
+
+      {dagLijstJsx}
+
+      {/* Daarna pas de rest. Eerst wat het afvinken oplevert: je scherm en je week. */}
+      {me.role !== "ouder" && <SchermKind state={state} me={me} />}
+      {me.role !== "ouder" && <MijnWeekKort state={state} me={me} />}
+
+      <Drinken state={state} me={me} onToast={onToast} />
+
+      {!ochtendStart && gevoelSectie}
+
+      {/* Oefening van vandaag en een klaarstaande oefentoets. */}
+      {me.role !== "ouder" && onDagOefening && <DagOefeningKaart state={state} me={me} onStart={onDagOefening} onToast={onToast} />}
+      {me.role !== "ouder" && onPlanner && (state.oefentoetsen?.[me.id] ?? []).filter((t) => !t.pogingen?.length).slice(0, 1).map((t) => (
+        <button key={t.id} className="v2-menu-rij v2-toets-klaar" onClick={onPlanner}><span aria-hidden="true">📝</span><b className="ff-grow">Oefentoets klaar: {t.titel}</b><span aria-hidden="true">›</span></button>
+      ))}
+
+      {/* Losse afspraken van vandaag: alleen als je er hebt. */}
+      {(state.agenda?.[me.id] ?? []).some((a) => a.datum === iso(new Date())) && (
+        <AfsprakenOpDag state={state} me={me} datum={iso(new Date())} onToast={onToast} alleenIk toevoegen={false} titel="📅 Jouw afspraken vandaag" />
+      )}
+
+      {!pushLater && <Herinneringen compact onToast={onToast} onWeg={() => { setPushLater(true); try { localStorage.setItem("familyflow:push-later", String(Date.now())); } catch { /* */ } }} />}
+
       <button className="v2-menu-rij" onClick={() => setNieuweAfspraak(true)}><span aria-hidden="true">📅</span><b className="ff-grow">Afspraak toevoegen</b><span aria-hidden="true">›</span></button>
       {onWeek && <button className="v2-menu-rij" onClick={onWeek}><span aria-hidden="true">🗓️</span><b className="ff-grow">Bekijk de week</b><span aria-hidden="true">›</span></button>}
       <AfspraakSheet open={nieuweAfspraak} me={me} datum={iso(new Date())} onClose={() => setNieuweAfspraak(false)} onToast={onToast} />
-
       {me.role !== "ouder" && onPlanner && (
         <button className="v2-menu-rij" onClick={onPlanner}><span aria-hidden="true">📚</span><b className="ff-grow">Huiswerk en toetsen plannen</b><span aria-hidden="true">›</span></button>
       )}
@@ -326,6 +284,27 @@ export function Vandaag({ state, me, onToast, onMeerGevoel, onWie, onSamenVerder
       {claim && <ClaimViering me={me} van={claim.van} n={claim.n} regels={claim.regels} onKlaar={() => setClaim(null)} />}
       <KlusSheet state={state} me={me} klus={klusOpen ? klusStatus(state).find((k) => k.key === klusOpen) ?? null : null} onClose={() => setKlusOpen(null)} onToast={onToast} />
     </div>
+  );
+}
+
+/** Ouders: elk kind in één rij. Tik = de dag van dat kind (afvinken, overslaan, week). */
+function KinderRij({ state, onLid }: { state: FamilyState; onLid: (id: string) => void }) {
+  const kinderen = state.members.filter((m) => m.role !== "ouder");
+  if (!kinderen.length) return null;
+  return (
+    <section className="v2-kinderrij" aria-label="De kinderen vandaag">
+      {kinderen.map((k) => {
+        const stand = dagStand(state, k.id, iso(new Date()));
+        const ci = state.checkins[k.id];
+        return (
+          <button key={k.id} className={`v2-kind-knop${stand.af >= stand.totaal && stand.totaal > 0 ? " is-af" : ""}`} onClick={() => onLid(k.id)} aria-label={`${k.name}: ${stand.af} van ${stand.totaal} gedaan. Bekijk de dag`}>
+            <Avatar config={k.avatar} expression={expressionFor(ci)} size={40} headOnly animate={false} label="" />
+            <span className="v2-kind-t"><b>{k.name}</b><span className="ff-small">{stand.af} van {stand.totaal}</span></span>
+            <span className="v2-kind-balk" aria-hidden="true"><i style={{ width: `${stand.totaal ? Math.round((stand.af / stand.totaal) * 100) : 0}%` }} /></span>
+          </button>
+        );
+      })}
+    </section>
   );
 }
 

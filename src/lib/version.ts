@@ -1,2 +1,2 @@
-export const VERSION = "3.7";
-export const VERSION_NAME = "Weekkaart";
+export const VERSION = "3.8";
+export const VERSION_NAME = "Eerst je lijst";

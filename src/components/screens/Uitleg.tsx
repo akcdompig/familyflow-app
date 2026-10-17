@@ -17,7 +17,7 @@ const EERSTE: Record<UitlegTab, { titel: string; tekst: (ouder: boolean) => stri
   vandaag: { titel: "Dit is je dag", tekst: () => "Tik op het rondje als iets af is. Het getal ernaast, zoals +2, zijn punten. Onderaan zet je een afspraak of bekijk je de week." },
   gezin: { titel: "Hier zie je het hele gezin", tekst: (o) => (o ? "Wie is thuis, wie werkt, wie heeft iets nodig. Onder Week staat de planning, onder Taken wie wat doet in huis." : "Wie is er thuis en wie is bezig. Onder Taken staan jouw klussen.") },
   samen: { titel: "Samen afspreken", tekst: () => "Hier staan jullie afspraken en hoe het gaat. Na een week vraagt de app: hielp het? Zo blijven afspraken die werken." },
-  hulp: { titel: "Hulp bij boosheid en ruzie", tekst: () => "Word je boos of is er ruzie? Begin hier, stap voor stap. Uitleg over de app zelf vind je hieronder: Hoe werkt de app?" },
+  hulp: { titel: "Hulp bij boosheid en ruzie", tekst: () => "Word je boos of is er ruzie? Begin hier, stap voor stap. Uitleg over de app zelf staat bij Ik: Hoe werkt de app?" },
   ik: { titel: "Jouw plek", tekst: () => "Je punten, wat je deed deze week en je instellingen. Punten die je verdient wachten in je schatkist tot je op Claim tikt." },
 };
 
@@ -90,7 +90,7 @@ const ROUTES: { titel: string; emoji: string; tekst: string; voorbeeld?: string 
   { emoji: "🌋", titel: "Boos of ruzie", tekst: "Ga naar Hulp en kies Ik word boos of Ruzie of gedoe. De app helpt stap voor stap. Je hoeft niks op te lossen als je nog boos bent." },
 ];
 
-/** Hoe werkt de app? Altijd terug te vinden via Hulp en Ik. */
+/** Hoe werkt de app? Altijd terug te vinden via Ik. */
 export function UitlegPagina({ me, onClose, onToast }: { me: Member; onClose: () => void; onToast: (m: string) => void }) {
   const [open, setOpen] = useState<number | null>(null);
   return (

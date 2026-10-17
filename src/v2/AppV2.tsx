@@ -182,7 +182,7 @@ export function AppV2() {
           {pagina === "ouders" && terug(<Gezin instellen state={state} me={me} onToast={setToast} onOefenen={() => { setPagina(null); setTab("hulp"); }} onCoachNu={() => setCoachNu("")} />)}
           {/* Eerste keer op een tabblad: één korte uitleg. Daarna niet meer (terug te halen via Hoe werkt de app?). */}
           {!pagina && <EersteKeer key={`${tab}-${me.id}`} tab={tab as UitlegTab} me={me} onMeer={() => setPagina("uitleg")} />}
-          {!pagina && tab === "vandaag" && <Vandaag state={state} me={me} onToast={setToast} onMeerGevoel={() => setCheckIn(true)} onWie={() => (live ? setTab("ik") : setWie(true))} onSamenVerder={() => setTab("samen")} onPlanner={() => setPagina("planner")} onWeek={() => { setGezinTab("week"); setTab("gezin"); }} onDagOefening={() => setDagOefening(true)} />}
+          {!pagina && tab === "vandaag" && <Vandaag state={state} me={me} onToast={setToast} onMeerGevoel={() => setCheckIn(true)} onWie={() => (live ? setTab("ik") : setWie(true))} onSamenVerder={() => setTab("samen")} onPlanner={() => setPagina("planner")} onWeek={() => { setGezinTab("week"); setTab("gezin"); }} onDagOefening={() => setDagOefening(true)} onLid={setLid} />}
           {!pagina && tab === "samen" && <SamenVerder state={state} me={me} onToast={setToast} onCoach={(id) => setCoachNu(id)} onKlussen={() => { setGezinTab("klussen"); setTab("gezin"); }} />}
           {!pagina && tab === "gezin" && <GezinV2 key={gezinTab ?? "nu"} startTab={gezinTab} state={state} me={me} onToast={setToast} onOuders={() => setPagina("ouders")} onOpenLid={setLid} onTips={setTips} onRuzie={(id) => setRuzie(id ?? "")} onCheckIn={() => setCheckIn(true)} />}
           {!pagina && tab === "hulp" && (
@@ -196,11 +196,6 @@ export function AppV2() {
                       <span aria-hidden="true">›</span>
                     </button>
                   )}
-                  <button className="ff-card v2-opvoed" onClick={() => setPagina("uitleg")}>
-                    <span aria-hidden="true" className="v2-opvoed-emoji">❓</span>
-                    <span className="ff-grow"><b>Hoe werkt de app?</b><span className="ff-small ff-muted ff-block">Uitleg in gewone woorden: je dag, taken, afspraken, punten</span></span>
-                    <span aria-hidden="true">›</span>
-                  </button>
                 </>
               } />
           )}

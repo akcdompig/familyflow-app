@@ -1313,4 +1313,25 @@ button.v2-samen-actie { justify-self: start; min-height: 34px; padding-left: 0; 
 .v2-toets-feedback.is-goed { background: var(--ff-munt-zacht); }
 .ff-choice.is-goed { border-color: var(--ff-munt); background: var(--ff-munt-zacht); }
 .v2-toets-klaar { border: 2px solid var(--ff-lucht); }
-</style></head><body><div id="root"></div><script src="/config.js"></script><script src="/assets/app-afcace5558b0.js"></script><script>if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("/sw.js");</script></body></html>
+
+/* ---------- 3.8: Vandaag met de lijst bovenaan ---------- */
+.v2-hero.is-compact { padding: 8px 14px; gap: 12px; }
+.v2-hero.is-compact .v2-ring { width: 76px; height: 76px; }
+.v2-hero.is-compact .v2-groot { font-size: 1.8rem; }
+.v2-ophalen { justify-self: start; border: 0; background: none; padding: 4px 0; font: inherit; font-size: var(--ff-t-s); font-weight: 700; color: var(--ff-tekst-zacht); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; min-height: 32px; }
+.v2-stap.is-volgende { background: var(--ff-zon-zacht); box-shadow: inset 0 0 0 2px var(--ff-zon); }
+.v2-stap.is-volgende .v2-check { border-color: #e8a20a; }
+.v2-volgende-label { display: block; font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: #9a6a00; margin-bottom: 2px; }
+.v2-stap:has(.v2-volgende-label) .v2-stap-t { padding-top: 2px; }
+.v2-sub-knop.is-volgende { box-shadow: 0 0 0 2px var(--ff-zon); }
+.v2-nu.is-klein { padding: 10px 14px; border-radius: 18px; }
+.v2-nu.is-klein .v2-nu-emoji { font-size: 26px; }
+.v2-kinderrij { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.v2-kind-knop { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 4px 10px; padding: 10px 12px; border: 2px solid var(--ff-lijn); border-radius: 18px; background: var(--ff-vlak); font: inherit; color: var(--ff-tekst); text-align: left; cursor: pointer; min-height: 64px; }
+.v2-kind-knop.is-af { border-color: var(--ff-munt-donker); }
+.v2-kind-t { display: grid; line-height: 1.2; }
+.v2-kind-balk { grid-column: 1 / -1; height: 6px; border-radius: 999px; background: var(--v2-ring-bg); overflow: hidden; }
+.v2-kind-balk i { display: block; height: 100%; background: var(--ff-munt-donker); border-radius: inherit; }
+/* Uitgeschakelde knoppen: grijs, niet lichtroze. Zo zie je meteen dat hij nog niet kan. */
+.ff-btn:disabled, .ff-btn[disabled] { opacity: 1; background: var(--ff-lijn); border-color: var(--ff-lijn); color: var(--ff-tekst-zacht); }
+</style></head><body><div id="root"></div><script src="/config.js"></script><script src="/assets/app-c0c247b68c45.js"></script><script>if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("/sw.js");</script></body></html>

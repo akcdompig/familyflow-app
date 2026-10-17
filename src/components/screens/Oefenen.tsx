@@ -101,7 +101,7 @@ function Aanrader({ state, me, onPlay }: { state: FamilyState; me: Member; onPla
     return (
       <section className="ff-card ff-aanrader ff-stack-s">
         <span className="ff-eyebrow">Jouw doel</span>
-        <b className="ff-h2">Alles een keer goed opgelost!</b>
+        <b className="ff-h2">Alles een keer gedaan!</b>
         <p className="ff-small">Nu het echte werk: probeer het thuis. Je opdrachten staan bij Taken.</p>
       </section>
     );
@@ -110,7 +110,7 @@ function Aanrader({ state, me, onPlay }: { state: FamilyState; me: Member; onPla
     <button className="ff-card ff-aanrader" onClick={() => onPlay(next.id)}>
       <span className="ff-eyebrow">{quest ? "Opdracht voor jou" : "Volgende oefening"} · {SKILLS[next.skill].label}</span>
       <b className="ff-h2">{next.title}</b>
-      <span className="ff-small">{solved.size} van {COACH_SCENARIOS.length} goed opgelost · 3 minuten</span>
+      <span className="ff-small">{solved.size} van {COACH_SCENARIOS.length} gedaan · 3 minuten</span>
       <span className="ff-btn ff-btn-primary">Start</span>
     </button>
   );
