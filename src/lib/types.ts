@@ -279,9 +279,10 @@ export interface FamilyState {
   /** Door een ouder gemarkeerd: taakStatus[lid][datum][itemId] = overgeslagen of ging niet door. Telt niet mee. */
   taakStatus?: Record<string, Record<string, Record<string, "overgeslagen" | "nietdoor">>>;
   /** Weekafspraak per kind, vooraf door een ouder: vanaf welk percentage is de week gehaald, en wat staat ertegenover. */
-  weekAfspraak?: Record<string, { drempel: number; beloning?: string }>;
+  /** Weekbonus per kind (3.10): vast zakgeld (alleen ter info, staat los van de week) en 1 of 2 treden. "drempel" en "beloning" = de eerste trede (oude afspraken blijven werken). */
+  weekAfspraak?: Record<string, { drempel: number; beloning?: string; treden?: WeekTrede[]; zakgeld?: string }>;
   /** Afgesloten weken per kind (maandag als sleutel). Wat afgesloten is, staat vast. */
-  weekAfsluiting?: Record<string, Record<string, { af: number; totaal: number; pct: number; gehaald: boolean; beloning?: string; door: string; at: string }>>;
+  weekAfsluiting?: Record<string, Record<string, { af: number; totaal: number; pct: number; gehaald: boolean; beloning?: string; trede?: number; betaald?: string; door: string; at: string }>>;
   /** Oefentoetsen per kind, door een ouder geplakt (gemaakt met eigen AI uit de echte lesstof). */
   oefentoetsen?: Record<string, OefenToets[]>;
   /** Oefening van vandaag per kind per datum: welke, en of hij echt is afgemaakt. */
@@ -468,4 +469,10 @@ export interface OefenToets {
   door: string;
   at: string;
   pogingen?: { at: string; goed: number; totaal: number; fout: number[] }[];
+}
+
+/** Een trede van de weekbonus: vanaf dit percentage krijg je dit (een bedrag of iets leuks). */
+export interface WeekTrede {
+  pct: number;
+  wat: string;
 }

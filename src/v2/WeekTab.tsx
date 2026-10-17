@@ -40,17 +40,17 @@ export function WeekTab({ state, me, onToast, onOpenLid, onCoach, onPlanner }: {
           {kinderen.map((k) => {
             const w = weekKaart(state, k.id);
             return (
-              <button key={k.id} className="v2-weekrij" onClick={() => onOpenLid(k.id)} aria-label={`${k.name}: ${w.pct}% van de week, doel ${w.drempel}%. Openen om af te vinken of af te sluiten`}>
+              <button key={k.id} className="v2-weekrij" onClick={() => onOpenLid(k.id)} aria-label={`${k.name}: ${w.pct}% van de week, doel ${w.drempel}%. Openen om af te vinken, af te sluiten of de bonus in te stellen`}>
                 <Avatar config={k.avatar} expression={expressionFor(state.checkins[k.id])} headOnly size={32} animate={false} label="" />
                 <span className="ff-grow ff-stack-xs">
-                  <span className="ff-row"><b className="ff-grow">{k.name}</b><span className="ff-small ff-muted">{w.gesloten ? "🔒 afgesloten" : w.gehaald ? "🏁 gehaald" : `${w.pct}% · doel ${w.drempel}%`}</span></span>
-                  <span className="v2-weekbalk" aria-hidden="true"><i style={{ width: `${Math.min(100, w.pct)}%` }} /><b style={{ left: `${w.drempel}%` }} /></span>
+                  <span className="ff-row"><b className="ff-grow">{k.name}</b><span className="ff-small ff-muted">{w.gesloten ? (w.gesloten.gehaald ? `🔒 ${w.gesloten.beloning ?? "gehaald"}${w.gesloten.betaald ? " · betaald" : ""}` : "🔒 afgesloten") : `${w.pct}% · ${w.behaald >= 0 ? `${w.treden[w.behaald].wat || "bonus"} binnen` : `doel ${w.drempel}%`}`}</span></span>
+                  <span className="v2-weekbalk" aria-hidden="true"><i style={{ width: `${Math.min(100, w.pct)}%` }} />{w.treden.map((t) => <b key={t.pct} style={{ left: `${t.pct}%` }} />)}</span>
                 </span>
                 <span aria-hidden="true">›</span>
               </button>
             );
           })}
-          <span className="ff-small ff-muted">Tik op een kind om af te vinken, iets over te slaan of op zondag de week af te sluiten.</span>
+          <span className="ff-small ff-muted">Tik op een kind om af te vinken, de weekbonus in te stellen of op zondag de week af te sluiten.</span>
         </section>
       )}
 

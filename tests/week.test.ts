@@ -5,7 +5,7 @@ import { maandag } from "@/lib/huis";
 import { actions, snapshot } from "@/lib/store";
 import { todayKey } from "@/lib/tasks";
 import { leesToets, zelfde } from "@/lib/toets";
-import { weekDicht, weekKaart } from "@/lib/week";
+import { eerdereWeken, tredenVan, vinkjesNodig, weekDicht, weekKaart } from "@/lib/week";
 
 const d = todayKey();
 
@@ -59,4 +59,39 @@ test("oefentoets lezen: V/A/O, ook met vet of nummers; rommel wordt overgeslagen
   assert.ok(zelfde("Das buch!", "das Buch"));
   assert.ok(zelfde("hond", "de hond"));
   assert.ok(!zelfde("kat", "de hond"));
+});
+
+test("weekbonus: twee treden, gesorteerd, en wat je nog nodig hebt", () => {
+  actions.setWeekAfspraak("k1", [{ pct: 85, wat: "€ 5" }, { pct: 70, wat: "€ 2,50" }], "€ 5");
+  assert.deepEqual(tredenVan(snapshot(), "k1"), [{ pct: 70, wat: "€ 2,50" }, { pct: 85, wat: "€ 5" }]);
+  assert.equal(snapshot().weekAfspraak?.k1?.zakgeld, "€ 5");
+  assert.equal(snapshot().weekAfspraak?.k1?.drempel, 70, "drempel = eerste trede (oude code blijft werken)");
+  const k = weekKaart(snapshot(), "k1");
+  const verwacht = [70, 85].filter((p) => k.totaal && k.pct >= p).length - 1;
+  assert.equal(k.behaald, verwacht);
+  if (k.volgende) assert.equal(k.volgende.nog, vinkjesNodig(k.af, k.totaal, k.volgende.pct));
+  assert.equal(vinkjesNodig(5, 10, 70), 2);
+  assert.equal(vinkjesNodig(7, 10, 70), 0);
+  assert.equal(vinkjesNodig(0, 0, 70), 0);
+});
+
+test("weekbonus: oude afspraak (één drempel) is één trede; dubbele of te veel treden worden opgeschoond", () => {
+  actions.setWeekAfspraak("k2", 80, "Film kiezen");
+  assert.deepEqual(tredenVan(snapshot(), "k2"), [{ pct: 80, wat: "Film kiezen" }]);
+  actions.setWeekAfspraak("k2", [{ pct: 75, wat: "a" }, { pct: 75, wat: "b" }, { pct: 90, wat: "c" }, { pct: 95, wat: "d" }], "");
+  assert.deepEqual(tredenVan(snapshot(), "k2").map((t) => t.pct), [75, 90]);
+});
+
+test("weekbonus: afsluiten onthoudt de trede, uitbetaald aan en uit", () => {
+  const ma = maandag(d);
+  const k = weekKaart(snapshot(), "k1");
+  const nep = { ...k, maandag: "2026-01-05", pct: 90, gehaald: true, behaald: 1, beloning: "€ 5" };
+  assert.equal(actions.weekAfsluiten("k1", "p1", nep), true);
+  assert.equal(snapshot().weekAfsluiting?.k1?.["2026-01-05"]?.trede, 1);
+  actions.weekUitbetaald("k1", "2026-01-05", true);
+  assert.ok(snapshot().weekAfsluiting?.k1?.["2026-01-05"]?.betaald);
+  actions.weekUitbetaald("k1", "2026-01-05", false);
+  assert.equal(snapshot().weekAfsluiting?.k1?.["2026-01-05"]?.betaald, undefined);
+  assert.ok(eerdereWeken(snapshot(), "k1").some((w) => w.maandag === "2026-01-05"));
+  assert.ok(ma >= "2026-01-05");
 });

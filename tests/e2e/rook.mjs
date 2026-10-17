@@ -855,14 +855,15 @@ await scenario("v3.7: weekafspraak en week afsluiten op zondag; daarna staat het
   await wissel(p, "Noah");
   const mijn = p.getByRole("region", { name: "Mijn week" });
   assert.match(await mijn.innerText(), /% gedaan/);
-  assert.match(await mijn.innerText(), /€ 5 weekgeld/);
+  assert.match(await mijn.innerText(), /Zakgeld € 5: krijg je altijd/);
   await wissel(p, "Papa");
   await tab(p, /Gezin/).click();
   await p.getByRole("region", { name: "Samen vandaag" }).getByRole("button", { name: /^Noah/ }).click();
   const week = p.getByRole("region", { name: "Week van Noah" });
-  await week.getByRole("button", { name: /Weekafspraak: gehaald vanaf 80%/ }).click();
-  await week.getByRole("button", { name: "70%" }).click();
+  await week.getByRole("button", { name: /Weekbonus: 70% → € 2,50 · 85% → € 5/ }).click();
+  await week.getByRole("button", { name: "75%" }).click();
   await week.getByRole("button", { name: "Opslaan" }).click();
+  assert.match(await week.innerText(), /Weekbonus: 75% → € 2,50/);
   await week.getByRole("button", { name: "Week afsluiten" }).last().click();
   await week.getByRole("button", { name: "Ja, afsluiten" }).click();
   assert.match(await week.innerText(), /Afgesloten op/);
@@ -995,7 +996,7 @@ await scenario("v3.9: ouder ziet bij Week elk kind met zijn weekdoel, tik = afsl
   await wissel(p, "Papa");
   await tab(p, /^Week/).click();
   const rijen = p.getByRole("region", { name: "Weekkaart per kind" });
-  assert.match(await rijen.innerText(), /Noah[\s\S]*doel 80%[\s\S]*Lina/);
+  assert.match(await rijen.innerText(), /Noah[\s\S]*\d+%[\s\S]*Lina/);
   await rijen.getByRole("button", { name: /^Noah/ }).click();
   assert.ok(await p.getByRole("region", { name: "Week van Noah" }).isVisible(), "weekkaart met afsluiten opent");
 });
@@ -1013,7 +1014,7 @@ await scenario("v3.9: kind ziet de week positief ('nog x vinkjes'), gevoel als k
   await wissel(p, "Noah");
   await tab(p, /^Week/).click();
   const week = p.getByRole("region", { name: "Mijn week" });
-  assert.match(await week.innerText(), /nog \d+ vinkjes? tot je doel/);
+  assert.match(await week.innerText(), /nog \d+ vinkjes? tot/i);
   assert.ok(!/0 van \d+ dagen goed/.test(await week.innerText()), "geen '0 van 4 dagen goed'");
   assert.equal(await p.getByRole("region", { name: /^Uitleg:/ }).count(), 0, "geen uitlegkaart op Week");
   await tab(p, /Gezin/).click();
@@ -1022,6 +1023,40 @@ await scenario("v3.9: kind ziet de week positief ('nog x vinkjes'), gevoel als k
   assert.match(await p.locator(".v2-gevoel-chip").innerText(), /Je voelt je|Hoe voel je je/);
   await p.locator(".v2-gevoel-chip").click();
   assert.ok(await p.getByRole("dialog").getByRole("group", { name: "Kies hoe je je voelt" }).isVisible());
+});
+
+// ---------- 3.10: weekbonus ----------
+await scenario("v3.10: kind ziet zakgeld (altijd) en hoeveel vinkjes tot de volgende bonustrede", v2, "16:00", async (p) => {
+  await wissel(p, "Noah");
+  await tab(p, /^Week/).click();
+  const mijn = p.getByRole("region", { name: "Mijn week" });
+  const t = await mijn.innerText();
+  assert.match(t, /Nog \d+ vinkjes? tot € 2,50|€ 2,50 binnen! Nog \d+ vinkjes? tot € 5|€ 5 gehaald/);
+  assert.match(t, /Zakgeld € 5: krijg je altijd/);
+  assert.match(t, /vanaf 70%[\s\S]*€ 2,50[\s\S]*vanaf 85%[\s\S]*€ 5/);
+  assert.match(t, /Eerdere weken[\s\S]*87%[\s\S]*€ 5/, "eerdere week met bonus staat erbij");
+});
+
+await scenario("v3.10: ouder stelt twee treden in met een snelknop, sluit af en vinkt 'uitbetaald' aan", v2, "20:00", async (p) => {
+  await p.clock.setFixedTime(new Date("2026-10-18T20:00:00+02:00"));
+  await p.reload(); await p.waitForSelector(".ff-nav");
+  await wissel(p, "Papa");
+  await tab(p, /^Week/).click();
+  await p.getByRole("region", { name: "Weekkaart per kind" }).getByRole("button", { name: /^Lina/ }).click();
+  const week = p.getByRole("region", { name: "Week van Lina" });
+  await week.getByRole("button", { name: /^Weekbonus:/ }).click();
+  await week.getByRole("button", { name: "Film kiezen" }).first().click();
+  await week.getByRole("button", { name: "Opslaan" }).click();
+  assert.match(await week.innerText(), /Weekbonus: 70% → Film kiezen · 85% → € 7,50 · zakgeld € 10/);
+  await week.getByRole("button", { name: "Week afsluiten" }).last().click();
+  assert.match(await week.getByRole("group", { name: "Week afsluiten" }).innerText(), /Lina haalde \d+%/);
+  await week.getByRole("button", { name: "Ja, afsluiten" }).click();
+  assert.match(await week.innerText(), /Afgesloten op/);
+  const betaald = week.getByRole("button", { name: /Uitbetaald/ });
+  if (await betaald.count()) {
+    await betaald.first().click();
+    assert.match(await week.innerText(), /Uitbetaald ✓/);
+  }
 });
 
 await browser.close();

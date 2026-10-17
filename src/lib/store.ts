@@ -15,7 +15,7 @@ import { weekDicht } from "./week";
 import { klusById as verdeelKlus } from "./huis";
 import { SCENARIOS } from "./scenarios";
 const routineAf = (l: DagLog) => ROUTINE.filter((r) => r.gewicht > 0).every((r) => l.routine.includes(r.id));
-import type { OefenToets, AgendaItem, InzetItem, InzetSoort, Kookplan, PotItem, Dienst, WerkItem, CoachRun, Quest, AvatarConfig, CalmPlan, CheckIn, Conflict, ConflictSide, FamilyState, Meeting, ProKind, Task } from "./types";
+import type { WeekTrede, OefenToets, AgendaItem, InzetItem, InzetSoort, Kookplan, PotItem, Dienst, WerkItem, CoachRun, Quest, AvatarConfig, CalmPlan, CheckIn, Conflict, ConflictSide, FamilyState, Meeting, ProKind, Task } from "./types";
 
 /*
   Eén store voor demo en echt.
@@ -655,16 +655,33 @@ export const actions = {
     return false;
   },
   /** Weekafspraak, vooraf: vanaf welk percentage is de week gehaald, en wat staat er tegenover (vrije tekst, geen rekensom per vinkje). */
-  setWeekAfspraak(kind: string, drempel: number, beloning: string) {
-    update((s) => ({ ...s, weekAfspraak: { ...(s.weekAfspraak ?? {}), [kind]: { drempel: Math.max(50, Math.min(100, Math.round(drempel))), ...(beloning.trim() ? { beloning: beloning.trim() } : {}) } } }));
+  /**
+    Weekbonus instellen: 1 of 2 treden (vanaf x% krijg je y) en het vaste zakgeld (alleen ter info).
+    Oude aanroep (drempel, beloning) werkt nog: dat is één trede.
+  */
+  setWeekAfspraak(kind: string, tredenOfDrempel: WeekTrede[] | number, zakgeldOfBeloning = "") {
+    const schoon = (t: WeekTrede[]) => t.map((x) => ({ pct: Math.max(50, Math.min(100, Math.round(x.pct))), wat: x.wat.trim().slice(0, 60) })).sort((a, b) => a.pct - b.pct).filter((x, i, a) => i === 0 || x.pct > a[i - 1].pct).slice(0, 2);
+    const treden = typeof tredenOfDrempel === "number" ? schoon([{ pct: tredenOfDrempel, wat: zakgeldOfBeloning }]) : schoon(tredenOfDrempel);
+    if (!treden.length) return;
+    const zakgeld = typeof tredenOfDrempel === "number" ? state.weekAfspraak?.[kind]?.zakgeld : zakgeldOfBeloning.trim().slice(0, 30) || undefined;
+    update((s) => ({ ...s, weekAfspraak: { ...(s.weekAfspraak ?? {}), [kind]: { drempel: treden[0].pct, ...(treden[0].wat ? { beloning: treden[0].wat } : {}), treden, ...(zakgeld ? { zakgeld } : {}) } } }));
+  },
+  /** Bonus van een afgesloten week als uitbetaald markeren (of weer terug). Alleen ouders. */
+  weekUitbetaald(kind: string, maandagVan: string, betaald: boolean) {
+    update((s) => {
+      const w = s.weekAfsluiting?.[kind]?.[maandagVan];
+      if (!w) return s;
+      const { betaald: _oud, ...rest } = w;
+      return { ...s, weekAfsluiting: { ...s.weekAfsluiting, [kind]: { ...s.weekAfsluiting![kind], [maandagVan]: betaald ? { ...rest, betaald: new Date().toISOString() } : rest } } };
+    });
   },
   /** Week afsluiten: de stand van nu staat vast. Al afgesloten? Dan verandert er niks. */
-  weekAfsluiten(kind: string, door: string, k: { maandag: string; af: number; totaal: number; pct: number; gehaald: boolean; beloning?: string }): boolean {
+  weekAfsluiten(kind: string, door: string, k: { maandag: string; af: number; totaal: number; pct: number; gehaald: boolean; beloning?: string; behaald?: number }): boolean {
     if (state.weekAfsluiting?.[kind]?.[k.maandag]) return false;
     const at = new Date().toISOString();
     update((s) => {
       if (s.weekAfsluiting?.[kind]?.[k.maandag]) return s;
-      const uit = { ...s, weekAfsluiting: { ...(s.weekAfsluiting ?? {}), [kind]: { ...(s.weekAfsluiting?.[kind] ?? {}), [k.maandag]: { af: k.af, totaal: k.totaal, pct: k.pct, gehaald: k.gehaald, beloning: k.gehaald ? k.beloning : undefined, door, at } } } };
+      const uit = { ...s, weekAfsluiting: { ...(s.weekAfsluiting ?? {}), [kind]: { ...(s.weekAfsluiting?.[kind] ?? {}), [k.maandag]: { af: k.af, totaal: k.totaal, pct: k.pct, gehaald: k.gehaald, beloning: k.gehaald ? k.beloning : undefined, ...(k.gehaald && k.behaald !== undefined && k.behaald >= 0 ? { trede: k.behaald } : {}), door, at } } } };
       return metFeed(uit, kind, k.gehaald ? `heeft de week gehaald (${k.pct}%) 🏁` : `sloot de week af met ${k.pct}%`, 0);
     });
     return true;

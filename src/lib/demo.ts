@@ -189,7 +189,17 @@ export function demoFamily(): FamilyState {
     },
     inzet: { p1: [{ id: "iz1", soort: "pitch", datum: new Date(daysAgo(1, 12)).toLocaleDateString("sv-SE"), tekst: "pitch voor een nieuwe klant", at: daysAgo(1, 21) }] },
     // Weekafspraak (vooraf, vast) en een oefentoets die papa plakte.
-    weekAfspraak: { k1: { drempel: 80, beloning: "€ 5 weekgeld" }, k2: { drempel: 80, beloning: "€ 7,50 weekgeld" } },
+    // Weekbonus: zakgeld krijgen ze altijd; de bonus komt erbovenop in twee treden.
+    weekAfspraak: {
+      k1: { drempel: 70, beloning: "€ 2,50", treden: [{ pct: 70, wat: "€ 2,50" }, { pct: 85, wat: "€ 5" }], zakgeld: "€ 5" },
+      k2: { drempel: 70, beloning: "€ 3,75", treden: [{ pct: 70, wat: "€ 3,75" }, { pct: 85, wat: "€ 7,50" }], zakgeld: "€ 10" },
+    },
+    // Twee eerder afgesloten weken van Noah: één met de hele bonus (uitbetaald), één net niet gehaald.
+    weekAfsluiting: (() => {
+      const ma = (w: number) => { const x = new Date(); x.setDate(x.getDate() - ((x.getDay() + 6) % 7) - 7 * w); return x.toLocaleDateString("sv-SE"); };
+      const zo = (w: number) => new Date(new Date(ma(w) + "T19:00:00").getTime() + 6 * 864e5).toISOString();
+      return { k1: { [ma(2)]: { af: 52, totaal: 60, pct: 87, gehaald: true, beloning: "€ 5", trede: 1, betaald: zo(2), door: "p1", at: zo(2) }, [ma(3)]: { af: 40, totaal: 59, pct: 68, gehaald: false, door: "p1", at: zo(3) } } };
+    })(),
     oefentoetsen: {
       k1: [{ id: "ot1", titel: "Duits H4 woordjes", door: "p1", at: daysAgo(1, 20), vragen: [
         { v: "Wat betekent 'der Hund'?", a: "de hond", opties: ["de kat", "het huis", "de boom"] },

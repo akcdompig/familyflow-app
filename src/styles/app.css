@@ -1277,3 +1277,19 @@ button.v2-samen-actie { justify-self: start; min-height: 34px; padding-left: 0; 
 .v2-badge-inline { margin-left: 6px; font-size: 11px; font-weight: 800; color: #fff; background: var(--ff-koraal-knop); border-radius: 999px; padding: 2px 8px; vertical-align: middle; }
 .v2-week-pijl { min-width: 32px; }
 .v2-screen input:not([type="checkbox"]):not([type="radio"]):not([type="range"]) { min-height: 40px; }
+
+/* ---------- 3.10: weekbonus ---------- */
+.v2-zakgeld { color: var(--ff-munt-donker); font-weight: 700; }
+.v2-treden { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.v2-treden li { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 12px; background: var(--ff-wolk); }
+.v2-treden li.is-binnen { background: var(--ff-munt-zacht); }
+.v2-betaald { margin-left: 8px; border: 2px solid var(--ff-lijn); background: var(--ff-vlak); border-radius: 999px; padding: 4px 10px; min-height: 32px; min-width: 32px; font: inherit; font-size: var(--ff-t-xs); font-weight: 800; color: var(--ff-tekst-zacht); cursor: pointer; }
+.v2-betaald.is-betaald { border-color: var(--ff-munt-donker); background: var(--ff-munt-zacht); color: var(--ff-munt-donker); }
+.v2-trede-instel { border-top: 1px solid var(--ff-lijn); padding-top: 8px; }
+.ff-chip.ff-chip-s { min-height: 32px; padding: 4px 10px; font-size: var(--ff-t-xs); }
+.v2-weekbalk b + b { opacity: .7; }
+/* Weekkaart in het gezinslid-blad: links uitgelijnd en nooit breder dan het blad. */
+.v2-weekouder { box-sizing: border-box; max-width: 100%; min-width: 0; text-align: left; }
+.v2-weekouder .v2-weekregels, .v2-weekouder .v2-samen-keuze { width: 100%; box-sizing: border-box; margin-left: 0; }
+.v2-weekouder .ff-row { flex-wrap: wrap; }
+.v2-weekouder .v2-weekregels li { gap: 8px; }
