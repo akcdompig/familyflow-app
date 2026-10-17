@@ -18,6 +18,7 @@ import { SchermKind } from "./Scherm";
 import { KlusSheet, antwoordTekst, vraagVan } from "@/components/screens/KlusSheet";
 import { klusStatus } from "@/lib/huis";
 import { iso } from "@/lib/planner";
+import { DUUR, gedaanVandaag, oefeningVanVandaag } from "@/lib/oefendag";
 import type { FamilyState, Member, MoodLevel, Oordeel } from "@/lib/types";
 import { OORDEEL, actief, teEvalueren } from "@/lib/afspraken";
 
@@ -34,7 +35,7 @@ const MOODS: { m: MoodLevel; e: string; l: string }[] = [
   Vandaag: jouw dagprogramma. Bovenaan hoe ver je bent, je schatkist, water, fruit en hoe je je voelt.
   Dan "Nu doen": één ding tegelijk. Daaronder de hele dag, per dagdeel.
 */
-export function Vandaag({ state, me, onToast, onMeerGevoel, onWie, onSamenVerder, onPlanner, onWeek }: { state: FamilyState; me: Member; onToast: (m: string) => void; onMeerGevoel: () => void; onWie: () => void; onSamenVerder?: () => void; onPlanner?: () => void; onWeek?: () => void }) {
+export function Vandaag({ state, me, onToast, onMeerGevoel, onWie, onSamenVerder, onPlanner, onWeek, onDagOefening }: { state: FamilyState; me: Member; onToast: (m: string) => void; onMeerGevoel: () => void; onWie: () => void; onSamenVerder?: () => void; onPlanner?: () => void; onWeek?: () => void; onDagOefening?: () => void }) {
   const [, tik] = useState(0);
   useEffect(() => {
     const t = window.setInterval(() => tik((n) => n + 1), 60_000);
@@ -185,6 +186,9 @@ export function Vandaag({ state, me, onToast, onMeerGevoel, onWie, onSamenVerder
         </section>
       )}
 
+      {/* Oefening van vandaag: kinderen, één korte oefening per dag. Gemist is niet erg; terugdraaien kan. */}
+      {me.role !== "ouder" && onDagOefening && <DagOefeningKaart state={state} me={me} onStart={onDagOefening} onToast={onToast} />}
+
       {/* Onze afspraak: de actie uit de afsprakenlus. Na een week meteen "hielp het?". */}
       {(() => {
         const vraag = teEvalueren(state, me.id)[0];
@@ -333,6 +337,45 @@ function Drinken({ state, me, onToast }: { state: FamilyState; me: Member; onToa
           <OngezondKnop state={state} me={me} onToast={onToast} />
         </div>
       </div>
+    </section>
+  );
+}
+
+/** "Jouw oefening van vandaag": welke, waarom, hoe lang, en of hij af is. Af? Dan kun je het ook ongedaan maken. */
+function DagOefeningKaart({ state, me, onStart, onToast }: { state: FamilyState; me: Member; onStart: () => void; onToast: (m: string) => void }) {
+  const d = iso(new Date());
+  const sc = oefeningVanVandaag(state, me.id, d);
+  const af = gedaanVandaag(state, me.id, d);
+  const [terug, setTerug] = useState(false);
+  if (af) {
+    return (
+      <section className="ff-card v2-dagoef is-af" aria-label="Oefening van vandaag">
+        <span className="v2-dagoef-icoon" aria-hidden="true">✅</span>
+        <span className="ff-grow ff-stack-xs">
+          <b>Oefening van vandaag gedaan</b>
+          <span className="ff-small ff-muted">{sc.title}. Morgen staat er een nieuwe klaar.</span>
+          {!terug ? (
+            <button className="ff-link ff-small v2-dagoef-terug" onClick={() => setTerug(true)}>Per ongeluk? Ongedaan maken</button>
+          ) : (
+            <span className="ff-row v2-dagoef-terug">
+              <span className="ff-small ff-grow">Terugdraaien? De punten gaan er weer af.</span>
+              <button className="ff-btn ff-btn-ghost ff-btn-s" onClick={() => setTerug(false)}>Nee</button>
+              <button className="ff-btn ff-btn-primary ff-btn-s" onClick={() => { actions.dagOefeningTerug(me.id); setTerug(false); onToast("Teruggedraaid. De oefening staat weer klaar"); }}>Ja</button>
+            </span>
+          )}
+        </span>
+      </section>
+    );
+  }
+  return (
+    <section className="ff-card v2-dagoef" aria-label="Oefening van vandaag">
+      <span className="v2-dagoef-icoon" aria-hidden="true">🎯</span>
+      <span className="ff-grow ff-stack-xs">
+        <span className="ff-eyebrow">Jouw oefening van vandaag · {DUUR}</span>
+        <b>{sc.title}</b>
+        <span className="ff-small">Neem twee minuten om te oefenen wat je kunt doen als dit gebeurt. Dan gaat het in het echt makkelijker.</span>
+        <button className="ff-btn ff-btn-primary ff-btn-s v2-dagoef-start" onClick={onStart}>Start oefening</button>
+      </span>
     </section>
   );
 }

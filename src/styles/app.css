@@ -1182,3 +1182,16 @@ button.v2-samen-actie { justify-self: start; min-height: 34px; padding-left: 0; 
 .v2-glazen { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .v2-glazen .ff-dag-glas { width: 40px; height: 40px; font-size: 20px; }
 .v2-glazen .v2-teller { margin-left: auto; min-height: 40px; }
+
+/* ---- 3.6: oefening van vandaag, gezinslid, tellers ---- */
+.v2-dagoef { display: flex; gap: 12px; align-items: flex-start; border: 2px solid var(--ff-lucht); background: var(--ff-lucht-zacht); }
+.v2-dagoef.is-af { border-color: var(--ff-munt); background: var(--ff-munt-zacht); }
+.v2-dagoef-icoon { font-size: 26px; line-height: 1; }
+.v2-dagoef-start { justify-self: start; margin-top: 6px; }
+.v2-dagoef-terug { min-height: 34px; gap: 8px; justify-self: start; }
+.ff-lijst-dag { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; text-align: left; width: 100%; }
+.ff-lijst-dag li { display: flex; gap: 8px; align-items: center; font-size: var(--ff-t-s); font-weight: 600; min-height: 26px; }
+.ff-lijst-dag li.is-af { color: var(--ff-tekst-zacht); }
+.ff-lijst-dag li.is-af .ff-lijst-titel { text-decoration: line-through; }
+.ff-lijst-soort { margin-left: auto; font-size: var(--ff-t-xs); color: var(--ff-tekst-zacht); font-weight: 600; }
+.v2-teller-uitleg > summary { cursor: pointer; min-height: 32px; list-style: none; }

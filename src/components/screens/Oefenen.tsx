@@ -116,12 +116,13 @@ function Aanrader({ state, me, onPlay }: { state: FamilyState; me: Member; onPla
   );
 }
 
-function Play({ scenario: s, me, onClose, onToast }: { scenario: Scenario; me: Member; onClose: () => void; onToast: (m: string) => void }) {
+export function Play({ scenario: s, me, onClose, onToast, onKlaar, eyebrow }: { scenario: Scenario; me: Member; onClose: () => void; onToast: (m: string) => void; onKlaar?: () => void; eyebrow?: string }) {
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
   const [pick, setPick] = useState<number | null>(null);
   const [answer, setAnswer] = useState<string | null>(null);
 
   const finish = () => {
+    if (onKlaar) return onKlaar();
     const first = actions.finishScenario(me.id, s.id);
     onToast(first ? "Klaar! +10 punten" : "Goed geoefend");
     onClose();
@@ -131,7 +132,7 @@ function Play({ scenario: s, me, onClose, onToast }: { scenario: Scenario; me: M
     <div className="ff-screen">
       <header className="ff-top">
         <div>
-          <div className="ff-eyebrow">Oefening {s.id} · {s.where}</div>
+          <div className="ff-eyebrow">{eyebrow ?? `Oefening ${s.id} · ${s.where}`}</div>
           <h1 className="ff-h2">{s.title}</h1>
         </div>
         <button className="ff-iconbtn" onClick={onClose} aria-label="Stoppen"><Icon name="sluit" /></button>

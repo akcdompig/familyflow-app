@@ -296,3 +296,14 @@ export function werkTaken(s: FamilyState, member: string, nu = new Date()): Werk
     };
   })];
 }
+
+/**
+  Bestaat deze taak al als huistaak? Dan niet nog een keer als losse taak (anders twee keer in de lijst en twee keer punten).
+  Vergelijkt de naam zonder hoofdletters en leestekens; "Vaatwasser inruimen" past ook bij "Vaatwasser inruimen en aanzetten".
+*/
+export function huistaakVoor(s: FamilyState, titel: string): Klus | undefined {
+  const kaal = (t: string) => t.toLowerCase().split(" (")[0].replace(/[^a-zà-ÿ0-9 ]/g, "").replace(/\s+/g, " ").trim();
+  const t = kaal(titel);
+  if (t.length < 4) return undefined;
+  return alleKlussen(s).find((k) => klusAan(s, k) && !k.perKind && (kaal(k.label) === t || kaal(k.label).startsWith(t + " ") || t.startsWith(kaal(k.label) + " ")));
+}

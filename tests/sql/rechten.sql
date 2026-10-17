@@ -148,6 +148,17 @@ select pg_temp.eis(jsonb_array_length(:'st'::jsonb #> '{xpLog,k2}') = 1 and json
 select pg_temp.eis((:'st'::jsonb #>> '{agenda,k1,0,titel}') = 'Voetbal kijken', 'kind zet een eigen afspraak');
 select pg_temp.eis((:'st'::jsonb #>> '{agenda,p1,0,notitie}') = 'verjaardag vragen' and jsonb_array_length(:'st'::jsonb #> '{agenda,k2}') = 1, 'afspraken van papa (met notitie) en zus blijven staan');
 
+-- ===== 3.6: oefening van vandaag: ieder alleen de eigen =====
+select rev from public.families \gset
+select public.save_family(:'st'::jsonb || '{"oefenDag":{"k2":{"2026-10-17":{"oefening":3,"gedaan":"x","xp":5}}}}'::jsonb, :rev);
+select pg_temp.als('00000000-0000-0000-0000-00000000000b');
+select (public.load_family() ->> 'state')::jsonb as kian, (public.load_family() ->> 'rev')::int as rev \gset
+select pg_temp.eis(not coalesce(:'kian'::jsonb -> 'oefenDag', '{}') ? 'k2', 'kind ziet de oefeningen van zus niet');
+select public.save_family(:'kian'::jsonb || '{"oefenDag":{"k1":{"2026-10-17":{"oefening":1,"gedaan":"y","xp":5}},"k2":{}}}'::jsonb, :rev);
+select pg_temp.als('00000000-0000-0000-0000-00000000000a');
+select state as st from public.families \gset
+select pg_temp.eis((:'st'::jsonb #>> '{oefenDag,k1,2026-10-17,oefening}') = '1' and (:'st'::jsonb #>> '{oefenDag,k2,2026-10-17,oefening}') = '3', 'kind bewaart zijn eigen oefening, die van zus blijft staan');
+
 -- ===== Schermtijd: alleen ouders vullen in, kind ziet alleen zijn eigen =====
 select rev from public.families \gset
 select public.save_family(:'st'::jsonb || '{"schermtijd":{"k1":{"2026-10-15":{"totaal":276,"sociaal":233,"door":"p1","at":"1"}},"k2":{"2026-10-15":{"totaal":60,"door":"p1","at":"1"}}},"schermAfspraak":{"k1":{"doel":120}}}'::jsonb, :rev);

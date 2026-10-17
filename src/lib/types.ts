@@ -274,6 +274,8 @@ export interface FamilyState {
   xpLog?: Record<string, XpRegel[]>;
   /** Losse afspraken in de agenda, per lid. Geen taak: niks af te vinken, geen punten. */
   agenda?: Record<string, AgendaItem[]>;
+  /** Oefening van vandaag per kind per datum: welke, en of hij echt is afgemaakt. */
+  oefenDag?: Record<string, Record<string, { oefening: number; gedaan?: string; xp?: number; eerste?: boolean }>>;
   /** Inzet die je zichtbaar wilt maken (extra werk, een pitch, rust nemen). Waardering, geen punten. */
   inzet?: Record<string, InzetItem[]>;
   doelen?: Record<string, { vaardigheden: string[]; terugblik?: Record<string, Record<string, "goed" | "beter" | "lastig">>; /** Wat zou thuis beter mogen, in eigen woorden. */ wens?: string; /** Per taak: leuk, wil ik leren, kan ik zelf, hulp nodig. */ taken?: Record<string, TaakGevoel> }>;

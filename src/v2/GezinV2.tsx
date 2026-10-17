@@ -16,7 +16,7 @@ import { SamenTab } from "./Samen";
 import { SchermOverzicht } from "./Scherm";
 import { Vragen } from "@/components/screens/Verdeling";
 import { WeekV2 } from "./WeekV2";
-import { dagStand } from "@/lib/groei";
+import { dagLijst, dagStand } from "@/lib/groei";
 import { iso } from "@/lib/planner";
 
 type Tab = "nu" | "week" | "samen" | "klussen" | "eten";
@@ -111,19 +111,26 @@ export function GezinV2({ state, me, onToast, onOuders, onOpenLid, onTips, onRuz
           </div>
           {state.members.map((m) => {
             const lijst = tasksFor(state, m.id).filter((t) => !(t.cat === "werk" && /^werkdag$/i.test(t.title)));
-            if (!lijst.length) return null;
+            // Huistaken van vandaag horen er ook bij: zelfde telling als Vandaag (dagLijst), alleen lezen.
+            const huis = dagLijst(state, m.id, iso(new Date())).filter((x) => x.soort === "klus");
+            if (!lijst.length && !huis.length) return null;
             return (
               <section key={m.id} className="ff-card v2-plan-lid">
                 <div className="ff-row">
                   <Avatar config={m.avatar} expression={expressionFor(state.checkins[m.id])} headOnly size={30} animate={false} label={m.name} />
                   <b className="ff-grow">{m.id === me.id ? "Jij" : m.name}</b>
-                  <span className="ff-small ff-muted">{lijst.filter((t) => isDone(state, t.id)).length}/{lijst.length}</span>
+                  <span className="ff-small ff-muted">{lijst.filter((t) => isDone(state, t.id)).length + huis.filter((x) => x.klaar).length}/{lijst.length + huis.length}</span>
                 </div>
                 <ul className="ff-tasklist">
                   {lijst.map((t) => (
                     <TaskRow key={t.id} task={t} state={state} who={m.id} canToggle={m.id === me.id || isOuder} onToggle={() => actions.toggleTask(t, m.id)} onConfirm={isOuder && m.id !== me.id ? () => { actions.confirmTask(t, me.id); onToast(`Bevestigd, ${m.name} krijgt +${t.xp} punten`); } : undefined} showXp={false} onRemove={isOuder ? () => { actions.removeTask(t.id); onToast("Taak verwijderd"); } : undefined} />
                   ))}
                 </ul>
+                {huis.length > 0 && (
+                  <ul className="ff-lijst-dag" aria-label={`Huistaken van ${m.name}`}>
+                    {huis.map((x, i) => <li key={x.titel + i} className={x.klaar ? "is-af" : ""}><span aria-hidden="true">{x.klaar ? "✅" : x.emoji}</span><span className="ff-lijst-titel">{x.titel}</span><span className="ff-lijst-soort">huistaak · afvinken bij Taken</span></li>)}
+                  </ul>
+                )}
               </section>
             );
           })}
@@ -162,6 +169,22 @@ function SamenVandaag({ state, me, onOpen }: { state: FamilyState; me: Member; o
         ))}
       </div>
       <span className="ff-small ff-muted">{klaar === leden.length ? "Iedereen heeft zijn dag af. Gezinsdag! 🎉" : "Helpt iedereen een beetje mee, dan halen jullie het samen."}</span>
+      {/* Elke teller is uit te klappen: wat telt er mee, voor wie, vandaag. */}
+      <details className="v2-teller-uitleg">
+        <summary className="ff-small"><b>Wat telt er mee?</b> <span className="ff-muted">vandaag, per persoon</span></summary>
+        <div className="ff-stack-s">
+          <span className="ff-small ff-muted">Telt: ochtendroutine, eetmomenten, taken en huistaken van vandaag. Werk, school en afspraken tellen niet: die vink je niet af.</span>
+          {st.map((x) => (
+            <div key={x.m.id} className="ff-stack-xs">
+              <b className="ff-small">{x.m.id === me.id ? "Jij" : x.m.name}: {x.af} van {x.totaal}</b>
+              <ul className="ff-lijst-dag">
+                {x.items.filter((it) => me.role === "ouder" || x.m.id === me.id || (it.soort !== "routine" && it.soort !== "eten")).map((it, i) => <li key={it.titel + i} className={it.klaar ? "is-af" : ""}><span aria-hidden="true">{it.klaar ? "✅" : "⬜"}</span><span className="ff-lijst-titel">{it.titel}</span></li>)}
+                {me.role !== "ouder" && x.m.id !== me.id && x.items.some((it) => it.soort === "routine" || it.soort === "eten") && <li className="ff-small ff-muted">+ routine en eten (alleen voor {x.m.name} zelf)</li>}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </details>
     </section>
   );
 }

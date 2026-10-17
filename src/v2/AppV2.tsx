@@ -12,6 +12,10 @@ import { CoachNu } from "@/components/screens/CoachNu";
 import { Gezin } from "@/components/screens/Gezin";
 import { Ik } from "@/components/screens/Ik";
 import { Leerplanner } from "@/components/screens/Leerplanner";
+import { Play } from "@/components/screens/Oefenen";
+import { LidDag } from "@/components/screens/LidDag";
+import { DUUR, oefeningVanVandaag } from "@/lib/oefendag";
+import { iso } from "@/lib/planner";
 import { EersteKeer, UitlegPagina, type UitlegTab } from "@/components/screens/Uitleg";
 import { MijnWerk } from "@/components/screens/MijnWerk";
 import { Oefenen } from "@/components/screens/Oefenen";
@@ -83,6 +87,7 @@ export function AppV2() {
   const [coach, setCoach] = useState<string | null>(null);
   const [coachNu, setCoachNu] = useState<string | null>(null);
   const [gezinTab, setGezinTab] = useState<string | undefined>(undefined);
+  const [dagOefening, setDagOefening] = useState(false);
 
   useEffect(() => setMounted(true), []);
   useEffect(() => {
@@ -153,6 +158,10 @@ export function AppV2() {
   else if (pagina === "avatar") vol = <AvatarMaker key={me.id} member={me} onClose={() => setPagina(null)} onSaved={setToast} />;
   else if (pagina === "werk") vol = <MijnWerk state={state} me={me} onClose={() => setPagina(null)} onToast={setToast} />;
   else if (pagina === "planner") vol = <Leerplanner key={me.id} state={state} me={me} onClose={() => setPagina(null)} onToast={setToast} />;
+  else if (dagOefening) {
+    const sc = oefeningVanVandaag(state, me.id, iso(new Date()));
+    vol = <Play key={sc.id} scenario={sc} me={me} eyebrow={`Oefening van vandaag · ${DUUR}`} onClose={() => setDagOefening(false)} onToast={setToast} onKlaar={() => { const ok = actions.dagOefeningGedaan(me.id, sc.id, sc.title); setToast(ok ? "Oefening van vandaag gedaan 🎯 Punten staan in je schatkist" : "Die had je vandaag al gedaan"); setDagOefening(false); }} />;
+  }
   else if (pagina === "uitleg") vol = <UitlegPagina me={me} onClose={() => setPagina(null)} onToast={setToast} />;
 
   const terug = (inhoud: ReactElement) => (
@@ -172,7 +181,7 @@ export function AppV2() {
           {pagina === "ouders" && terug(<Gezin instellen state={state} me={me} onToast={setToast} onOefenen={() => { setPagina(null); setTab("hulp"); }} onCoachNu={() => setCoachNu("")} />)}
           {/* Eerste keer op een tabblad: één korte uitleg. Daarna niet meer (terug te halen via Hoe werkt de app?). */}
           {!pagina && <EersteKeer key={`${tab}-${me.id}`} tab={tab as UitlegTab} me={me} onMeer={() => setPagina("uitleg")} />}
-          {!pagina && tab === "vandaag" && <Vandaag state={state} me={me} onToast={setToast} onMeerGevoel={() => setCheckIn(true)} onWie={() => (live ? setTab("ik") : setWie(true))} onSamenVerder={() => setTab("samen")} onPlanner={() => setPagina("planner")} onWeek={() => { setGezinTab("week"); setTab("gezin"); }} />}
+          {!pagina && tab === "vandaag" && <Vandaag state={state} me={me} onToast={setToast} onMeerGevoel={() => setCheckIn(true)} onWie={() => (live ? setTab("ik") : setWie(true))} onSamenVerder={() => setTab("samen")} onPlanner={() => setPagina("planner")} onWeek={() => { setGezinTab("week"); setTab("gezin"); }} onDagOefening={() => setDagOefening(true)} />}
           {!pagina && tab === "samen" && <SamenVerder state={state} me={me} onToast={setToast} onCoach={(id) => setCoachNu(id)} onKlussen={() => { setGezinTab("klussen"); setTab("gezin"); }} />}
           {!pagina && tab === "gezin" && <GezinV2 key={gezinTab ?? "nu"} startTab={gezinTab} state={state} me={me} onToast={setToast} onOuders={() => setPagina("ouders")} onOpenLid={setLid} onTips={setTips} onRuzie={(id) => setRuzie(id ?? "")} onCheckIn={() => setCheckIn(true)} />}
           {!pagina && tab === "hulp" && (
@@ -226,6 +235,7 @@ export function AppV2() {
               <Avatar config={sel.avatar} expression={zzz ? "slaap" : expressionFor(ci)} bezig={werk?.look} walm={!zzz && walm(state, sel.id)} dorst={!zzz && dorst(state, sel.id)} honger={!zzz && !werk && honger(state, sel.id)} energy={sel.energy} size={130} seed={5} label={sel.name} />
               <h2 className="ff-h2">{sel.id === me.id ? "Jij" : sel.name}</h2>
               <p className="ff-muted">{zzz ? "Slaapt" : werk ? `${werk.look === "school" ? "Op school" : werk.werk.naam} · ${restTekst(werk.rest)}` : ci ? `${moodLabel(ci)} · ${timeLabel(ci.at)}` : "Nog niet ingecheckt"}</p>
+              {sel.joined !== false && <LidDag state={state} lid={sel} me={me} />}
               {sel.joined !== false && <div style={{ width: "100%" }}><Meters state={state} id={sel.id} /></div>}
               {sel.joined !== false && (isOuder || sel.id === me.id) && <div style={{ width: "100%" }}><VoedingKaart state={state} id={sel.id} kanAanpassen={isOuder || sel.id === me.id} /></div>}
               {sel.joined !== false && sel.role !== "ouder" && (isOuder || sel.id === me.id) && <div className="v2-groei-kaart" style={{ width: "100%" }}><Groei state={state} lid={sel} me={me} onToast={setToast} compact /></div>}

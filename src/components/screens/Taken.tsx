@@ -6,6 +6,7 @@ import { Flo } from "@/components/ui/Flo";
 import { Icon } from "@/components/ui/Icon";
 import { Sheet } from "@/components/ui/Sheet";
 import { TaskIcon } from "@/components/ui/TaskIcon";
+import { huistaakVoor } from "@/lib/huis";
 import { expressionFor } from "@/lib/mood";
 import { actions } from "@/lib/store";
 import { wachtOpOuder, isDone, tasksFor as alleTaken } from "@/lib/tasks";
@@ -262,8 +263,9 @@ export function AddTaskSheet({ open, onClose, state, me, onAdded }: { open: bool
   }, [open]);
 
   const voorOuder = state.members.find((m) => m.id === assignee)?.role === "ouder";
+  const dubbel = huistaakVoor(state, title);
   const save = () => {
-    if (!title.trim() || (repeat === "wekelijks" && !days.length)) return;
+    if (!title.trim() || (repeat === "wekelijks" && !days.length) || dubbel) return;
     actions.addTask({
       title: title.trim(), icon, xp: voorOuder ? 0 : xp, pet, assignee, repeat, cat, min,
       days: repeat === "wekelijks" ? [...days].sort() : undefined,
@@ -274,7 +276,8 @@ export function AddTaskSheet({ open, onClose, state, me, onAdded }: { open: bool
     onClose();
   };
   const groepen: TaakCat[] = ["huishouden", "kinderen", "school", "sport", "werk", "overig"];
-  const lijst = CATALOGUS.filter((c) => c.cat === groep && (c.pet ? state.pet.has : true));
+  // Voorbeelden die al een huistaak zijn, laten we weg: anders staat dezelfde klus er twee keer.
+  const lijst = CATALOGUS.filter((c) => c.cat === groep && (c.pet ? state.pet.has : true) && !huistaakVoor(state, c.title));
 
   return (
     <Sheet open={open} onClose={onClose} title="Taak toevoegen">
@@ -327,7 +330,12 @@ export function AddTaskSheet({ open, onClose, state, me, onAdded }: { open: bool
           </div>
         )}
       </div>
-      <button className="ff-btn ff-btn-primary ff-btn-wide" onClick={save} disabled={!title.trim() || (repeat === "wekelijks" && !days.length)}>
+      {dubbel && (
+        <p className="ff-alert" role="alert">
+          <b>{dubbel.label.split(" (")[0]}</b> is al een huistaak. Die verdeelt de app elke dag eerlijk en staat al bij iedereen op Vandaag. Wil je hem vast bij één persoon? Kies dat bij Gezin › Taken › Taken en afspraken.
+        </p>
+      )}
+      <button className="ff-btn ff-btn-primary ff-btn-wide" onClick={save} disabled={!title.trim() || (repeat === "wekelijks" && !days.length) || !!dubbel}>
         Toevoegen
       </button>
     </Sheet>

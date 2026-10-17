@@ -159,7 +159,7 @@ declare
   k text;
   ouder_velden text[] := array['family', 'rewards', 'pros', 'consent', 'proNotes', 'goals', 'allesAan', 'startedAt', 'meetings', 'pet', 'checked', 'badgesStart', 'version', 'klusAfspraken', 'vrijstelling', 'bezwaarAntwoord', 'schermtijd', 'schermAfspraak'];
   -- 3.2: xpLog (waar komen je punten vandaan), agenda (losse afspraken) en inzet: ieder alleen de eigen.
-  per_lid text[] := array['checkins', 'history', 'plans', 'coach', 'played', 'werk', 'somtoday', 'vakanties', 'rooster', 'interesses', 'reading', 'actief', 'sleep', 'doelen', 'xpLog', 'agenda', 'inzet'];
+  per_lid text[] := array['checkins', 'history', 'plans', 'coach', 'played', 'werk', 'somtoday', 'vakanties', 'rooster', 'interesses', 'reading', 'actief', 'sleep', 'doelen', 'xpLog', 'agenda', 'inzet', 'oefenDag'];
 begin
   -- Ouder-instellingen: altijd de bestaande waarde.
   foreach k in array ouder_velden loop
@@ -223,6 +223,7 @@ language sql immutable as $$
       'doelen', public.ff_eigen('{}', coalesce(st -> 'doelen', '{}'), me),
       'xpLog', public.ff_eigen('{}', coalesce(st -> 'xpLog', '{}'), me),
       'inzet', public.ff_eigen('{}', coalesce(st -> 'inzet', '{}'), me),
+      'oefenDag', public.ff_eigen('{}', coalesce(st -> 'oefenDag', '{}'), me),
       -- Afspraken: je eigen helemaal, die van ouders zonder notitie, die van broers en zussen niet.
       'agenda', (select coalesce(jsonb_object_agg(e.key, case when e.key = me then e.value
                    else (select coalesce(jsonb_agg(a - 'notitie'), '[]'::jsonb) from jsonb_array_elements(case when jsonb_typeof(e.value) = 'array' then e.value else '[]'::jsonb end) a) end), '{}'::jsonb)

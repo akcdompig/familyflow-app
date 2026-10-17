@@ -62,7 +62,7 @@ export function Ruzie({ state, me, conflictId, onClose, onToast, onAfter, met }:
     onClose();
     if (solution === "Een ouder helpt ons") onToast("Je ouders krijgen een seintje om te helpen");
     else {
-      onToast("Opgelost! Knap gedaan, allebei");
+      onToast("Knap dat jullie het samen hebben uitgepraat. Gaat het later toch weer mis? Begin gerust opnieuw of vraag een ouder.");
       window.setTimeout(onAfter, 900);
     }
   };

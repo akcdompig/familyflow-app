@@ -10,6 +10,8 @@ import { nieuweBadges } from "./badges";
 import { controleer as controleerAfspraak, isDubbel, schoon as schoonAfspraak, type Invoer } from "./agenda";
 import { markeerGeclaimd, metHerkomst, openRegels, type OpenRegel, type Wat } from "./herkomst";
 import { verdeling } from "./verdeling";
+import { DAG_OEFENING_XP } from "./oefendag";
+import { SCENARIOS } from "./scenarios";
 const routineAf = (l: DagLog) => ROUTINE.filter((r) => r.gewicht > 0).every((r) => l.routine.includes(r.id));
 import type { AgendaItem, InzetItem, InzetSoort, Kookplan, PotItem, Dienst, WerkItem, CoachRun, Quest, AvatarConfig, CalmPlan, CheckIn, Conflict, ConflictSide, FamilyState, Meeting, ProKind, Task } from "./types";
 
@@ -558,6 +560,48 @@ export const actions = {
       return { ...s, played: { ...s.played, [memberId]: [...list, id] }, xp: addXp(s, memberId, XP.korteOefening) };
     }, "Korte oefening gedaan");
     return true;
+  },
+  /**
+    Oefening van vandaag afgemaakt (na "Oefening klaar"). Eén keer per dag: nog een keer tikken geeft niks extra.
+    5 punten, plus de eenmalige bonus als het de eerste keer ooit is (zoals bij Alle oefeningen).
+  */
+  dagOefeningGedaan(memberId: string, oefening: number, titel: string): boolean {
+    const d = todayKey();
+    if (state.oefenDag?.[memberId]?.[d]?.gedaan) return false;
+    update((s) => {
+      const per = s.oefenDag?.[memberId] ?? {};
+      if (per[d]?.gedaan) return s;
+      const lijst = s.played[memberId] ?? [];
+      const eerste = !lijst.includes(oefening);
+      const xp = DAG_OEFENING_XP + (eerste ? XP.korteOefening : 0);
+      return {
+        ...s,
+        played: eerste ? { ...s.played, [memberId]: [...lijst, oefening] } : s.played,
+        oefenDag: { ...(s.oefenDag ?? {}), [memberId]: { ...per, [d]: { oefening, gedaan: new Date().toISOString(), xp, eerste } } },
+        xp: addXp(s, memberId, xp),
+      };
+    }, `Oefening van vandaag: ${titel}`);
+    return true;
+  },
+  /** Per ongeluk op klaar getikt? Terugdraaien: registratie weg, precies dezelfde punten eraf. */
+  dagOefeningTerug(memberId: string) {
+    const d = todayKey();
+    const r = state.oefenDag?.[memberId]?.[d];
+    if (!r?.gedaan) return;
+    const titel = SCENARIOS.find((x) => x.id === r.oefening)?.title ?? "";
+    update((s) => {
+      const rec = s.oefenDag?.[memberId]?.[d];
+      if (!rec?.gedaan) return s;
+      const per = { ...(s.oefenDag?.[memberId] ?? {}), [d]: { oefening: rec.oefening } };
+      return {
+        ...s,
+        played: rec.eerste ? { ...s.played, [memberId]: (s.played[memberId] ?? []).filter((x) => x !== rec.oefening) } : s.played,
+        oefenDag: { ...(s.oefenDag ?? {}), [memberId]: per },
+        xp: addXp(s, memberId, -(rec.xp ?? 0)),
+        // Al geclaimd? Dan zakt de claimstand mee, zodat de volgende punten niet "verdwijnen".
+        claim: (s.claim?.[memberId] ?? 0) > Math.max(0, (s.xp[memberId] ?? 0) - (rec.xp ?? 0)) ? { ...(s.claim ?? {}), [memberId]: Math.max(0, (s.xp[memberId] ?? 0) - (rec.xp ?? 0)) } : s.claim,
+      };
+    }, `Oefening van vandaag: ${titel}`);
   },
   startConflict(c: Omit<Conflict, "id" | "at" | "status">) {
     const extra = { id: newId("c"), at: new Date().toISOString(), status: "wacht" as const };

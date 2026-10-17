@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { Avatar } from "@/components/avatar/Avatar";
 import { Sheet } from "@/components/ui/Sheet";
-import { actions } from "@/lib/store";
+import { actions, stand } from "@/lib/store";
+import { XP } from "@/lib/xp";
 import type { CalmPlan, Member } from "@/lib/types";
 
 const EMPTY: CalmPlan = { signals: [], helps: [], needs: [], place: "" };
@@ -55,8 +56,10 @@ export function CalmSheet({ open, onClose, me, plan, onDone }: { open: boolean; 
         <button
           className="ff-btn ff-btn-dark ff-btn-wide"
           onClick={() => {
+            // Punten alleen de eerste keer per dag (XP.rustig); de melding zegt precies wat er gebeurt.
+            const eerste = !(stand().calm ?? []).some((c) => c.member === me.id && new Date(c.at).toDateString() === new Date().toDateString());
             actions.calmDone(me.id);
-            onDone(me.role === "ouder" ? "Goed gedaan. Ook voor ouders werkt dit" : "Knap! Rustig worden is een echte skill. +5 punten");
+            onDone(me.role === "ouder" ? "Goed gedaan. Ook voor ouders werkt dit" : eerste ? `Knap! Rustig worden is een echte skill. +${XP.rustig} punten` : "Knap dat je weer even stopte");
             onClose();
           }}
         >
