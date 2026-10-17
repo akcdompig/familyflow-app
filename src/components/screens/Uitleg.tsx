@@ -14,11 +14,11 @@ import type { Member } from "@/lib/types";
 export type UitlegTab = "vandaag" | "gezin" | "samen" | "hulp" | "ik";
 
 const EERSTE: Record<UitlegTab, { titel: string; tekst: (ouder: boolean) => string }> = {
-  vandaag: { titel: "Dit is je dag", tekst: (o) => `Tik op het rondje als iets af is: dat geeft punten. Onderin vind je Week (je week en de agenda), Gezin (wie is waar, de huisregels) en Ik (je punten en instellingen). Boos of ruzie? Tik op Rust, rechtsonder.${o ? " Bovenaan zie je de kinderen: tik er een aan voor zijn dag." : ""}` },
+  vandaag: { titel: "Dit is je dag", tekst: (o) => `Tik op het rondje als iets af is. Boos of ruzie? Tik op Rust in het menu.${o ? " Bovenaan staan de kinderen: tik er een aan voor zijn dag." : ""}` },
   gezin: { titel: "Hier zie je het hele gezin", tekst: (o) => (o ? "Wie is thuis, wie werkt, wie heeft iets nodig. Onder Week staat de planning, onder Taken wie wat doet in huis." : "Wie is er thuis en wie is bezig. Onder Taken staan jouw klussen.") },
   samen: { titel: "Huisregels", tekst: () => "Hier staan jullie huisregels. Na een week vraagt de app: hielp het?" },
   hulp: { titel: "Rust", tekst: () => "Word je boos of is er ruzie? Begin hier, stap voor stap." },
-  ik: { titel: "Jouw plek", tekst: () => "Je punten, wat je deed deze week en je instellingen. Punten die je verdient wachten in je schatkist tot je op Claim tikt." },
+  ik: { titel: "Jouw plek", tekst: () => "Je punten, wat je deed deze week en je instellingen. Punten die je verdient wachten in je schatkist tot je op Ophalen tikt." },
 };
 
 const sleutel = (id: string) => `familyflow:uitleg:${id}`;
@@ -81,14 +81,14 @@ export function Info({ tekst, label = "Wat is dit?" }: { tekst: string; label?: 
 const ROUTES: { titel: string; emoji: string; tekst: string; voorbeeld?: string }[] = [
   { emoji: "☀️", titel: "Je dag bekijken", tekst: "Open Vandaag. Bovenaan staat je lijst van nu. Wat je als eerste kunt doen, heeft een gele rand. Andere dagdelen klap je open met een tik." },
   { emoji: "✅", titel: "Een taak afronden", tekst: "Tik op het rondje voor de taak. Er komt een vinkje. Per ongeluk? Tik nog een keer, dan staat hij weer open.", voorbeeld: "Lunch gegeten? Tik op het rondje bij Lunch." },
-  { emoji: "📅", titel: "Een afspraak toevoegen", tekst: "Op Vandaag, helemaal onderaan: Afspraak toevoegen. Vul in wat, welke dag en hoe laat. Je hoeft je werk niet eerst in te vullen.", voorbeeld: "Een gesprek op school, de huisarts, of ontbijten met Akram." },
+  { emoji: "📅", titel: "Een afspraak toevoegen", tekst: "Op Vandaag bovenaan: het plusje naast je naam. Of bij Week: + Afspraak toevoegen. Vul in wat, welke dag en hoe laat. Je hoeft je werk niet eerst in te vullen.", voorbeeld: "Een gesprek op school, de huisarts, of ontbijten met Akram." },
   { emoji: "🗓️", titel: "De week bekijken", tekst: "Tik onderin op Week. Tik op een dag om te zien wat er staat. Ging iets samen anders dan gepland? Tik op Aanpassen, of bij iets wat al gedaan is op Klopt niet? Terugzetten.", voorbeeld: "Kian kon toch niet mee sporten: bij Gedaan tik je hem weg, dan krijgt hij geen punten." },
   { emoji: "👀", titel: "Zien wat aandacht nodig heeft", tekst: "Ga naar Gezin. Onder de huiskamer staan kaartjes, bijvoorbeeld als iemand even rust wil of nog iets moet doen." },
-  { emoji: "💎", titel: "Punten en beloningen", tekst: "Punten die je verdient komen in je schatkist. Tik op Claim en je ziet waarvoor je ze kreeg. Bij Ik staat: Waar komen mijn punten vandaan?" },
+  { emoji: "💎", titel: "Punten", tekst: "Punten zijn het spel: je haalt niveaus en badges. Ze komen in je schatkist; tik op Ophalen en je ziet waarvoor je ze kreeg. Echte beloningen (zoals geld of een film kiezen) lopen via de weekbonus." },
   { emoji: "💰", titel: "Zakgeld en weekbonus", tekst: "Zakgeld krijg je altijd. De weekbonus komt erbovenop: haal je deze week bijvoorbeeld 70%, dan krijg je de eerste trede; haal je 85%, dan de hele bonus. Bij Week zie je hoeveel vinkjes je nog nodig hebt. Zondag sluit papa of mama de week af en betaalt uit.", voorbeeld: "Nog 4 vinkjes tot € 2,50, nog 9 tot € 5." },
-  { emoji: "🧭", titel: "Een oefening met de coach", tekst: "Tik rechtsonder op Rust en kies een oefening. Aan het eind zie je wat er gebeurde en wat je de volgende keer kunt proberen." },
+  { emoji: "🧭", titel: "Een oefening met de coach", tekst: "Tik op Rust (het rode rondje in het menu) en kies een oefening. Aan het eind zie je wat er gebeurde en wat je de volgende keer kunt proberen." },
   { emoji: "📈", titel: "Hoe het gaat", tekst: "Tik onderin op Week. Daar staat hoe jullie week ging, en of de huisregels helpen." },
-  { emoji: "🌋", titel: "Boos of ruzie", tekst: "Tik rechtsonder op Rust (op elk scherm) en kies Ik word boos of Ruzie of gedoe. De app helpt stap voor stap. Je hoeft niks op te lossen als je nog boos bent." },
+  { emoji: "🌋", titel: "Boos of ruzie", tekst: "Tik op Rust (het rode rondje midden in het menu, op elk scherm) en kies Ik word boos of Ruzie of gedoe. De app helpt stap voor stap. Je hoeft niks op te lossen als je nog boos bent." },
 ];
 
 /** Hoe werkt de app? Altijd terug te vinden via Ik. */

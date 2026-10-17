@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactElement } from "react";
+import { Fragment, useEffect, useMemo, useState, type ReactElement } from "react";
 import { Avatar } from "@/components/avatar/Avatar";
 import { DemoBar } from "@/components/DemoBar";
 import { PorPopup } from "@/components/FamilyFlowApp";
@@ -49,7 +49,7 @@ type Pagina = null | "avatar" | "werk" | "meer" | "ouders" | "planner" | "privac
 
 const NAV: { id: Tab; label: string; icon: IconName }[] = [
   { id: "vandaag", label: "Vandaag", icon: "taken" },
-  { id: "week", label: "Week", icon: "groei" },
+  { id: "week", label: "Week", icon: "kalender" },
   { id: "gezin", label: "Gezin", icon: "huis" },
   { id: "ik", label: "Ik", icon: "ik" },
 ];
@@ -69,7 +69,7 @@ const OPENERS: Record<string, string> = {
   - Week: weekkaart, de dagen van de week, "hielp de huisregel?", weekoverleg en hoe de week ging.
   - Gezin: de huiskamer, wie zijn dag af heeft, de huisregels; klussen, samen en eten achter één klik.
   - Ik: jezelf, punten, tips en instellingen.
-  - Rust (rechtsonder, op elk scherm): boos, ruzie, opvoedvragen en oefenen. Altijd één tik weg.
+  - Rust (rood rondje midden in het menu): boos, ruzie, opvoedvragen en oefenen. Altijd één tik weg.
 */
 export function AppV2() {
   const raw = useFamily();
@@ -201,19 +201,23 @@ export function AppV2() {
           )}
           {!pagina && tab === "ik" && <IkV2 state={state} me={me} onToast={setToast} onAvatar={() => setPagina("avatar")} onWerk={() => setPagina("werk")} onMeer={() => setPagina("meer")} onPrivacy={() => setPagina("privacy")} onUitleg={() => setPagina("uitleg")} onOuders={isOuder ? () => setPagina("ouders") : undefined} onPlanner={isOuder && state.members.some((m) => m.role !== "ouder") ? () => setPagina("planner") : undefined} />}
 
-          {pagina !== "rust" && (
-            <button className="v2-rust-knop" onClick={() => setPagina("rust")} aria-label="Rust: hulp bij boosheid en ruzie">
-              <span aria-hidden="true">🌋</span><span>Rust</span>
-            </button>
-          )}
-          <nav className="ff-nav v2-nav" aria-label="Hoofdmenu" style={{ gridTemplateColumns: `repeat(${NAV.length}, minmax(0, 1fr))` }}>
-            {NAV.map((n) => {
+          <nav className="ff-nav v2-nav" aria-label="Hoofdmenu" style={{ gridTemplateColumns: `repeat(${NAV.length + 1}, minmax(0, 1fr))` }}>
+            {NAV.map((n, i) => {
               const cur = tab === n.id && !pagina;
               return (
-                <button key={n.id} className="ff-nav-item" aria-current={cur ? "page" : undefined} onClick={() => { setPagina(null); setGezinTab(undefined); setTab(n.id); }}>
-                  <Icon name={n.icon} size={26} filled={cur} />
-                  <span>{n.label}</span>
-                </button>
+                <Fragment key={n.id}>
+                  {/* Rust staat in het midden van het menu: op elk scherm één tik weg, zonder iets af te dekken. */}
+                  {i === 2 && (
+                    <button className="ff-nav-item v2-nav-rust" aria-current={pagina === "rust" ? "page" : undefined} onClick={() => setPagina("rust")} aria-label="Rust: hulp bij boosheid en ruzie">
+                      <span className="v2-nav-rust-bol"><Icon name="rust" size={24} /></span>
+                      <span>Rust</span>
+                    </button>
+                  )}
+                  <button className="ff-nav-item" aria-current={cur ? "page" : undefined} onClick={() => { setPagina(null); setGezinTab(undefined); setTab(n.id); }}>
+                    <Icon name={n.icon} size={26} filled={cur} />
+                    <span>{n.label}</span>
+                  </button>
+                </Fragment>
               );
             })}
           </nav>

@@ -33,7 +33,7 @@ export function WeekTab({ state, me, onToast, onOpenLid, onCoach, onPlanner }: {
         </div>
       </header>
 
-      {!isOuder && <MijnWeekKort state={state} me={me} startOpen />}
+      {!isOuder && <MijnWeekKort state={state} me={me} />}
       {isOuder && kinderen.length > 0 && (
         <section className="ff-card ff-stack-s" aria-label="Weekkaart per kind">
           <b>Hoe staat de week ervoor?</b>

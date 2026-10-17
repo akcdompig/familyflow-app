@@ -1296,3 +1296,23 @@ button.v2-samen-actie { justify-self: start; min-height: 34px; padding-left: 0; 
 .v2-regel-weg { flex: none; width: 36px; height: 36px; border: 0; border-radius: 50%; background: var(--ff-vlak); color: var(--ff-tekst-zacht); font: inherit; font-weight: 800; cursor: pointer; }
 .v2-regel-zeker { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .v2-afspraak { flex-wrap: wrap; }
+
+/* ---------- 3.11 ---------- */
+/* Rust in het menu: rood rondje in het midden, geen zwevende knop meer. */
+.v2-nav-rust { color: var(--ff-koraal-knop); }
+.v2-nav-rust-bol { display: grid; place-items: center; width: 36px; height: 36px; margin-top: -6px; border-radius: 50%; background: var(--ff-koraal-knop); color: #fff; box-shadow: 0 4px 12px rgba(196, 58, 38, .3); }
+.v2-nav-rust[aria-current="page"] { font-weight: 800; }
+.ff-app.v2 { padding-bottom: calc(108px + env(safe-area-inset-bottom, 0px)); }
+.v2-weekregel { display: flex; align-items: center; gap: 10px; width: 100%; padding: 12px 14px; min-height: 52px; border: 2px solid var(--ff-lijn); border-radius: 18px; background: var(--ff-vlak); font: inherit; color: var(--ff-tekst); text-align: left; cursor: pointer; }
+.v2-plus-afspraak { margin-left: auto; margin-right: 8px; width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--ff-lijn); background: var(--ff-vlak); color: var(--ff-actie); font: inherit; font-size: 22px; font-weight: 800; cursor: pointer; flex: none; }
+.v2-regel { display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px; border-radius: var(--ff-rond-m); background: var(--ff-wolk); }
+.v2-regel.is-voorstel { background: var(--ff-zon-zacht); }
+.v2-regel.is-vast { background: var(--ff-vlak); border: 2px dashed var(--ff-lijn); }
+.v2-oordeel-tekst.is-ja { color: var(--ff-munt-donker); font-weight: 700; }
+.v2-regel-kies { border-top: 1px solid var(--ff-lijn); padding-top: 10px; }
+.v2-kies-rij { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 14px; background: var(--ff-vlak); border: 2px solid var(--ff-lijn); }
+.v2-kies-rij.is-aan { border-color: var(--ff-munt-donker); background: var(--ff-munt-zacht); }
+.v2-kies-emoji { font-size: 22px; width: 28px; text-align: center; flex: none; }
+.v2-eigen-klus input { width: 100%; box-sizing: border-box; }
+.v2-kiezer { text-align: left; }
+.v2-week-details > summary { cursor: pointer; min-height: 32px; color: var(--ff-tekst-zacht); font-weight: 700; }

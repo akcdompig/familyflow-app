@@ -29,7 +29,7 @@ function Balk({ pct, treden }: { pct: number; treden: WeekTrede[] }) {
 }
 
 /** Eén zin: hoe staat de bonus ervoor? */
-function bonusZin(k: Kaart): string {
+export function bonusZin(k: Kaart): string {
   if (k.gesloten) return k.gesloten.gehaald ? `Week afgesloten: ${k.gesloten.beloning ?? "gehaald"} 🎉` : "Week afgesloten";
   if (k.behaald < 0) {
     const t = k.treden[0];
@@ -37,6 +37,20 @@ function bonusZin(k: Kaart): string {
   }
   const binnen = watOf(k.treden[k.behaald]);
   return k.volgende ? `${binnen} binnen! Nog ${vinkjes(k.volgende.nog)} tot ${watOf(k.volgende)}` : `🏁 ${binnen} gehaald!`;
+}
+
+/** Eén regel op Vandaag (kinderen): hoe staat je week ervoor? Tik = naar Week. */
+export function WeekRegel({ state, me, onWeek }: { state: FamilyState; me: Member; onWeek: () => void }) {
+  const k = weekKaart(state, me.id);
+  if (!k.totaal && !k.gesloten) return null;
+  const heeftBonus = k.treden.some((t) => t.wat);
+  return (
+    <button className="v2-weekregel" onClick={onWeek} aria-label={`${heeftBonus ? bonusZin(k) : `Je week: ${k.pct}%`}. Bekijk de week`}>
+      <span aria-hidden="true">🗓️</span>
+      <b className="ff-grow">{heeftBonus ? bonusZin(k) : `Je week: ${k.pct}% gedaan`}</b>
+      <span aria-hidden="true">›</span>
+    </button>
+  );
 }
 
 /** Kort, voor kinderen (bovenaan Week): hoe staat mijn week en mijn bonus ervoor? */
@@ -147,7 +161,7 @@ export function WeekOuder({ state, kind, me, onToast }: { state: FamilyState; ki
       <div className="ff-row"><b className="ff-grow">{titel}</b><span className="ff-small ff-muted">{k.pct}% · {k.dagenGoed}/{k.dagen} dagen goed</span></div>
       <Balk pct={k.pct} treden={k.treden} />
       <span className="ff-small">{bonusZin(k)}</span>
-      <WeekDetails k={k} />
+      <details className="v2-week-details"><summary className="ff-small">Wat telt er mee?</summary><WeekDetails k={k} /></details>
       {k.gesloten ? (
         <div className="ff-row v2-week-dicht">
           <span className="ff-small ff-grow">🔒 Afgesloten op {datumKort(k.gesloten.at.slice(0, 10))}: {k.gesloten.gehaald ? `${k.gesloten.beloning ?? "gehaald"} (${k.gesloten.pct}%)` : `geen bonus (${k.gesloten.pct}%)`}</span>
@@ -178,10 +192,6 @@ export function WeekOuder({ state, kind, me, onToast }: { state: FamilyState; ki
 
   return (
     <section className="ff-card ff-stack-s v2-weekouder" aria-label={`Week van ${kind.name}`} style={{ width: "100%" }}>
-      {vorige.totaal > 0 && !vorige.gesloten && blok(vorige, `Vorige week (vanaf ${datumKort(vorigeMa)})`, true)}
-      {blok(deze, "Deze week", zondag)}
-      {!zondag && !deze.gesloten && <span className="ff-small ff-muted">Afsluiten kan op zondag, bij het weekoverleg.</span>}
-      <Eerder state={state} kind={kind} ouder />
       {!instellen ? (
         <button className="ff-link ff-small" onClick={() => setInstellen(true)}>
           Weekbonus: {huidig.map((t) => `${t.pct}% → ${watOf(t)}`).join(" · ")}{state.weekAfspraak?.[kind.id]?.zakgeld ? ` · zakgeld ${state.weekAfspraak[kind.id].zakgeld}` : ""} · aanpassen
@@ -206,6 +216,10 @@ export function WeekOuder({ state, kind, me, onToast }: { state: FamilyState; ki
           </div>
         </div>
       )}
+      {vorige.totaal > 0 && !vorige.gesloten && blok(vorige, `Vorige week (vanaf ${datumKort(vorigeMa)})`, true)}
+      {blok(deze, "Deze week", zondag)}
+      {!zondag && !deze.gesloten && <span className="ff-small ff-muted">Afsluiten kan op zondag, bij het weekoverleg.</span>}
+      <Eerder state={state} kind={kind} ouder />
     </section>
   );
 }

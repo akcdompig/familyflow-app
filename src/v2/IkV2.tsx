@@ -12,7 +12,7 @@ import { BADGES, bijna } from "@/lib/badges";
 import { expressionFor } from "@/lib/mood";
 import { actions } from "@/lib/store";
 import type { OpenRegel } from "@/lib/herkomst";
-import { geclaimd, levelProgress, teClaimen, xpForLevel } from "@/lib/xp";
+import { geclaimd, levelProgress, teClaimen } from "@/lib/xp";
 import type { FamilyState, Member } from "@/lib/types";
 
 /** Ik: je level, schatkist, achievements en je instellingen. Alles wat over jou gaat op één plek. */
@@ -25,7 +25,6 @@ export function IkV2({ state, me, onToast, onAvatar, onWerk, onMeer, onOuders, o
   const mijnBadges = (state.badges ?? []).filter((b) => b.who === me.id);
   const voortgang = bijna(state, me.id);
   const isOuder = me.role === "ouder";
-  const volgendeBeloning = state.rewards.filter((r) => r.title && r.level > lp.level).sort((a, b) => a.level - b.level)[0];
   const R = 58;
   const omtrek = 2 * Math.PI * R;
 
@@ -42,7 +41,7 @@ export function IkV2({ state, me, onToast, onAvatar, onWerk, onMeer, onOuders, o
         </div>
         <h1 className="ff-h1">{me.name}</h1>
         <span className="ff-small ff-muted">{xp} punten · nog {lp.left} tot niveau {lp.level + 1}</span>
-        {!isOuder && volgendeBeloning && <span className="ff-small">🎁 Niveau {volgendeBeloning.level}: {volgendeBeloning.title} <span className="ff-muted">(nog {xpForLevel(volgendeBeloning.level) - xp})</span></span>}
+        {/* 3.11: echte beloningen lopen via de weekbonus (Week). Punten en niveaus zijn het spel. */}
       </section>
 
       {/* Ouders: wat je voor het gezin regelt, staat bovenaan. */}
@@ -56,8 +55,8 @@ export function IkV2({ state, me, onToast, onAvatar, onWerk, onMeer, onOuders, o
       {kist > 0 && (
         <section className="ff-card ff-schatkist">
           <div className="ff-schatkist-bol" aria-hidden="true">💎<b>+{kist}</b></div>
-          <div className="ff-grow"><b>Je schatkist</b> <Info label="Wat is de schatkist?" tekst="Punten die je verdient komen hier. Tik op Claim en je ziet waarvoor je ze kreeg. Daarna tellen ze mee voor je niveau." /><span className="ff-small ff-muted ff-block">{kist} punten om te claimen</span></div>
-          <button className="ff-btn ff-btn-primary" onClick={() => { const c = actions.claim(me.id); if (c) setClaim({ van: c.van, n: c.totaal, regels: c.regels }); }}>Claim</button>
+          <div className="ff-grow"><b>Je schatkist</b> <Info label="Wat is de schatkist?" tekst="Punten die je verdient komen hier. Tik op Ophalen en je ziet waarvoor je ze kreeg. Daarna tellen ze mee voor je niveau. Punten zijn voor het spel; de echte beloning is je weekbonus." /><span className="ff-small ff-muted ff-block">{kist} punten om op te halen</span></div>
+          <button className="ff-btn ff-btn-primary" onClick={() => { const c = actions.claim(me.id); if (c) setClaim({ van: c.van, n: c.totaal, regels: c.regels }); }}>Ophalen</button>
         </section>
       )}
 

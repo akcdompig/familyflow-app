@@ -303,6 +303,8 @@ export interface Afspraak {
   evaluaties?: { at: string; by: string; oordeel: Oordeel }[];
   /** Gestopt: het gezin heeft hem losgelaten of vervangen. */
   gestopt?: string;
+  /** Voorstel van een kind: telt pas als een ouder hem goedkeurt. */
+  voorstel?: boolean;
 }
 export type Oordeel = "ja" | "beetje" | "nee";
 

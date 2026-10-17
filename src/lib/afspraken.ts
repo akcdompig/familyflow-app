@@ -14,7 +14,27 @@ export const OORDEEL: Record<Oordeel, { label: string; emoji: string }> = {
   nee: { label: "Nee, nog niet", emoji: "👎" },
 };
 
-export const actief = (s: FamilyState) => (s.afspraken ?? []).filter((a) => !a.gestopt);
+export const actief = (s: FamilyState) => (s.afspraken ?? []).filter((a) => !a.gestopt && !a.voorstel);
+/** Voorstellen van kinderen die nog op een ouder wachten. */
+export const voorstellen = (s: FamilyState) => (s.afspraken ?? []).filter((a) => !a.gestopt && a.voorstel);
+
+/** Veelgebruikte huisregels om uit te kiezen. Kort, concreet, positief waar het kan. */
+export const STANDAARD_HUISREGELS = [
+  "Niet slaan, schoppen of duwen",
+  "Normaal praten, niet schreeuwen",
+  "Boos? Eerst even weg, later praten",
+  "Kloppen voordat je bij een ander binnenkomt",
+  "Vragen voordat je iets van een ander pakt",
+  "Opruimen wat je zelf pakt",
+  "Eerst je dag af, dan je scherm",
+  "Aan tafel geen telefoon",
+  "Telefoon om 21.00 aan de lader",
+  "Samen eten, iedereen schuift aan",
+  "Op tijd thuis, of even appen",
+  "Schoenen uit bij de deur",
+  "Huiswerk voor het gamen",
+  "Sorry zeggen en het weer goedmaken",
+];
 
 /** Laatste oordeel van het gezin over deze afspraak. */
 export const laatsteOordeel = (a: Afspraak) => a.evaluaties?.at(-1);

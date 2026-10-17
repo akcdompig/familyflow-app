@@ -13,8 +13,8 @@ export function PuntenHistorie({ state, me }: { state: FamilyState; me: Member }
       <summary><b>Waar komen mijn punten vandaan?</b></summary>
       <div className="ff-stack-s">
         {open.totaal > 0 && (
-          <section aria-label="Nog te claimen" className="ff-stack-xs">
-            <span className="ff-eyebrow">Nog te claimen · {open.totaal}</span>
+          <section aria-label="Nog op te halen" className="ff-stack-xs">
+            <span className="ff-eyebrow">Nog op te halen · {open.totaal}</span>
             <Regels regels={open.regels} />
           </section>
         )}

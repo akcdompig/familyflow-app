@@ -1,5 +1,6 @@
 "use client";
 
+import { KlusKiezer } from "./KlusKiezer";
 import { useState } from "react";
 import { Info } from "@/components/screens/Uitleg";
 import { Avatar } from "@/components/avatar/Avatar";
@@ -148,6 +149,7 @@ export function Klussen({ state, me, lijst, onToast, simpel = false }: { state: 
   const [openKey, setOpenKey] = useState<string | null>(null);
   const [verdeel, setVerdeel] = useState(false);
   const [afspraken, setAfspraken] = useState(false);
+  const [kiezen, setKiezen] = useState(false);
   const open = lijst.find((k) => k.key === openKey) ?? null;
   const isOuder = me.role === "ouder";
   // Eigen kamer: alleen die van jezelf tonen aan kinderen, ouders zien alles.
@@ -203,7 +205,10 @@ export function Klussen({ state, me, lijst, onToast, simpel = false }: { state: 
     <div className="ff-stack">
       {isOuder && (
         <div className="ff-stack-xs">
-          <button className="ff-btn ff-btn-primary ff-btn-wide v2-verdeel-knop" onClick={() => setVerdeel(true)}>📋 Verdeel de taken</button>
+          <div className="ff-row">
+            <button className="ff-btn ff-btn-ghost ff-grow" onClick={() => setKiezen(true)}>🧹 Klussen kiezen</button>
+            <button className="ff-btn ff-btn-primary ff-grow v2-verdeel-knop" onClick={() => setVerdeel(true)}>📋 Verdeel de taken</button>
+          </div>
           <span className="ff-small ff-muted">Hoe werkt dat? <Info label="Hoe werkt Verdeel de taken?" tekst="De app maakt een voorstel voor de week: eerlijk naar tijd, met school, werk en leeftijd erbij. Jij kijkt het na, wisselt wat niet klopt en tikt op Bevestigen. Daarna ziet iedereen het." /></span>
         </div>
       )}
@@ -223,6 +228,7 @@ export function Klussen({ state, me, lijst, onToast, simpel = false }: { state: 
 
       <KlusSheet state={state} me={me} klus={open} onClose={() => setOpenKey(null)} onToast={onToast} />
       <AfsprakenSheet open={afspraken} onClose={() => setAfspraken(false)} state={state} me={me} onToast={onToast} />
+      {isOuder && <KlusKiezer open={kiezen} onClose={() => setKiezen(false)} state={state} onToast={onToast} />}
     </div>
   );
 }

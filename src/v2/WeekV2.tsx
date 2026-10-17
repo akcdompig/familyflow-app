@@ -89,7 +89,8 @@ export function WeekV2({ state, me, onToast, onOpenLid }: { state: FamilyState; 
       <AfsprakenOpDag state={state} me={me} datum={dag} onToast={onToast} />
 
       {/* Terugblik of vandaag: hoe ging het? */}
-      {!toekomst && (
+      {/* Vandaag staat al op Vandaag en bij de kinderen; hier alleen eerdere dagen en wat er nog komt. */}
+      {verleden && (
         <section className="ff-card ff-stack-s" aria-label="Hoe ging deze dag">
           <b>{verleden ? "Hoe ging het?" : "Tot nu toe"}</b>
           <span className="ff-small ff-muted">Telt: ochtendroutine, eten, taken en klussen. Tik op iemand om te zien wat er precies gedaan is.</span>
@@ -98,7 +99,7 @@ export function WeekV2({ state, me, onToast, onOpenLid }: { state: FamilyState; 
       )}
 
       {/* Vooruit: werk, school, eten, klussen, toetsen */}
-      {!verleden && (
+      {toekomst && (
         <section className="ff-card ff-stack-s" aria-label="Wat staat er">
           <b>{toekomst ? "Wat staat er" : "Verder vandaag"}</b>
           {leden.map((m) => {

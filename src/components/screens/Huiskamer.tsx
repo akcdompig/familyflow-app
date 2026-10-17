@@ -508,7 +508,7 @@ function Schatkist({ state, me }: { state: FamilyState; me: Member }) {
           <div className="ff-schatkist-bol" aria-hidden="true">💎<b>+{n}</b></div>
           <div className="ff-grow">
             <b>Je schatkist</b>
-            <span className="ff-small ff-muted ff-block">{n} punten gespaard. Claim ze als je wilt, of spaar door.</span>
+            <span className="ff-small ff-muted ff-block">{n} punten gespaard. Haal ze op als je wilt, of spaar door.</span>
           </div>
           <button className="ff-btn ff-btn-primary" onClick={() => { const c = actions.claim(me.id); if (c) setViering({ van: c.van, n: c.totaal, regels: c.regels }); }}>Claim</button>
         </div>

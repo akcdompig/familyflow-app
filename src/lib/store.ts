@@ -789,8 +789,8 @@ export const actions = {
   removeQuest(id: string) {
     update((s) => ({ ...s, quests: (s.quests ?? []).filter((x) => x.id !== id) }));
   },
-  addAfspraak(text: string, by: string, scenario?: string) {
-    const a = { id: newId("a"), text: text.trim(), at: new Date().toISOString(), by, scenario };
+  addAfspraak(text: string, by: string, scenario?: string, voorstel?: boolean) {
+    const a = { id: newId("a"), text: text.trim(), at: new Date().toISOString(), by, scenario, ...(voorstel ? { voorstel: true } : {}) };
     if (!a.text) return;
     update((s) => ((s.afspraken ?? []).some((x) => x.text === a.text && !x.gestopt) ? s : { ...s, afspraken: [...(s.afspraken ?? []), a].slice(-50) }));
   },
@@ -803,6 +803,11 @@ export const actions = {
   stopAfspraak(id: string) {
     const at = new Date().toISOString();
     update((s) => ({ ...s, afspraken: (s.afspraken ?? []).map((a) => (a.id === id ? { ...a, gestopt: at } : a)) }));
+  },
+  /** Voorstel van een kind goedkeuren: vanaf nu is het een huisregel (en over een week vragen we of hij helpt). */
+  keurHuisregelGoed(id: string) {
+    const at = new Date().toISOString();
+    update((s) => ({ ...s, afspraken: (s.afspraken ?? []).map((a) => (a.id === id ? { ...a, voorstel: undefined, at } : a)) }));
   },
   removeAfspraak(id: string) {
     update((s) => ({ ...s, afspraken: (s.afspraken ?? []).filter((x) => x.id !== id) }));

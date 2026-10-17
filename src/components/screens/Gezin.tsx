@@ -210,15 +210,9 @@ export function Gezin({ state, me, onToast, onOefenen, onCoachNu, instellen = fa
       <section className="ff-card ff-stack">
         <div>
           <h2 className="ff-h2">Beloningen</h2>
-          <p className="ff-small ff-muted">Kinderen sparen punten met taken, oefenen en ruzies oplossen. Wat krijgen ze bij elk level?</p>
+          <p className="ff-small ff-muted">Eén systeem voor echte beloningen: de weekbonus. Die stel je per kind in bij Week (tik op een kind). Zakgeld staat daar los van en krijgen ze altijd.</p>
+          <p className="ff-small ff-muted">Punten en niveaus zijn het spel: voor plezier en om te zien wat je deed. Er hangt geen geld of beloning aan, zodat er niet twee systemen naast elkaar lopen.</p>
         </div>
-        {state.rewards.map((r, i) => (
-          <label key={r.level} className="ff-reward-edit">
-            <span className="ff-reward-lvl">Lvl {r.level}</span>
-            <input value={r.title} maxLength={50} onChange={(e) => actions.setRewards(state.rewards.map((x, j) => (j === i ? { ...x, title: e.target.value } : x)))} aria-label={`Beloning bij level ${r.level}`} />
-          </label>
-        ))}
-        <button className="ff-link" onClick={() => actions.setRewards([...state.rewards, { level: (state.rewards[state.rewards.length - 1]?.level ?? 1) + 1, title: "" }])}>+ Level toevoegen</button>
         <details className="ff-details">
           <summary><b>Zo verdienen de kinderen punten</b></summary>
           <ul className="ff-list ff-small">{XP_UITLEG.map(([a, b]) => <li key={a}><b>{a}:</b> {b}</li>)}</ul>
@@ -227,7 +221,7 @@ export function Gezin({ state, me, onToast, onOefenen, onCoachNu, instellen = fa
         </details>
         {state.members.filter((m) => m.role !== "ouder").map((k) => {
           const mins = (state.reading?.[k.id] ?? []).filter((r) => Date.now() - new Date(r.at).getTime() < 7 * 864e5).reduce((a, r) => a + r.min, 0);
-          return <p key={k.id} className="ff-small"><b>{k.name}:</b> niveau {levelOf(geclaimd(state, k.id))} · {state.xp[k.id] ?? 0} punten{teClaimen(state, k.id) ? ` (${teClaimen(state, k.id)} nog te claimen)` : ""} · {mins} min gelezen deze week</p>;
+          return <p key={k.id} className="ff-small"><b>{k.name}:</b> niveau {levelOf(geclaimd(state, k.id))} · {state.xp[k.id] ?? 0} punten{teClaimen(state, k.id) ? ` (${teClaimen(state, k.id)} nog op te halen)` : ""} · {mins} min gelezen deze week</p>;
         })}
       </section>
 

@@ -66,7 +66,8 @@ export function GezinV2({ state, me, onToast, onOuders, onOpenLid, onTips, onRuz
         <Row members={state.members.filter((m) => m.role !== "ouder")} row="voor" state={state} me={me} onOpen={onOpenLid} />
       </section>
 
-      <SamenVandaag state={state} me={me} onOpen={onOpenLid} />
+      {/* Ouders zien de kinderen al bovenaan Vandaag; hier alleen voor kinderen. */}
+      {!isOuder && <SamenVandaag state={state} me={me} onOpen={onOpenLid} />}
       <Attention state={state} me={me} onTalkTips={onTips} onCheckIn={onCheckIn} onGoTasks={isOuder ? onWeek : naarKlussen} onRuzie={onRuzie} onGoGezin={onOuders} />
       <Vragen state={state} me={me} onToast={onToast} />
       {isOuder && <SchermOverzicht state={state} onOpen={onOpenLid} />}
@@ -74,7 +75,7 @@ export function GezinV2({ state, me, onToast, onOuders, onOpenLid, onTips, onRuz
       <Inbox state={state} me={me} />
       {isOuder && <NetGedaan state={state} me={me} />}
 
-      <Huisregels state={state} me={me} onToast={onToast} onKlussen={naarKlussen} />
+      <Huisregels state={state} me={me} onToast={onToast} />
 
       <details id="gezin-klussen" className="v2-meer-details" open={klussenOpen} onToggle={(e) => setKlussenOpen((e.currentTarget as HTMLDetailsElement).open)}>
         <summary><b>🧹 Klussen{isOuder ? " verdelen" : ""}</b>{teLaat > 0 ? <span className="v2-badge-inline">{teLaat} te laat</span> : null} <span className="ff-small ff-muted">{isOuder ? "wie doet wat in huis" : "wat er in huis moet gebeuren"}</span></summary>

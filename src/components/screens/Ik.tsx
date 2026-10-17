@@ -77,7 +77,8 @@ export function Ik({ state, me, onEditAvatar, onCalm, onToast }: { state: Family
         </section>
       )}
 
-      {!isParent && state.rewards.length > 0 && (
+      {/* 3.11: echte beloningen lopen via de weekbonus; niveaubeloningen tonen we niet meer (data blijft bewaard). */}
+      {false && !isParent && state.rewards.length > 0 && (
         <section className="ff-card ff-stack-s">
           <h2 className="ff-h2">Mijn beloningen</h2>
           <p className="ff-small ff-muted">Afgesproken met je ouders. Haal je een level, dan mag je het inleveren.</p>

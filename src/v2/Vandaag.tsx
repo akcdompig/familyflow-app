@@ -15,7 +15,7 @@ import { teClaimen } from "@/lib/xp";
 import { OngezondKnop } from "./Voeding";
 import { dagStand } from "@/lib/groei";
 import { SchermKind } from "./Scherm";
-import { MijnWeekKort } from "@/components/screens/WeekKaart";
+import { WeekRegel } from "@/components/screens/WeekKaart";
 import { slaapt } from "@/lib/status";
 import { KlusSheet, antwoordTekst, vraagVan } from "@/components/screens/KlusSheet";
 import { klusStatus } from "@/lib/huis";
@@ -209,6 +209,7 @@ export function Vandaag({ state, me, onToast, onMeerGevoel, onWie, onPlanner, on
             </button>
           )}
         </div>
+        <button className="v2-plus-afspraak" onClick={() => setNieuweAfspraak(true)} aria-label="Afspraak toevoegen">＋</button>
         <button className="v2-ik" onClick={onWie} aria-label={`Je bent ${me.name}`}>
           <Avatar config={me.avatar} expression={expressionFor(ci)} size={40} headOnly animate={false} label={me.name} />
         </button>
@@ -260,7 +261,7 @@ export function Vandaag({ state, me, onToast, onMeerGevoel, onWie, onPlanner, on
 
       {/* Daarna pas de rest. Eerst wat het afvinken oplevert: je scherm en je week. */}
       {me.role !== "ouder" && <SchermKind state={state} me={me} />}
-      {me.role !== "ouder" && <MijnWeekKort state={state} me={me} />}
+      {me.role !== "ouder" && onWeek && <WeekRegel state={state} me={me} onWeek={onWeek} />}
 
       <Drinken state={state} me={me} onToast={onToast} />
 
@@ -278,12 +279,8 @@ export function Vandaag({ state, me, onToast, onMeerGevoel, onWie, onPlanner, on
 
       {!pushLater && <Herinneringen compact onToast={onToast} onWeg={() => { setPushLater(true); try { localStorage.setItem("familyflow:push-later", String(Date.now())); } catch { /* */ } }} />}
 
-      <button className="v2-menu-rij" onClick={() => setNieuweAfspraak(true)}><span aria-hidden="true">📅</span><b className="ff-grow">Afspraak toevoegen</b><span aria-hidden="true">›</span></button>
-      {onWeek && <button className="v2-menu-rij" onClick={onWeek}><span aria-hidden="true">🗓️</span><b className="ff-grow">Bekijk de week</b><span aria-hidden="true">›</span></button>}
+      {/* 3.11: week en huiswerk staan bij Week; een afspraak zet je met het plusje bovenaan. */}
       <AfspraakSheet open={nieuweAfspraak} me={me} datum={iso(new Date())} onClose={() => setNieuweAfspraak(false)} onToast={onToast} />
-      {me.role !== "ouder" && onPlanner && (
-        <button className="v2-menu-rij" onClick={onPlanner}><span aria-hidden="true">📚</span><b className="ff-grow">Huiswerk en toetsen plannen</b><span aria-hidden="true">›</span></button>
-      )}
 
       {claim && <ClaimViering me={me} van={claim.van} n={claim.n} regels={claim.regels} onKlaar={() => setClaim(null)} />}
       <KlusSheet state={state} me={me} klus={klusOpen ? klusStatus(state).find((k) => k.key === klusOpen) ?? null : null} onClose={() => setKlusOpen(null)} onToast={onToast} />

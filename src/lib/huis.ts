@@ -40,7 +40,30 @@ export interface Klus {
   standaardUit?: boolean;
   /** Zelf toegevoegd door de ouders. */
   eigen?: boolean;
+  /** Groep in de bibliotheek (keuken, huis, badkamer, ...). */
+  groep?: KlusGroep;
 }
+
+export type KlusGroep = "keuken" | "huis" | "badkamer" | "was" | "kamer" | "buiten" | "dieren" | "koken";
+export const KLUS_GROEPEN: { id: KlusGroep; label: string; emoji: string }[] = [
+  { id: "keuken", label: "Keuken en tafel", emoji: "🍽️" },
+  { id: "huis", label: "Woonkamer en huis", emoji: "🛋️" },
+  { id: "badkamer", label: "Badkamer en wc", emoji: "🛁" },
+  { id: "was", label: "Was en bedden", emoji: "👕" },
+  { id: "kamer", label: "Eigen kamer", emoji: "🛏️" },
+  { id: "buiten", label: "Afval en buiten", emoji: "🗑️" },
+  { id: "dieren", label: "Huisdieren", emoji: "🐾" },
+  { id: "koken", label: "Koken en boodschappen", emoji: "🥕" },
+];
+const GROEP_VAN: Record<string, KlusGroep> = {
+  "vaat-uit": "keuken", "vaat-in": "keuken", keuken: "keuken", koelkast: "keuken", "tafel-dekken": "keuken", "tafel-af": "keuken",
+  stofzuigen: "huis", woonkamer: "huis", ramen: "huis",
+  badkamer: "badkamer",
+  was: "was", "was-vouwen": "was", "was-opbergen": "was", bedden: "was",
+  kamer: "kamer",
+  afval: "buiten", flessen: "buiten",
+  boodschappen: "koken", boodschappenlijst: "koken", "koken-helpen": "koken", maaltijd: "koken",
+};
 
 export const KLUSSEN: Klus[] = [
   { id: "vaat-uit", label: "Vaatwasser uitruimen", emoji: "🍽️", elke: 1, xp: 5, rommel: "🍽️", minuten: 10, vanaf: 7, instructie: "Alles uit de vaatwasser op zijn plek zetten. Scherpe messen laat je liggen voor een ouder." },
@@ -65,11 +88,45 @@ export const KLUSSEN: Klus[] = [
   { id: "boodschappenlijst", label: "Boodschappenlijst aanvullen", emoji: "📝", elke: 7, xp: 5, rommel: "📝", minuten: 5, vanaf: 9, standaardUit: true, instructie: "Kijk in de koelkast en de kast wat bijna op is en zet het op de lijst." },
   { id: "koken-helpen", label: "Helpen met koken", emoji: "🥕", elke: 7, xp: 10, rommel: "🥘", iedereen: true, minuten: 30, vanaf: 8, standaardUit: true, begeleiding: true, instructie: "Groente wassen en snijden, tafel klaarzetten. Een ouder doet het fornuis en de oven." },
   { id: "maaltijd", label: "Een eenvoudige maaltijd maken", emoji: "🍳", elke: 7, xp: 20, rommel: "🥘", iedereen: true, minuten: 45, vanaf: 11, standaardUit: true, begeleiding: true, instructie: "Samen een recept kiezen, boodschappen checken en koken. Een ouder blijft in de keuken." },
+  // 3.11: uitgebreide bibliotheek. Alles staat uit; ouders kiezen wat past. Leeftijd is een richtlijn.
+  { id: "aanrecht", groep: "keuken", label: "Aanrecht afnemen", emoji: "🧽", elke: 1, xp: 5, rommel: "🍞", minuten: 5, vanaf: 7, standaardUit: true, instructie: "Kruimels weg, aanrecht nat afnemen met een doekje, daarna droog." },
+  { id: "afwas", groep: "keuken", label: "Afwassen met de hand", emoji: "🫧", elke: 1, xp: 5, rommel: "🍳", minuten: 15, vanaf: 8, standaardUit: true, instructie: "Warm water met een beetje afwasmiddel. Eerst glazen, dan borden, dan pannen. Scherpe messen laat je liggen." },
+  { id: "afdrogen", groep: "keuken", label: "Afdrogen en opruimen", emoji: "🍽️", elke: 1, xp: 5, rommel: "🥄", minuten: 10, vanaf: 7, standaardUit: true, instructie: "Met een schone theedoek afdrogen en alles in de kast zetten." },
+  { id: "broodtrommels", groep: "keuken", label: "Broodtrommel en beker legen", emoji: "🥪", elke: 1, xp: 2, rommel: "🥪", minuten: 3, vanaf: 6, perKind: true, standaardUit: true, instructie: "Na school: trommel en beker uit je tas, restjes weg, in de vaatwasser." },
+  { id: "koelkast-poetsen", groep: "keuken", label: "Koelkast schoonmaken", emoji: "🧊", elke: 14, xp: 10, rommel: "🧀", minuten: 20, vanaf: 10, standaardUit: true, instructie: "Over de datum weggooien, planken afnemen met een sopje, alles terugzetten." },
+  { id: "magnetron", groep: "keuken", label: "Magnetron schoonmaken", emoji: "📦", elke: 14, xp: 5, rommel: "🍲", minuten: 10, vanaf: 9, standaardUit: true, instructie: "Bakje water met citroen 2 minuten verwarmen, dan binnenkant uitvegen." },
+  { id: "kookplaat", groep: "keuken", label: "Kookplaat schoonmaken", emoji: "🍳", elke: 7, xp: 5, rommel: "🍳", minuten: 10, vanaf: 11, standaardUit: true, instructie: "Alleen als hij koud is. Sopje en een zachte spons, daarna droog." },
+  { id: "theedoeken", groep: "keuken", label: "Theedoeken en vaatdoekjes verwisselen", emoji: "🧻", elke: 3, xp: 2, rommel: "🧻", minuten: 2, vanaf: 7, standaardUit: true, instructie: "Vieze in de wasmand, schone uit de la." },
+  { id: "dweilen", groep: "huis", label: "Dweilen", emoji: "🪣", elke: 7, xp: 10, rommel: "👣", minuten: 20, vanaf: 11, standaardUit: true, instructie: "Eerst stofzuigen. Emmer met lauw water en een scheutje allesreiniger, dweil goed uitwringen." },
+  { id: "stoffen", groep: "huis", label: "Stof afnemen", emoji: "🪶", elke: 7, xp: 5, rommel: "💨", minuten: 15, vanaf: 8, standaardUit: true, instructie: "Kasten, vensterbanken en de tv-kast met een licht vochtige doek." },
+  { id: "trap", groep: "huis", label: "Trap stofzuigen", emoji: "🪜", elke: 7, xp: 5, rommel: "💨", minuten: 10, vanaf: 10, standaardUit: true, instructie: "Van boven naar beneden, elke tree, ook de hoekjes." },
+  { id: "planten", groep: "huis", label: "Planten water geven", emoji: "🪴", elke: 3, xp: 2, rommel: "🥀", minuten: 5, vanaf: 6, standaardUit: true, instructie: "Voel met je vinger: droog? Dan een scheut water. Nat? Overslaan." },
+  { id: "schoenen", groep: "huis", label: "Schoenen en jassen opruimen", emoji: "👟", elke: 1, xp: 2, rommel: "👟", minuten: 5, vanaf: 5, iedereen: true, standaardUit: true, instructie: "Schoenen in het rek, jassen aan de kapstok, tassen niet in de gang." },
+  { id: "speelgoed", groep: "huis", label: "Speelgoed opruimen", emoji: "🧸", elke: 1, xp: 2, rommel: "🧸", minuten: 10, vanaf: 4, standaardUit: true, instructie: "Alles terug in de bak of de kast waar het hoort." },
+  { id: "spiegels", groep: "huis", label: "Spiegels en deuren afnemen", emoji: "✨", elke: 14, xp: 5, rommel: "✋", minuten: 10, vanaf: 9, standaardUit: true, instructie: "Vingers van deuren en spiegels poetsen met een vochtige doek, daarna droog." },
+  { id: "wc", groep: "badkamer", label: "Wc schoonmaken", emoji: "🚽", elke: 7, xp: 10, rommel: "🧻", minuten: 10, vanaf: 12, standaardUit: true, instructie: "Handschoenen aan. Middel dat een ouder klaarzet, borstel, en de bril en knop afnemen." },
+  { id: "douche", groep: "badkamer", label: "Douche schoonmaken", emoji: "🚿", elke: 7, xp: 10, rommel: "🫧", minuten: 15, vanaf: 12, standaardUit: true, instructie: "Wanden aftrekken, putje schoonmaken, kranen glanzend." },
+  { id: "handdoeken", groep: "badkamer", label: "Handdoeken verwisselen", emoji: "🧺", elke: 3, xp: 2, rommel: "🧺", minuten: 3, vanaf: 7, standaardUit: true, instructie: "Natte handdoeken in de wasmand, schone ophangen." },
+  { id: "wcpapier", groep: "badkamer", label: "Wc-papier aanvullen", emoji: "🧻", elke: 3, xp: 2, rommel: "🧻", minuten: 2, vanaf: 6, standaardUit: true, instructie: "Nieuwe rol ophangen en een reserve klaarzetten. Bijna op? Zet het op de boodschappenlijst." },
+  { id: "wasmand", groep: "was", label: "Eigen wasmand naar de wasmachine", emoji: "🧺", elke: 2, xp: 2, rommel: "🧦", minuten: 3, vanaf: 6, perKind: true, standaardUit: true, instructie: "Je vieze kleren naar de wasplek brengen. Zakken leeg!" },
+  { id: "sokken", groep: "was", label: "Sokken sorteren", emoji: "🧦", elke: 7, xp: 2, rommel: "🧦", minuten: 10, vanaf: 6, standaardUit: true, instructie: "Paren zoeken, oprollen en per persoon op een stapel." },
+  { id: "strijken", groep: "was", label: "Strijken", emoji: "👔", elke: 7, xp: 10, rommel: "👔", minuten: 20, vanaf: 14, begeleiding: true, standaardUit: true, instructie: "Eerst samen oefenen. Strijkijzer altijd rechtop neerzetten." },
+  { id: "bed-op", groep: "kamer", label: "Bed opmaken", emoji: "🛏️", elke: 1, xp: 2, rommel: "🛏️", minuten: 2, vanaf: 6, perKind: true, standaardUit: true, instructie: "Dekbed recht, kussen erop. Klaar." },
+  { id: "bureau", groep: "kamer", label: "Bureau opruimen", emoji: "🖊️", elke: 7, xp: 5, rommel: "📚", minuten: 10, vanaf: 8, perKind: true, standaardUit: true, instructie: "Papieren weg of in een map, pennen in de bak, bekers naar beneden." },
+  { id: "papier", groep: "buiten", label: "Oud papier wegbrengen", emoji: "📰", elke: 7, xp: 5, rommel: "📦", minuten: 10, vanaf: 8, standaardUit: true, instructie: "Dozen plat, papier bij elkaar, naar de papiercontainer." },
+  { id: "gft", groep: "buiten", label: "Groene bak buiten zetten", emoji: "🍂", elke: 14, xp: 2, rommel: "🍂", minuten: 5, vanaf: 8, standaardUit: true, instructie: "De avond ervoor aan de straat, na het legen weer terug." },
+  { id: "glas", groep: "buiten", label: "Glas wegbrengen", emoji: "🫙", elke: 14, xp: 5, rommel: "🫙", minuten: 15, vanaf: 10, standaardUit: true, instructie: "Potten en flessen zonder statiegeld naar de glasbak. Deksels eraf." },
+  { id: "tuin", groep: "buiten", label: "Tuin of balkon vegen", emoji: "🌿", elke: 7, xp: 5, rommel: "🍃", minuten: 20, vanaf: 8, standaardUit: true, instructie: "Bladeren en zand bij elkaar vegen, onkruid tussen de tegels eruit." },
+  { id: "auto", groep: "buiten", label: "Auto opruimen", emoji: "🚗", elke: 14, xp: 5, rommel: "🥤", minuten: 15, vanaf: 9, standaardUit: true, instructie: "Alles wat niet in de auto hoort eruit, matten uitkloppen." },
+  { id: "hond-uit", groep: "dieren", label: "Hond uitlaten", emoji: "🐕", elke: 1, xp: 5, rommel: "🦴", minuten: 20, vanaf: 10, standaardUit: true, instructie: "Riem om, poepzakje mee, rondje van minstens een kwartier." },
+  { id: "dier-eten", groep: "dieren", label: "Huisdier eten en water geven", emoji: "🐾", elke: 1, xp: 2, rommel: "🥣", minuten: 5, vanaf: 6, standaardUit: true, instructie: "Afgemeten eten in de bak, vers water erbij." },
+  { id: "kattenbak", groep: "dieren", label: "Kattenbak verschonen", emoji: "🐈", elke: 2, xp: 5, rommel: "🐈", minuten: 5, vanaf: 10, standaardUit: true, instructie: "Met het schepje de klontjes eruit, in een zakje, handen wassen." },
+  { id: "hok", groep: "dieren", label: "Kooi of hok schoonmaken", emoji: "🐹", elke: 7, xp: 10, rommel: "🐹", minuten: 20, vanaf: 9, standaardUit: true, instructie: "Dier veilig ergens anders, oud stro eruit, nieuw erin, water verversen." },
 ];
 
 /** Alle taken van dit gezin: de bibliotheek en wat de ouders zelf toevoegden. */
 export function alleKlussen(s: FamilyState): Klus[] {
-  return [...KLUSSEN, ...((s.klusAfspraken?.eigen ?? []).map((e) => ({ rommel: "📌", ...e, eigen: true })) as Klus[])];
+  return [...KLUSSEN.map((k) => (k.groep ? k : { ...k, groep: GROEP_VAN[k.id] ?? "huis" })), ...((s.klusAfspraken?.eigen ?? []).map((e) => ({ rommel: "📌", ...e, eigen: true })) as Klus[])];
 }
 export const klusById = (s: FamilyState, id: string) => alleKlussen(s).find((k) => k.id === id.split(":")[0]);
 /** Staat deze taak aan? Afspraak gaat voor; anders staat de basis aan en de bibliotheek uit. */
