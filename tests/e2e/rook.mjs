@@ -706,7 +706,8 @@ await scenario("v3.3: uitleg bij de eerste keer, sluiten, en via Hulp opnieuw be
 
 await scenario("v3.3: afspraak en week altijd vanaf Vandaag, info-knopje toont één zin", v2, "10:00", async (p) => {
   await wissel(p, "Mama");
-  await knop(p, "Afspraak toevoegen").click();
+  await p.getByRole("button", { name: /^Toevoegen: taak/ }).click();
+  await p.getByRole("dialog").getByRole("button", { name: /^Afspraak Iets op een/ }).click();
   const blad = p.getByRole("dialog");
   assert.match(await blad.innerText(), /Nodig: wat, datum en hoe laat/);
   await blad.getByRole("textbox", { name: /Wat/ }).fill("Huisarts");
@@ -817,14 +818,13 @@ await scenario("v3.6: teller 'x van y gedaan' is uit te klappen (kind, bij Gezin
   assert.match(t, /Werk, school en afspraken tellen niet/);
 });
 
-await scenario("v3.6: een huistaak kan niet nog een keer als losse taak", v2, "10:00", async (p) => {
+await scenario("v3.6/3.12: een huistaak kan niet nog een keer als losse taak", v2, "10:00", async (p) => {
   await wissel(p, "Papa");
-  await gezinTab(p, /Week/);
-  await p.getByText("Taken en roosters").click();
-  await knop(p, "+ Taak").click();
-  await p.getByPlaceholder("Bijv. fiets in de schuur zetten").fill("Vaatwasser uitruimen");
-  assert.match(await p.getByRole("alert").innerText(), /is al een huistaak/);
-  assert.ok(await p.getByRole("button", { name: "Toevoegen", exact: true }).isDisabled());
+  await p.getByRole("button", { name: /^Toevoegen: taak/ }).click();
+  await p.getByRole("dialog").getByRole("button", { name: /^Taak Iets wat je/ }).click();
+  await p.getByRole("dialog").getByLabel("Wat moet er gebeuren?").fill("Vaatwasser uitruimen");
+  assert.match(await p.getByRole("dialog").innerText(), /Dit is een klus voor het huis/);
+  assert.ok(await p.getByRole("dialog").getByRole("button", { name: "Taak toevoegen" }).isDisabled());
 });
 
 // ---------- 3.7: meekijken, de week afsluiten, scherm vrij, oefentoets ----------
@@ -1011,7 +1011,9 @@ await scenario("v3.9: 'afspraak' is alleen nog de agenda; gezinsregels heten hui
   assert.ok(await p.getByRole("region", { name: "Huisregels" }).isVisible());
   assert.equal(await p.getByRole("region", { name: "Onze afspraken" }).count(), 0);
   await tab(p, /Vandaag/).click();
-  assert.ok(await p.getByRole("button", { name: "Afspraak toevoegen" }).isVisible(), "agenda-afspraak blijft afspraak heten");
+  await p.getByRole("button", { name: /^Toevoegen: taak/ }).click();
+  assert.ok(await p.getByRole("dialog").getByRole("button", { name: /^Afspraak Iets op een/ }).isVisible(), "agenda-afspraak blijft afspraak heten");
+  await p.keyboard.press("Escape");
 });
 
 await scenario("v3.9: kind ziet de week positief ('nog x vinkjes'), gevoel als knopje, en één uitlegkaart", v2, "16:00", async (p) => {
@@ -1132,6 +1134,45 @@ await scenario("v3.11: één beloningssysteem: geen niveaubeloning bij Ik, 'Opha
   await tab(p, /^Ik/).click();
   await knop(p, /Gezin instellen/).click();
   assert.match(await p.locator("body").innerText(), /Eén systeem voor echte beloningen: de weekbonus/);
+});
+
+// ---------- 3.12: één plek om toe te voegen ----------
+await scenario("v3.12: ouder voegt 'Boodschappen doen' toe voor morgen, zonder tijd; staat morgen op Vandaag", v2, "10:00", async (p) => {
+  await wissel(p, "Papa");
+  for (const t of [/Vandaag/, /^Week/, /Gezin/]) {
+    await tab(p, t).click();
+    assert.equal(await p.getByRole("button", { name: /^Toevoegen: taak/ }).count(), 1, `plusje op ${t}`);
+  }
+  await tab(p, /Vandaag/).click();
+  await p.getByRole("button", { name: /^Toevoegen: taak/ }).click();
+  const blad = p.getByRole("dialog");
+  assert.match(await blad.innerText(), /Taak[\s\S]*Afspraak[\s\S]*Samen iets doen[\s\S]*Klus voor het huis/);
+  await blad.getByRole("button", { name: /^Taak Iets wat je/ }).click();
+  await blad.getByRole("button", { name: "+ Boodschappen doen" }).click();
+  await blad.getByRole("button", { name: "Morgen", exact: true }).click();
+  await blad.getByRole("button", { name: "Taak toevoegen" }).click();
+  assert.ok(await p.getByText(/Boodschappen doen: morgen ✓/).isVisible());
+  assert.equal(await p.locator(".v2-stap", { hasText: "Boodschappen doen" }).count(), 0, "niet vandaag");
+  await p.clock.setFixedTime(new Date("2026-10-16T10:00:00+02:00"));
+  await p.reload(); await p.waitForSelector(".ff-nav");
+  await wissel(p, "Papa");
+  await p.locator(".v2-deel-kop", { hasText: "Middag" }).click();
+  assert.ok(await p.locator(".v2-stap", { hasText: "Boodschappen doen" }).first().isVisible(), "morgen staat hij in de lijst");
+});
+
+await scenario("v3.12: kind voegt zelf een taak toe met een tijd; geen klus-keuze voor kinderen", v2, "15:00", async (p) => {
+  await wissel(p, "Noah");
+  await p.getByRole("button", { name: /^Toevoegen: taak/ }).click();
+  const blad = p.getByRole("dialog");
+  assert.equal(await blad.getByRole("button", { name: /Klus voor het huis/ }).count(), 0);
+  await blad.getByRole("button", { name: /^Taak Iets wat je/ }).click();
+  assert.equal(await blad.getByText("Voor wie?").count(), 0, "kind voegt alleen voor zichzelf toe");
+  await blad.getByRole("button", { name: "+ Gymtas inpakken" }).click();
+  await blad.getByLabel("Hoe laat (hoeft niet)").fill("19:30");
+  await blad.getByRole("button", { name: "Taak toevoegen" }).click();
+  await p.locator(".v2-deel-kop", { hasText: "Avond" }).click();
+  const rij = p.locator(".v2-stap", { hasText: "Gymtas inpakken" });
+  assert.match(await rij.innerText(), /19\.30/);
 });
 
 await browser.close();

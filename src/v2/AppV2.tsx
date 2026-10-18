@@ -43,6 +43,7 @@ import { VoedingKaart } from "./Voeding";
 import { Groei } from "./Groei";
 import { SchermOuder } from "./Scherm";
 import { WeekTab } from "./WeekTab";
+import { Toevoegen } from "@/components/screens/Toevoegen";
 
 type Tab = "vandaag" | "week" | "gezin" | "ik";
 type Pagina = null | "avatar" | "werk" | "meer" | "ouders" | "planner" | "privacy" | "uitleg" | "rust";
@@ -88,6 +89,7 @@ export function AppV2() {
   const [coachNu, setCoachNu] = useState<string | null>(null);
   const [gezinTab, setGezinTab] = useState<string | undefined>(undefined);
   const [dagOefening, setDagOefening] = useState(false);
+  const [toevoegen, setToevoegen] = useState(false);
 
   useEffect(() => setMounted(true), []);
   useEffect(() => {
@@ -182,9 +184,9 @@ export function AppV2() {
           {/* Eerste keer op een tabblad: één korte uitleg. Daarna niet meer (terug te halen via Hoe werkt de app?). */}
           {/* 3.9: één uitlegkaart, alleen op Vandaag. Niet meer op elk tabblad opnieuw. */}
           {!pagina && tab === "vandaag" && <EersteKeer key={`vandaag-${me.id}`} tab={"vandaag" as UitlegTab} me={me} onMeer={() => setPagina("uitleg")} />}
-          {!pagina && tab === "vandaag" && <Vandaag state={state} me={me} onToast={setToast} onMeerGevoel={() => setCheckIn(true)} onWie={() => (live ? setTab("ik") : setWie(true))} onPlanner={() => setPagina("planner")} onWeek={() => setTab("week")} onDagOefening={() => setDagOefening(true)} onLid={setLid} />}
-          {!pagina && tab === "week" && <WeekTab state={state} me={me} onToast={setToast} onOpenLid={setLid} onCoach={(id) => setCoachNu(id)} onPlanner={!isOuder || state.members.some((m) => m.role !== "ouder") ? () => setPagina("planner") : undefined} />}
-          {!pagina && tab === "gezin" && <GezinV2 key={gezinTab ?? "nu"} startTab={gezinTab} state={state} me={me} onToast={setToast} onOuders={() => setPagina("ouders")} onOpenLid={setLid} onTips={setTips} onRuzie={(id) => setRuzie(id ?? "")} onCheckIn={() => setCheckIn(true)} onWeek={() => setTab("week")} />}
+          {!pagina && tab === "vandaag" && <Vandaag state={state} me={me} onToast={setToast} onMeerGevoel={() => setCheckIn(true)} onWie={() => (live ? setTab("ik") : setWie(true))} onPlanner={() => setPagina("planner")} onWeek={() => setTab("week")} onDagOefening={() => setDagOefening(true)} onLid={setLid} onToevoegen={() => setToevoegen(true)} />}
+          {!pagina && tab === "week" && <WeekTab state={state} me={me} onToast={setToast} onOpenLid={setLid} onCoach={(id) => setCoachNu(id)} onPlanner={!isOuder || state.members.some((m) => m.role !== "ouder") ? () => setPagina("planner") : undefined} onToevoegen={() => setToevoegen(true)} />}
+          {!pagina && tab === "gezin" && <GezinV2 key={gezinTab ?? "nu"} startTab={gezinTab} state={state} me={me} onToast={setToast} onOuders={() => setPagina("ouders")} onOpenLid={setLid} onTips={setTips} onRuzie={(id) => setRuzie(id ?? "")} onCheckIn={() => setCheckIn(true)} onWeek={() => setTab("week")} onToevoegen={() => setToevoegen(true)} />}
           {pagina === "rust" && terug(
             <Oefenen state={state} me={me} titel="Rust" onToast={setToast} onCalm={() => setCalm(true)} onRuzie={() => setRuzie("")} onCoach={setCoach} onCoachNu={() => setCoachNu("")}
               onder={
@@ -224,6 +226,8 @@ export function AppV2() {
         </>
       )}
 
+      {/* Eén plek om iets toe te voegen: het plusje rechtsboven op Vandaag, Week en Gezin. */}
+      <Toevoegen open={toevoegen} onClose={() => setToevoegen(false)} state={state} me={me} onToast={setToast} />
       <CheckInSheet open={checkIn} onClose={() => setCheckIn(false)} me={me} current={state.checkins[me.id]} talkTo={talkTo} onDone={setToast} />
       <CalmSheet open={calm} onClose={() => setCalm(false)} me={me} plan={state.plans[me.id]} onDone={setToast} />
       <PorPopup state={state} me={me} />

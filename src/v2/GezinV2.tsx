@@ -30,7 +30,7 @@ function tijdVanDag() {
   Klussen verdelen, samen iets doen en eten plannen zitten achter één klik (dichtgeklapt): minder prikkels.
   De week en de taken staan bij Week.
 */
-export function GezinV2({ state, me, onToast, onOuders, onOpenLid, onTips, onRuzie, onCheckIn, onWeek, startTab }: { startTab?: string; state: FamilyState; me: Member; onToast: (m: string) => void; onOuders: () => void; onOpenLid: (id: string) => void; onTips: (id: string) => void; onRuzie: (id?: string) => void; onCheckIn: () => void; onWeek: () => void }) {
+export function GezinV2({ state, me, onToast, onOuders, onOpenLid, onTips, onRuzie, onCheckIn, onWeek, onToevoegen, startTab }: { onToevoegen?: () => void; startTab?: string; state: FamilyState; me: Member; onToast: (m: string) => void; onOuders: () => void; onOpenLid: (id: string) => void; onTips: (id: string) => void; onRuzie: (id?: string) => void; onCheckIn: () => void; onWeek: () => void }) {
   const [klussenOpen, setKlussenOpen] = useState(startTab === "klussen");
   const klussen = klusStatus(state);
   const teLaat = klussen.filter((k) => k.teLaat > 0).length;
@@ -50,6 +50,7 @@ export function GezinV2({ state, me, onToast, onOuders, onOpenLid, onTips, onRuz
           <div className="ff-eyebrow">{state.family}</div>
           <h1 className="ff-h1">Gezin</h1>
         </div>
+        {onToevoegen && <button className="v2-plus-afspraak" onClick={onToevoegen} aria-label="Toevoegen: taak, afspraak of samen iets doen">＋</button>}
       </header>
 
       <section className={`ff-room v2-room ff-room-${iedereenSlaapt ? "nacht" : tod}${troep.length >= 3 ? " is-rommelig" : ""}`} aria-label="De huiskamer">

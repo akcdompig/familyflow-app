@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { Avatar } from "@/components/avatar/Avatar";
 import { MijnWeekKort } from "@/components/screens/WeekKaart";
-import { AddTaskSheet, TaskRow } from "@/components/screens/Taken";
+import { TaskRow } from "@/components/screens/Taken";
 import { Week as WerkWeek } from "@/components/screens/Thuis";
 import { dagLijst } from "@/lib/groei";
 import { expressionFor } from "@/lib/mood";
@@ -20,10 +19,9 @@ import { WeekVerder } from "./SamenVerder";
   Bovenaan hoe de week ervoor staat (kind: je weekkaart; ouder: elk kind, tik = afsluiten en details).
   Dan de dagen van de week, "hielp de huisregel?", het weekoverleg en hoe de week ging.
 */
-export function WeekTab({ state, me, onToast, onOpenLid, onCoach, onPlanner }: { state: FamilyState; me: Member; onToast: (m: string) => void; onOpenLid: (id: string) => void; onCoach: (id: string) => void; onPlanner?: () => void }) {
+export function WeekTab({ state, me, onToast, onOpenLid, onCoach, onPlanner, onToevoegen }: { state: FamilyState; me: Member; onToast: (m: string) => void; onOpenLid: (id: string) => void; onCoach: (id: string) => void; onPlanner?: () => void; onToevoegen?: () => void }) {
   const isOuder = me.role === "ouder";
   const kinderen = state.members.filter((m) => m.role !== "ouder" && m.joined !== false);
-  const [adding, setAdding] = useState(false);
   return (
     <div className="ff-screen v2-screen">
       <header className="v2-top">
@@ -31,6 +29,7 @@ export function WeekTab({ state, me, onToast, onOpenLid, onCoach, onPlanner }: {
           <div className="ff-eyebrow">{state.family}</div>
           <h1 className="ff-h1">Week</h1>
         </div>
+        {onToevoegen && <button className="v2-plus-afspraak" onClick={onToevoegen} aria-label="Toevoegen: taak, afspraak of samen iets doen">＋</button>}
       </header>
 
       {!isOuder && <MijnWeekKort state={state} me={me} />}
@@ -65,7 +64,7 @@ export function WeekTab({ state, me, onToast, onOpenLid, onCoach, onPlanner }: {
           <summary><b>Taken en roosters</b> <span className="ff-small ff-muted">taken toevoegen, werk vrij wegklikken</span></summary>
           <div className="ff-row" style={{ justifyContent: "space-between" }}>
             <b>Taken vandaag</b>
-            <button className="ff-btn ff-btn-primary ff-btn-sm" onClick={() => setAdding(true)}>+ Taak</button>
+            {onToevoegen && <button className="ff-btn ff-btn-primary ff-btn-sm" onClick={onToevoegen}>+ Toevoegen</button>}
           </div>
           {state.members.map((m) => {
             const lijst = tasksFor(state, m.id).filter((t) => !(t.cat === "werk" && /^werkdag$/i.test(t.title)));
@@ -95,7 +94,6 @@ export function WeekTab({ state, me, onToast, onOpenLid, onCoach, onPlanner }: {
           <WerkWeek state={state} me={me} />
         </details>
       )}
-      <AddTaskSheet open={adding} onClose={() => setAdding(false)} state={state} me={me} onAdded={onToast} />
     </div>
   );
 }

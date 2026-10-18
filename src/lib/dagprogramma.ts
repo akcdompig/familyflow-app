@@ -44,6 +44,7 @@ const VOLGORDE: Dagdeel[] = ["ochtend", "middag", "avond", "nacht"];
 
 /** In welk dagdeel hoort deze taak? Op basis van het icoon en de titel. */
 function deelVoorTaak(t: Task): Dagdeel {
+  if (t.tijd && /^\d\d:\d\d$/.test(t.tijd)) { const h = Number(t.tijd.slice(0, 2)); return h < 12 ? "ochtend" : h < 18 ? "middag" : h < 23 ? "avond" : "nacht"; }
   if (t.icon === "zon" || /opstaan|ontbijt|ochtend/i.test(t.title)) return "ochtend";
   if (t.icon === "telefoon" || /lader|slapen|avond|tas inpakken/i.test(t.title)) return "avond";
   return "middag";
@@ -69,7 +70,7 @@ export function dagprogramma(s: FamilyState, id: string, nu = new Date()): Stap[
 
   // Taken (huiswerk, leren, vaste taken). De oude losse "Werkdag" niet meer: werk staat er al in.
   for (const t of tasksFor(s, id).filter((t) => !(t.cat === "werk" && /^werkdag$/i.test(t.title)))) {
-    stappen.push({ id: `taak:${t.id}`, deel: deelVoorTaak(t), titel: t.title, emoji: t.study ? "📚" : t.icon === "telefoon" ? "📱" : t.icon === "sport" ? "⚽" : "📌", soort: "taak", klaar: isDone(s, t.id), punten: t.xp, task: t });
+    stappen.push({ id: `taak:${t.id}`, deel: deelVoorTaak(t), titel: t.title, emoji: t.study ? "📚" : t.icon === "telefoon" ? "📱" : t.icon === "sport" ? "⚽" : "📌", soort: "taak", klaar: isDone(s, t.id), punten: t.xp, task: t, ...(t.tijd ? { tijd: t.tijd } : {}) });
   }
 
   // Klussen waar jij aan de beurt bent (alleen wat vandaag echt moet), plus wat je vandaag al deed.

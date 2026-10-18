@@ -59,6 +59,8 @@ export interface Task {
   repeat: "dagelijks" | "eenmalig" | "wekelijks";
   /** Alleen bij eenmalig: de dag (YYYY-MM-DD). */
   date?: string;
+  /** Optioneel: hoe laat ("16:30"). Een taak hoeft geen tijd te hebben. */
+  tijd?: string;
   /** Alleen bij wekelijks: op welke dagen (0 = zondag … 6 = zaterdag). */
   days?: number[];
   /** Soort taak en hoe lang hij ongeveer duurt, voor "Wie doet wat". */

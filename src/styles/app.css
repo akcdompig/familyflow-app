@@ -1316,3 +1316,15 @@ button.v2-samen-actie { justify-self: start; min-height: 34px; padding-left: 0; 
 .v2-eigen-klus input { width: 100%; box-sizing: border-box; }
 .v2-kiezer { text-align: left; }
 .v2-week-details > summary { cursor: pointer; min-height: 32px; color: var(--ff-tekst-zacht); font-weight: 700; }
+
+/* ---------- 3.12: één plek om toe te voegen ---------- */
+.v2-toevoeg-keuze { display: flex; align-items: center; gap: 12px; width: 100%; padding: 14px; min-height: 72px; border: 2px solid var(--ff-lijn); border-radius: 18px; background: var(--ff-vlak); font: inherit; color: var(--ff-tekst); text-align: left; cursor: pointer; }
+.v2-toevoeg-keuze:active { transform: scale(.98); }
+.v2-toevoeg-emoji { font-size: 28px; width: 36px; text-align: center; flex: none; }
+.v2-let-op { background: var(--ff-zon-zacht); border-radius: 12px; padding: 8px 10px; margin: 0; }
+.v2-cat-tabs { display: flex; gap: 4px; overflow-x: auto; border-bottom: 2px solid var(--ff-lijn); margin: 0 -4px; padding: 0 4px; scrollbar-width: none; }
+.v2-cat-tab { flex: none; border: 0; background: none; padding: 10px 10px 8px; min-height: 40px; font: inherit; font-size: var(--ff-t-s); font-weight: 700; color: var(--ff-tekst-zacht); border-bottom: 3px solid transparent; margin-bottom: -2px; cursor: pointer; white-space: nowrap; }
+.v2-cat-tab[aria-selected="true"] { color: var(--ff-actie); border-bottom-color: var(--ff-actie); }
+.v2-taak-keuzes { max-height: 260px; overflow-y: auto; }
+.v2-cat-tabs { flex-wrap: wrap; overflow: visible; }
+.v2-taak-keuzes { max-height: none; overflow: visible; }

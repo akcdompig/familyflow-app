@@ -63,6 +63,22 @@ export const CATALOGUS: CatalogTaak[] = [
   { title: "Training of sporten", icon: "sport", cat: "sport", min: 60, xp: 10 },
   { title: "Naar buiten", icon: "zon", cat: "sport", min: 30, xp: 10 },
   { title: "Telefoon aan de lader in de keuken", icon: "telefoon", cat: "overig", min: 1, xp: 10 },
+  // School, sport en zelf (kinderen)
+  { title: "Schooltas inpakken", icon: "pen", cat: "school", min: 5, xp: 5 },
+  { title: "Gymtas inpakken", icon: "sport", cat: "school", min: 5, xp: 5 },
+  { title: "Lezen", icon: "boek", cat: "school", min: 20, xp: 10 },
+  { title: "Instrument oefenen", icon: "boek", cat: "school", min: 20, xp: 10 },
+  { title: "Kleren klaarleggen voor morgen", icon: "bed", cat: "overig", min: 5, xp: 5 },
+  { title: "Bidon en broodtrommel klaarzetten", icon: "kook", cat: "overig", min: 5, xp: 5 },
+  // Regelen en buiten de deur
+  { title: "Apotheek", icon: "post", cat: "overig", min: 20, xp: 5 },
+  { title: "Pakketje wegbrengen of ophalen", icon: "post", cat: "overig", min: 20, xp: 5 },
+  { title: "Tanken", icon: "auto", cat: "overig", min: 15, xp: 0, ouder: true },
+  { title: "Auto wassen", icon: "auto", cat: "overig", min: 30, xp: 10 },
+  { title: "Rekeningen betalen", icon: "post", cat: "overig", min: 15, xp: 0, ouder: true },
+  { title: "Post en papieren opruimen", icon: "post", cat: "overig", min: 15, xp: 5 },
+  { title: "Iemand bellen", icon: "telefoon", cat: "overig", min: 10, xp: 0 },
+  { title: "Cadeautje kopen", icon: "kar", cat: "overig", min: 30, xp: 5 },
   // Werk (ouders)
   { title: "Werkdag", icon: "werk", cat: "werk", min: 540, xp: 0, ouder: true },
   { title: "Bootcamp geven", icon: "sport", cat: "werk", min: 90, xp: 0, ouder: true },

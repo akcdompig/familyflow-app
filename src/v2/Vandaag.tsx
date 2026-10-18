@@ -37,7 +37,7 @@ const MOODS: { m: MoodLevel; e: string; l: string }[] = [
   Vandaag: jouw dagprogramma. Bovenaan hoe ver je bent, je schatkist, water, fruit en hoe je je voelt.
   Dan "Nu doen": één ding tegelijk. Daaronder de hele dag, per dagdeel.
 */
-export function Vandaag({ state, me, onToast, onMeerGevoel, onWie, onPlanner, onWeek, onDagOefening, onLid }: { state: FamilyState; me: Member; onToast: (m: string) => void; onMeerGevoel: () => void; onWie: () => void; onSamenVerder?: () => void; onPlanner?: () => void; onWeek?: () => void; onDagOefening?: () => void; onLid?: (id: string) => void }) {
+export function Vandaag({ state, me, onToast, onMeerGevoel, onWie, onPlanner, onWeek, onDagOefening, onLid, onToevoegen }: { state: FamilyState; me: Member; onToast: (m: string) => void; onMeerGevoel: () => void; onWie: () => void; onSamenVerder?: () => void; onPlanner?: () => void; onWeek?: () => void; onDagOefening?: () => void; onLid?: (id: string) => void; onToevoegen?: () => void }) {
   const [, tik] = useState(0);
   useEffect(() => {
     const t = window.setInterval(() => tik((n) => n + 1), 60_000);
@@ -209,7 +209,7 @@ export function Vandaag({ state, me, onToast, onMeerGevoel, onWie, onPlanner, on
             </button>
           )}
         </div>
-        <button className="v2-plus-afspraak" onClick={() => setNieuweAfspraak(true)} aria-label="Afspraak toevoegen">＋</button>
+        {onToevoegen && <button className="v2-plus-afspraak" onClick={onToevoegen} aria-label="Toevoegen: taak, afspraak of samen iets doen">＋</button>}
         <button className="v2-ik" onClick={onWie} aria-label={`Je bent ${me.name}`}>
           <Avatar config={me.avatar} expression={expressionFor(ci)} size={40} headOnly animate={false} label={me.name} />
         </button>
