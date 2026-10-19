@@ -971,6 +971,46 @@ await scenario("v3.7: ouder plakt een oefentoets, kind oefent en ziet wat nog mo
   assert.match(await en.innerText(), /Noah: wist het niet/, "eerdere poging: Weet ik niet");
 });
 
+// ---------- 3.14: Turven en sterren ----------
+await scenario("v3.14: ouder zet turven en sterren aan, geeft een turf; kind ziet alleen de eigen", v2, "20:10", async (p) => {
+  await wissel(p, "Papa");
+  await tab(p, /Week/).click();
+  await p.getByRole("button", { name: /^Noah: / }).click();
+  const blad = p.getByRole("dialog");
+  const inst = blad.getByRole("region", { name: "Turven en sterren instellen voor Noah" });
+  assert.match(await inst.innerText(), /Gelogen[\s\S]*2 turven/);
+  await inst.getByRole("button", { name: "Aanzetten" }).click();
+  const g = blad.getByRole("region", { name: "Turven en sterren van Noah" });
+  await g.getByRole("button", { name: "＋ Turf geven" }).click();
+  await g.getByRole("button", { name: "Niet gedoucht" }).click();
+  await g.getByRole("button", { name: "Turf geven" }).click();
+  assert.match(await p.locator(".ff-toast").innerText(), /Turf voor Noah: Niet gedoucht\. Morgen 15 minuten minder scherm/);
+  assert.match(await g.innerText(), /Niet gedoucht/);
+  assert.match(await g.innerText(), /1 turf \(−5%\)/);
+  await g.getByRole("button", { name: "Goedgemaakt" }).click();
+  assert.match(await g.innerText(), /goedgemaakt ✓/);
+  assert.match(await g.innerText(), /0 turven \(−0%\)/);
+  await g.getByRole("button", { name: "＋ Turf geven" }).click();
+  await g.getByRole("button", { name: "Gelogen (×2)" }).click();
+  await g.getByRole("button", { name: "Turf geven" }).click();
+  assert.equal(await g.getByRole("button", { name: "Goedgemaakt" }).count(), 0, "maar één per week goedmaken");
+  await p.keyboard.press("Escape");
+  // Noah ziet zijn eigen turven en de avondregels
+  await wissel(p, "Noah");
+  const avond = p.getByRole("region", { name: "Avondregels" });
+  assert.match(await avond.innerText(), /20:30 telefoon aan de lader/);
+  assert.match(await avond.innerText(), /Turf: gelogen/);
+  await tab(p, /Week/).click();
+  const mijn = p.getByRole("region", { name: "Mijn sterren en turven" });
+  assert.match(await mijn.innerText(), /Gelogen \(telt dubbel\)/);
+  // Lina ziet die van Noah niet
+  await wissel(p, "Lina");
+  await tab(p, /Week/).click();
+  assert.equal(await p.getByRole("region", { name: "Mijn sterren en turven" }).count(), 0, "bij Lina staat het (nog) niet aan");
+  await p.locator(".ff-toast").waitFor({ state: "detached" }).catch(() => {});
+  assert.ok(!(await p.locator("body").innerText()).includes("Gelogen"), "Lina ziet de turven van Noah niet");
+});
+
 // ---------- 3.8: Vandaag met de lijst bovenaan ----------
 await scenario("v3.8: kind ziet de lijst van nu bovenaan, zonder te scrollen; geen losse Nu doen-kaart en geen +2-labels", v2, "16:00", async (p) => {
   await wissel(p, "Noah");

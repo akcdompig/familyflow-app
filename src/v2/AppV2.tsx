@@ -15,6 +15,7 @@ import { Leerplanner } from "@/components/screens/Leerplanner";
 import { Play } from "@/components/screens/Oefenen";
 import { LidDag } from "@/components/screens/LidDag";
 import { WeekOuder } from "@/components/screens/WeekKaart";
+import { GedragOuder } from "@/components/screens/Gedrag";
 import { DUUR, oefeningVanVandaag } from "@/lib/oefendag";
 import { iso } from "@/lib/planner";
 import { EersteKeer, UitlegPagina, type UitlegTab } from "@/components/screens/Uitleg";
@@ -245,6 +246,7 @@ export function AppV2() {
               <h2 className="ff-h2">{sel.id === me.id ? "Jij" : sel.name}</h2>
               <p className="ff-muted">{zzz ? "Slaapt" : werk ? `${werk.look === "school" ? "Op school" : werk.werk.naam} · ${restTekst(werk.rest)}` : ci ? `${moodLabel(ci)} · ${timeLabel(ci.at)}` : "Nog niet ingecheckt"}</p>
               {sel.joined !== false && <LidDag state={state} lid={sel} me={me} onToast={setToast} />}
+              {sel.joined !== false && isOuder && sel.role !== "ouder" && <div style={{ width: "100%" }}><GedragOuder state={state} kind={sel} me={me} onToast={setToast} /></div>}
               {sel.joined !== false && isOuder && sel.role !== "ouder" && <WeekOuder state={state} kind={sel} me={me} onToast={setToast} />}
               {sel.joined !== false && <div style={{ width: "100%" }}><Meters state={state} id={sel.id} /></div>}
               {sel.joined !== false && (isOuder || sel.id === me.id) && <div style={{ width: "100%" }}><VoedingKaart state={state} id={sel.id} kanAanpassen={isOuder || sel.id === me.id} /></div>}

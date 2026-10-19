@@ -1336,3 +1336,24 @@ button.v2-samen-actie { justify-self: start; min-height: 34px; padding-left: 0; 
 .v2-taak-keuzes { max-height: 260px; overflow-y: auto; }
 .v2-cat-tabs { flex-wrap: wrap; overflow: visible; }
 .v2-taak-keuzes { max-height: none; overflow: visible; }
+
+/* 3.14 Turven en sterren */
+.v2-gedrag { width: 100%; box-sizing: border-box; text-align: left; }
+.v2-sterren { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.v2-sterren li { display: grid; justify-items: center; gap: 2px; padding: 6px 0; border-radius: 10px; background: var(--ff-wolk, #f4f1fb); font-size: 1.05rem; line-height: 1.2; }
+.v2-sterren li small { font-size: var(--ff-t-xs); color: var(--ff-ink-2, #5b577a); }
+.v2-sterren li.is-ster { background: #fff4cf; }
+.v2-sterren li.is-turf { background: #fdecea; color: #a3271b; font-weight: 800; letter-spacing: -1px; }
+.v2-straf { color: #a3271b; font-weight: 600; }
+.v2-turflijst { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.v2-turflijst li { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; padding: 8px 10px; border-radius: 12px; background: #fdecea; }
+.v2-turflijst li > .ff-grow { flex: 1 1 60%; min-width: 60%; }
+.v2-turflijst li.is-weg { background: var(--ff-wolk, #f4f1fb); }
+.v2-turflijst li.is-weg b { text-decoration: line-through; opacity: .7; }
+.v2-turf-geven { border-top: 1px solid var(--ff-lijn, #eee6dc); padding-top: 8px; }
+.v2-avondtijden { display: grid; gap: 6px; }
+.v2-avondtijden .ff-field { display: grid; grid-template-columns: 1fr 140px; align-items: center; gap: 8px; }
+.v2-avondtijden input { min-width: 0; width: 100%; }
+.v2-avondlijst { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.v2-avondlijst li.is-volgende { font-weight: 700; color: var(--ff-actie, #3d52b8); }
+.v2-avondlijst li.is-voorbij { opacity: .55; }

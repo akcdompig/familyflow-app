@@ -111,6 +111,10 @@ function WeekDetails({ k }: { k: Kaart }) {
       {k.taken.totaal > 0 && r("✅ Taken", k.taken.af, k.taken.totaal)}
       {k.routine.totaal > 0 && r("🚿 Ochtendroutine (dagen)", k.routine.af, k.routine.totaal)}
       {r("🎯 Oefeningen", Math.min(k.oefeningen.af, k.oefeningen.doel), k.oefeningen.doel)}
+      {k.gedrag && <li><span className="ff-grow">📋 Taken samen</span><b>{k.takenPct}%</b></li>}
+      {k.gedrag && <li><span className="ff-grow">⭐ Sterren</span><b>{k.gedrag.sterren} (+{k.gedrag.plus}%)</b></li>}
+      {k.gedrag && <li><span className="ff-grow">✕ Turven</span><b>{k.gedrag.turven} (−{k.gedrag.min}%)</b></li>}
+      {k.gedrag && <li><span className="ff-grow"><b>Weekscore</b></span><b>{k.pct}%</b></li>}
       <li><span className="ff-grow">💞 Samen gedaan</span><b>{k.samen}×</b></li>
       <li className="ff-small ff-muted">Overgeslagen en "ging niet door" tellen niet mee.</li>
     </ul>

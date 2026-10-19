@@ -2,6 +2,7 @@
 
 import { Avatar } from "@/components/avatar/Avatar";
 import { MijnWeekKort } from "@/components/screens/WeekKaart";
+import { GedragKind } from "@/components/screens/Gedrag";
 import { TaskRow } from "@/components/screens/Taken";
 import { Week as WerkWeek } from "@/components/screens/Thuis";
 import { dagLijst } from "@/lib/groei";
@@ -33,6 +34,7 @@ export function WeekTab({ state, me, onToast, onOpenLid, onCoach, onPlanner, onT
       </header>
 
       {!isOuder && <MijnWeekKort state={state} me={me} />}
+      {!isOuder && <GedragKind state={state} me={me} />}
       {isOuder && kinderen.length > 0 && (
         <section className="ff-card ff-stack-s" aria-label="Weekkaart per kind">
           <b>Hoe staat de week ervoor?</b>
@@ -43,6 +45,7 @@ export function WeekTab({ state, me, onToast, onOpenLid, onCoach, onPlanner, onT
                 <Avatar config={k.avatar} expression={expressionFor(state.checkins[k.id])} headOnly size={32} animate={false} label="" />
                 <span className="ff-grow ff-stack-xs">
                   <span className="ff-row"><b className="ff-grow">{k.name}</b><span className="ff-small ff-muted">{w.gesloten ? (w.gesloten.gehaald ? `🔒 ${w.gesloten.beloning ?? "gehaald"}${w.gesloten.betaald ? " · betaald" : ""}` : "🔒 afgesloten") : `${w.pct}% · ${w.behaald >= 0 ? `${w.treden[w.behaald].wat || "bonus"} binnen` : `doel ${w.drempel}%`}`}</span></span>
+                  {w.gedrag && <span className="ff-small ff-muted">⭐ {w.gedrag.sterren} · {w.gedrag.turven} {w.gedrag.turven === 1 ? "turf" : "turven"}</span>}
                   <span className="v2-weekbalk" aria-hidden="true"><i style={{ width: `${Math.min(100, w.pct)}%` }} />{w.treden.map((t) => <b key={t.pct} style={{ left: `${t.pct}%` }} />)}</span>
                 </span>
                 <span aria-hidden="true">›</span>

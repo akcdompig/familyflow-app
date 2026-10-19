@@ -12,10 +12,11 @@ import { markeerGeclaimd, metHerkomst, openRegels, type OpenRegel, type Wat } fr
 import { verdeling } from "./verdeling";
 import { DAG_OEFENING_XP } from "./oefendag";
 import { weekDicht } from "./week";
-import { klusById as verdeelKlus } from "./huis";
+import { klusById as verdeelKlus, maandag } from "./huis";
+import { iso } from "./planner";
 import { SCENARIOS } from "./scenarios";
 const routineAf = (l: DagLog) => ROUTINE.filter((r) => r.gewicht > 0).every((r) => l.routine.includes(r.id));
-import type { WeekTrede, OefenToets, AgendaItem, InzetItem, InzetSoort, Kookplan, PotItem, Dienst, WerkItem, CoachRun, Quest, AvatarConfig, CalmPlan, CheckIn, Conflict, ConflictSide, FamilyState, Meeting, ProKind, Task } from "./types";
+import type { GedragAfspraak, Turf, WeekTrede, OefenToets, AgendaItem, InzetItem, InzetSoort, Kookplan, PotItem, Dienst, WerkItem, CoachRun, Quest, AvatarConfig, CalmPlan, CheckIn, Conflict, ConflictSide, FamilyState, Meeting, ProKind, Task } from "./types";
 
 /*
   Eén store voor demo en echt.
@@ -685,6 +686,33 @@ export const actions = {
       return metFeed(uit, kind, k.gehaald ? `heeft de week gehaald (${k.pct}%) 🏁` : `sloot de week af met ${k.pct}%`, 0);
     });
     return true;
+  },
+  /** 3.14 Turf zetten (alleen ouders). Niet in een week die al is afgesloten. */
+  turf(kind: string, reden: string, n: 1 | 2, door: string, datum = iso(new Date())): string | null {
+    if (state.weekAfsluiting?.[kind]?.[maandag(datum)]) return null;
+    const t: Turf = { id: newId("tf"), datum, at: new Date().toISOString(), reden: reden.trim().slice(0, 80), n, door };
+    update((s) => ({ ...s, gedrag: { ...(s.gedrag ?? {}), [kind]: [...(s.gedrag?.[kind] ?? []), t].slice(-200) } }));
+    return t.id;
+  },
+  /** Goedgemaakt (sorry + extra klus): telt niet meer. Eén per week. */
+  turfGoedgemaakt(kind: string, id: string, door: string): boolean {
+    const t = state.gedrag?.[kind]?.find((x) => x.id === id);
+    if (!t || t.weg || state.weekAfsluiting?.[kind]?.[maandag(t.datum)]) return false;
+    if ((state.gedrag?.[kind] ?? []).some((x) => x.weg && maandag(x.datum) === maandag(t.datum))) return false;
+    update((s) => ({ ...s, gedrag: { ...(s.gedrag ?? {}), [kind]: (s.gedrag?.[kind] ?? []).map((x) => (x.id === id ? { ...x, weg: { at: new Date().toISOString(), door } } : x)) } }));
+    return true;
+  },
+  /** Vergissing: turf helemaal weghalen. */
+  turfWeghalen(kind: string, id: string) {
+    update((s) => ({ ...s, gedrag: { ...(s.gedrag ?? {}), [kind]: (s.gedrag?.[kind] ?? []).filter((x) => x.id !== id) } }));
+  },
+  /** Turven en sterren aan (met avondtijden en extra beloning) of uit. */
+  setGedragAfspraak(kind: string, a: GedragAfspraak | null) {
+    update((s) => {
+      const alle = { ...(s.gedragAfspraak ?? {}) };
+      if (a) alle[kind] = a; else delete alle[kind];
+      return { ...s, gedragAfspraak: alle };
+    });
   },
   /** Oefentoets opslaan (een ouder plakt hem, na controle). */
   bewaarToets(kind: string, toets: Omit<OefenToets, "id" | "at" | "pogingen">): string {

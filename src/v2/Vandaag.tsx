@@ -16,6 +16,7 @@ import { OngezondKnop } from "./Voeding";
 import { dagStand } from "@/lib/groei";
 import { SchermKind } from "./Scherm";
 import { WeekRegel } from "@/components/screens/WeekKaart";
+import { AvondRegels } from "@/components/screens/Gedrag";
 import { slaapt } from "@/lib/status";
 import { KlusSheet, antwoordTekst, vraagVan } from "@/components/screens/KlusSheet";
 import { klusStatus } from "@/lib/huis";
@@ -261,6 +262,7 @@ export function Vandaag({ state, me, onToast, onMeerGevoel, onWie, onPlanner, on
 
       {/* Daarna pas de rest. Eerst wat het afvinken oplevert: je scherm en je week. */}
       {me.role !== "ouder" && <SchermKind state={state} me={me} />}
+      {me.role !== "ouder" && <AvondRegels state={state} me={me} />}
       {me.role !== "ouder" && onWeek && <WeekRegel state={state} me={me} onWeek={onWeek} />}
 
       <Drinken state={state} me={me} onToast={onToast} />

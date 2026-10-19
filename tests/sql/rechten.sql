@@ -175,6 +175,19 @@ select pg_temp.eis((:'st'::jsonb #>> '{weekAfsluiting,k1,2026-10-12,pct}') = '80
 select pg_temp.eis(not (:'st'::jsonb #> '{taakStatus,k1,2026-10-17}') ? 'taak:x', 'kind kan zelf niks op overgeslagen zetten');
 select pg_temp.eis(jsonb_array_length(:'st'::jsonb #> '{oefentoetsen,k1,0,pogingen}') = 1, 'kind bewaart zijn eigen oefenpoging');
 
+-- ===== 3.14: turven en sterren: alleen ouders zetten ze, ieder kind ziet alleen de eigen =====
+select rev from public.families \gset
+select public.save_family(:'st'::jsonb || '{"gedrag":{"k1":[{"id":"tf1","datum":"2026-10-19","at":"x","reden":"Niet gedoucht","n":1,"door":"p1"}],"k2":[{"id":"tf2","datum":"2026-10-19","at":"x","reden":"Te laat","n":1,"door":"p1"}]},"gedragAfspraak":{"k1":{"sinds":"2026-10-19"},"k2":{"sinds":"2026-10-19"}}}'::jsonb, :rev);
+select pg_temp.als('00000000-0000-0000-0000-00000000000b');
+select (public.load_family() ->> 'state')::jsonb as kian, (public.load_family() ->> 'rev')::int as rev \gset
+select pg_temp.eis((:'kian'::jsonb #>> '{gedrag,k1,0,reden}') = 'Niet gedoucht', 'kind ziet zijn eigen turf');
+select pg_temp.eis(not (:'kian'::jsonb -> 'gedrag') ? 'k2' and not (:'kian'::jsonb -> 'gedragAfspraak') ? 'k2', 'kind ziet de turven van zus niet');
+select public.save_family(:'kian'::jsonb || '{"gedrag":{"k1":[]},"gedragAfspraak":{}}'::jsonb, :rev);
+select pg_temp.als('00000000-0000-0000-0000-00000000000a');
+select state as st from public.families \gset
+select pg_temp.eis(jsonb_array_length(:'st'::jsonb #> '{gedrag,k1}') = 1 and jsonb_array_length(:'st'::jsonb #> '{gedrag,k2}') = 1, 'kind kan geen turven weghalen');
+select pg_temp.eis((:'st'::jsonb -> 'gedragAfspraak') ? 'k1', 'kind kan turven en sterren niet uitzetten');
+
 -- ===== Schermtijd: alleen ouders vullen in, kind ziet alleen zijn eigen =====
 select rev from public.families \gset
 select public.save_family(:'st'::jsonb || '{"schermtijd":{"k1":{"2026-10-15":{"totaal":276,"sociaal":233,"door":"p1","at":"1"}},"k2":{"2026-10-15":{"totaal":60,"door":"p1","at":"1"}}},"schermAfspraak":{"k1":{"doel":120}}}'::jsonb, :rev);

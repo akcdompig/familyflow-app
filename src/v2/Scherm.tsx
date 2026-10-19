@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Avatar } from "@/components/avatar/Avatar";
 import { addDays, iso } from "@/lib/planner";
 import { dagAf, doelVan, uurMin, week, weekStand } from "@/lib/scherm";
+import { schermStraf, strafZin } from "@/lib/gedrag";
 import { samenwerken } from "@/lib/samenwerken";
 import type { FamilyState, Member } from "@/lib/types";
 
@@ -21,6 +22,7 @@ export function SchermKind({ state, me }: { state: FamilyState; me: Member }) {
   const [laat, setLaat] = useState(false);
   const gisteren = state.schermtijd?.[me.id]?.[addDays(iso(new Date()), -1)];
   const doel = doelVan(state, me.id);
+  const straf = schermStraf(state, me.id);
   return (
     <section className={`v2-scherm${af ? " is-af" : ""}`} aria-label="Schermtijd">
       <span className="v2-scherm-icoon" aria-hidden="true">{af ? "🔓" : "📱"}</span>
@@ -29,10 +31,11 @@ export function SchermKind({ state, me }: { state: FamilyState; me: Member }) {
         <span className="ff-small">
           {af ? "Laat het groene scherm zien. Papa of mama ziet het ook in de app." : `Nog ${open.length === 1 ? "1 ding" : `${open.length} dingen`}: ${open.slice(0, 3).join(", ").toLowerCase()}${open.length > 3 ? " …" : ""}`}
         </span>
+        {straf.turven > 0 && <span className="ff-small v2-straf">Vandaag {strafZin(straf)} ({straf.turven} {straf.turven === 1 ? "turf" : "turven"} gisteren)</span>}
         {gisteren && <span className="ff-small ff-muted">Gisteren {uurMin(gisteren.totaal)} op je scherm{gisteren.totaal <= doel ? " · binnen de afspraak 👍" : ` · afspraak is ${uurMin(doel)}`}</span>}
         {af && <button className="ff-btn ff-btn-primary ff-btn-s v2-dagoef-start" onClick={() => setLaat(true)}>Laat zien: scherm vrij</button>}
       </span>
-      {laat && <SchermVrij me={me} onKlaar={() => setLaat(false)} />}
+      {laat && <SchermVrij me={me} straf={straf.turven ? strafZin(straf) : undefined} onKlaar={() => setLaat(false)} />}
     </section>
   );
 }
@@ -41,7 +44,7 @@ export function SchermKind({ state, me }: { state: FamilyState; me: Member }) {
   "Scherm vrij": het groene scherm dat je laat zien. De app kan de telefoon niet zelf ontgrendelen (het is een webapp);
   dit is de sleutel voor de gezinsregel "eerst je dag, dan je scherm". Met tijd en naam, zodat het niet van gisteren is.
 */
-export function SchermVrij({ me, onKlaar }: { me: Member; onKlaar: () => void }) {
+export function SchermVrij({ me, onKlaar, straf }: { me: Member; onKlaar: () => void; straf?: string }) {
   const nu = new Date();
   return (
     <div className="v2-schermvrij" role="dialog" aria-modal="true" aria-label="Scherm vrij">
@@ -50,6 +53,7 @@ export function SchermVrij({ me, onKlaar }: { me: Member; onKlaar: () => void })
         <b className="v2-schermvrij-titel">Scherm vrij</b>
         <span className="v2-schermvrij-wie">{me.name} · je dag is af</span>
         <span className="v2-schermvrij-tijd">{nu.toLocaleDateString("nl-NL", { weekday: "long", day: "numeric", month: "long" })} · {nu.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" })}</span>
+        {straf && <span className="v2-schermvrij-uitleg"><b>Let op: vandaag {straf}.</b></span>}
         <span className="v2-schermvrij-uitleg">Laat dit zien aan papa of mama.</span>
         <button className="ff-btn ff-btn-wide v2-schermvrij-knop" onClick={onKlaar}>Sluiten</button>
       </div>
@@ -112,6 +116,7 @@ export function SchermOuder({ state, lid, me, onToast }: { state: FamilyState; l
     <section className="ff-stack-s" aria-label={`Schermtijd van ${lid.name}`}>
       <b>📱 Schermtijd</b>
       <span className={`v2-scherm-status${af ? " is-af" : ""}`}>{af ? `${lid.name} heeft de dag af: extra tijd mag ✓` : `Nog niet af: ${open.slice(0, 3).join(", ").toLowerCase()}`}</span>
+      {schermStraf(state, lid.id).turven > 0 && <span className="ff-small v2-straf">Vandaag {strafZin(schermStraf(state, lid.id))} (turven van gisteren)</span>}
       <div className="v2-scherm-week" aria-label="Laatste 7 dagen">
         {w.map((x) => (
           <span key={x.d} className="v2-scherm-dag" title={`${x.d}: ${uurMin(x.totaal)}`}>

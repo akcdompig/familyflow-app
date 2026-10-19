@@ -1,3 +1,4 @@
+import { gedragWeek } from "./gedrag";
 import { dagStand } from "./groei";
 import { maandag } from "./huis";
 import { addDays, iso } from "./planner";
@@ -11,6 +12,7 @@ import type { FamilyState, WeekTrede } from "./types";
     per procent: dat leidt tot rekenen en onderhandelen. Elke week dezelfde afspraak.
   - Een ouder sluit de week af (bij het weekoverleg). Wat dan gehaald is, staat vast en verandert niet meer.
   Overgeslagen en "ging niet door" tellen niet mee. Een dag zonder iets ingevuld telt als "niet ingevuld", niet als slecht.
+  3.14: staan turven en sterren aan, dan tellen ze mee in de weekscore (−5% per turf, +3% per ster). Zie gedrag.ts.
 */
 
 export const STANDAARD_DREMPEL = 80;
@@ -20,7 +22,11 @@ export interface WeekKaart {
   maandag: string;
   af: number;
   totaal: number;
+  /** Weekscore: taken, plus of min turven en sterren (als die aanstaan). */
   pct: number;
+  /** Alleen de taken (zonder turven en sterren). */
+  takenPct: number;
+  gedrag?: { turven: number; sterren: number; min: number; plus: number; extra: boolean };
   drempel: number;
   gehaald: boolean;
   /** Dagen waarop 80% of meer af was. */
@@ -78,7 +84,10 @@ export function weekKaart(s: FamilyState, id: string, nu = new Date(), maandagVa
   }
   const oef = Object.entries(s.oefenDag?.[id] ?? {}).filter(([d, r]) => dagen.includes(d) && r.gedaan).length;
   const samen = (s.samen ?? []).filter((x) => x.gedaan && (x.deden ?? x.wie).includes(id) && dagen.includes(iso(new Date(x.gedaan)))).length;
-  const pct = totaal ? Math.round((af / totaal) * 100) : 0;
+  const takenPct = totaal ? Math.round((af / totaal) * 100) : 0;
+  const gw = gedragWeek(s, id, maandagVan, vandaag);
+  const delta = gw.aan ? gw.delta : 0;
+  const pct = totaal ? Math.max(0, Math.min(100, takenPct + delta)) : 0;
   const drempel = drempelVan(s, id);
   const g = s.weekAfsluiting?.[id]?.[maandagVan];
   const treden = tredenVan(s, id);
@@ -90,7 +99,9 @@ export function weekKaart(s: FamilyState, id: string, nu = new Date(), maandagVa
     ...tel, oefeningen: { af: oef, doel: OEFENINGEN_PER_WEEK }, samen,
     beloning: behaald >= 0 ? treden[behaald].wat || undefined : treden[0]?.wat || undefined,
     treden, behaald,
-    volgende: vt ? { ...vt, nog: vinkjesNodig(af, totaal, vt.pct) } : undefined,
+    volgende: vt ? { ...vt, nog: vinkjesNodig(af, totaal, Math.max(0, vt.pct - delta)) } : undefined,
+    takenPct,
+    gedrag: gw.aan ? { turven: gw.turven, sterren: gw.sterren, min: gw.min, plus: gw.plus, extra: gw.extra } : undefined,
     zakgeld: s.weekAfspraak?.[id]?.zakgeld,
     gesloten: g ? { gehaald: g.gehaald, pct: g.pct, beloning: g.beloning, trede: g.trede, betaald: g.betaald, at: g.at, door: g.door } : undefined,
   };

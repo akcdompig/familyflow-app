@@ -285,6 +285,10 @@ export interface FamilyState {
   weekAfspraak?: Record<string, { drempel: number; beloning?: string; treden?: WeekTrede[]; zakgeld?: string }>;
   /** Afgesloten weken per kind (maandag als sleutel). Wat afgesloten is, staat vast. */
   weekAfsluiting?: Record<string, Record<string, { af: number; totaal: number; pct: number; gehaald: boolean; beloning?: string; trede?: number; betaald?: string; door: string; at: string }>>;
+  /** 3.14 Turven en sterren: per kind, alleen ouders zetten ze. Een kind ziet alleen de eigen. */
+  gedrag?: Record<string, Turf[]>;
+  /** 3.14 Per kind: turven en sterren aan (vanaf een datum), de avondtijden en de extra beloning bij 6+ sterren. */
+  gedragAfspraak?: Record<string, GedragAfspraak>;
   /** Oefentoetsen per kind, door een ouder geplakt (gemaakt met eigen AI uit de echte lesstof). */
   oefentoetsen?: Record<string, OefenToets[]>;
   /** Oefening van vandaag per kind per datum: welke, en of hij echt is afgemaakt. */
@@ -490,4 +494,23 @@ export interface ToetsPoging {
 export interface WeekTrede {
   pct: number;
   wat: string;
+}
+
+/** Een turf: een afgesproken regel niet gehaald. n = 2 bij liegen. Goedgemaakt (sorry + extra klus) telt niet meer. */
+export interface Turf {
+  id: string;
+  datum: string;
+  at: string;
+  reden: string;
+  n: 1 | 2;
+  door: string;
+  weg?: { at: string; door: string };
+}
+export interface GedragAfspraak {
+  /** Vanaf deze dag tellen sterren. */
+  sinds: string;
+  /** Extra beloning bij 6 of 7 sterren in een week. */
+  extra?: string;
+  /** Avondtijden ("19:30"). */
+  avond?: { snack?: string; douchen?: string; lader?: string };
 }
