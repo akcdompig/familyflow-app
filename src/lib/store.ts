@@ -696,8 +696,9 @@ export const actions = {
     update((s) => ({ ...s, oefentoetsen: { ...(s.oefentoetsen ?? {}), [kind]: (s.oefentoetsen?.[kind] ?? []).filter((t) => t.id !== id) } }));
   },
   /** Een poging: hoeveel goed, welke fout. Geen cijfer, alleen om te zien wat nog geoefend moet. */
-  toetsPoging(kind: string, id: string, goed: number, totaal: number, fout: number[]) {
-    update((s) => ({ ...s, oefentoetsen: { ...(s.oefentoetsen ?? {}), [kind]: (s.oefentoetsen?.[kind] ?? []).map((t) => (t.id === id ? { ...t, pogingen: [...(t.pogingen ?? []), { at: new Date().toISOString(), goed, totaal, fout }].slice(-20) } : t)) } }));
+  toetsPoging(kind: string, id: string, goed: number, totaal: number, fout: number[], antwoorden?: string[], zelf?: number[]) {
+    const p = { at: new Date().toISOString(), goed, totaal, fout, ...(antwoorden ? { antwoorden: antwoorden.map((a) => String(a ?? "").slice(0, 120)) } : {}), ...(zelf?.length ? { zelf } : {}) };
+    update((s) => ({ ...s, oefentoetsen: { ...(s.oefentoetsen ?? {}), [kind]: (s.oefentoetsen?.[kind] ?? []).map((t) => (t.id === id ? { ...t, pogingen: [...(t.pogingen ?? []), p].slice(-20) } : t)) } }));
   },
   startConflict(c: Omit<Conflict, "id" | "at" | "status">) {
     const extra = { id: newId("c"), at: new Date().toISOString(), status: "wacht" as const };

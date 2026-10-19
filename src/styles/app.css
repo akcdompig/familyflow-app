@@ -1234,6 +1234,14 @@ button.v2-samen-actie { justify-self: start; min-height: 34px; padding-left: 0; 
 .v2-toets-check li { font-size: var(--ff-t-s); }
 .v2-toets-check li { display: list-item; }
 .v2-toets-uitslag { font-family: var(--ff-font-speels); font-size: 1.5rem; font-weight: 600; }
+/* 3.13 Resultaten voor ouders */
+.ff-visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.v2-toets-res { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }
+.v2-toets-res li { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 14px; background: var(--ff-wolk, #f4f1fb); }
+.v2-toets-res li.is-fout { background: #fdecea; }
+.v2-toets-zijn { color: #a3271b; font-weight: 600; }
+.v2-toets-vaak { background: #fff6dc; border-radius: 14px; padding: 12px; }
+.v2-toets-poging summary { display: flex; gap: 8px; align-items: baseline; justify-content: space-between; }
 .v2-toets-feedback { display: grid; gap: 4px; padding: 10px 12px; border-radius: 12px; background: var(--ff-koraal-zacht); }
 .v2-toets-feedback.is-goed { background: var(--ff-munt-zacht); }
 .ff-choice.is-goed { border-color: var(--ff-munt); background: var(--ff-munt-zacht); }

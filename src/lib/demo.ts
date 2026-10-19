@@ -206,6 +206,13 @@ export function demoFamily(): FamilyState {
         { v: "Wat betekent 'die Schule'?", a: "de school", opties: ["de schoen", "de tafel", "de straat"] },
         { v: "Vertaal: het boek", a: "das Buch" },
         { v: "Wat betekent 'schnell'?", a: "snel", opties: ["langzaam", "groot", "koud"] },
+      ] }, { id: "ot2", titel: "Engels H2 woordjes", door: "p1", at: daysAgo(4, 20), vragen: [
+        { v: "Vertaal: the kitchen", a: "de keuken", opties: ["de kamer", "de kip", "het kussen"] },
+        { v: "Vertaal: to borrow", a: "lenen" },
+        { v: "Vertaal: the weather", a: "het weer", opties: ["de wereld", "de wind", "het water"] },
+      ], pogingen: [
+        { at: daysAgo(3, 19), goed: 1, totaal: 3, fout: [0, 1], antwoorden: ["de kamer", "", "het weer"] },
+        { at: daysAgo(2, 19), goed: 2, totaal: 3, fout: [1], antwoorden: ["de keuken", "lijnen", "het weer"] },
       ] }],
     },
     xpLog: {

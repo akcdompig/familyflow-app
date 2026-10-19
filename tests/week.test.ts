@@ -4,7 +4,7 @@ import { dagStand } from "@/lib/groei";
 import { maandag } from "@/lib/huis";
 import { actions, snapshot } from "@/lib/store";
 import { todayKey } from "@/lib/tasks";
-import { leesToets, zelfde } from "@/lib/toets";
+import { leesToets, vaakFout, zelfde } from "@/lib/toets";
 import { eerdereWeken, tredenVan, vinkjesNodig, weekDicht, weekKaart } from "@/lib/week";
 
 const d = todayKey();
@@ -94,4 +94,18 @@ test("weekbonus: afsluiten onthoudt de trede, uitbetaald aan en uit", () => {
   assert.equal(snapshot().weekAfsluiting?.k1?.["2026-01-05"]?.betaald, undefined);
   assert.ok(eerdereWeken(snapshot(), "k1").some((w) => w.maandag === "2026-01-05"));
   assert.ok(ma >= "2026-01-05");
+});
+
+test("oefentoets: poging bewaart antwoorden en zelf-goed; vaker fout telt per vraag", () => {
+  actions.bewaarToets("k2", { titel: "Test", door: "p1", vragen: [{ v: "1?", a: "een" }, { v: "2?", a: "twee" }, { v: "3?", a: "drie" }] });
+  const id = snapshot().oefentoetsen!.k2!.at(-1)!.id;
+  actions.toetsPoging("k2", id, 1, 3, [0, 2], ["ien", "twee", ""], []);
+  actions.toetsPoging("k2", id, 2, 3, [0], ["1", "twee", "drei"], [2]);
+  const t = snapshot().oefentoetsen!.k2!.find((x) => x.id === id)!;
+  assert.equal(t.pogingen!.length, 2);
+  assert.deepEqual(t.pogingen![0].antwoorden, ["ien", "twee", ""]);
+  assert.equal(t.pogingen![0].zelf, undefined, "geen lege zelf-lijst opslaan");
+  assert.deepEqual(t.pogingen![1].zelf, [2]);
+  assert.deepEqual(vaakFout(t), [{ i: 0, keer: 2 }], "alleen vraag 1 ging twee keer fout");
+  assert.deepEqual(vaakFout({ ...t, pogingen: [{ at: "x", goed: 0, totaal: 3, fout: [0, 0, 9] }] }), [], "dubbel of onbekend telt niet");
 });

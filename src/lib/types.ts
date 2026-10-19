@@ -472,7 +472,18 @@ export interface OefenToets {
   vragen: ToetsVraag[];
   door: string;
   at: string;
-  pogingen?: { at: string; goed: number; totaal: number; fout: number[] }[];
+  /** Per keer oefenen: score, welke vragen fout (index), en (vanaf 3.13) wat het kind antwoordde in de eerste ronde. */
+  pogingen?: ToetsPoging[];
+}
+export interface ToetsPoging {
+  at: string;
+  goed: number;
+  totaal: number;
+  fout: number[];
+  /** Antwoord per vraag (index = vraag). "" = "Weet ik niet". Ontbreekt bij pogingen van vóór 3.13. */
+  antwoorden?: string[];
+  /** Vragen die het kind zelf goed rekende ("Ik had het eigenlijk goed"). */
+  zelf?: number[];
 }
 
 /** Een trede van de weekbonus: vanaf dit percentage krijg je dit (een bedrag of iets leuks). */

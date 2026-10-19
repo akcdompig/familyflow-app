@@ -1,4 +1,4 @@
-import type { ToetsVraag } from "./types";
+import type { OefenToets, ToetsVraag } from "./types";
 
 /*
   Oefentoets uit je eigen AI. De app maakt zelf geen vragen en verzint dus geen leerstof:
@@ -48,4 +48,11 @@ export function keuzes(v: ToetsVraag, i: number): string[] {
   const alle = [v.a, ...(v.opties ?? [])];
   const h = [...v.v].reduce((n, c) => (n * 31 + c.charCodeAt(0)) >>> 0, i + 3);
   return alle.map((x, j) => ({ x, r: (h >> (j % 16)) % 97 + j })).sort((p, q) => p.r - q.r).map((p) => p.x);
+}
+
+/** Vragen die vaker dan één keer fout gingen, meest fout eerst. */
+export function vaakFout(t: OefenToets): { i: number; keer: number }[] {
+  const n = new Map<number, number>();
+  for (const p of t.pogingen ?? []) for (const i of new Set(p.fout)) if (t.vragen[i]) n.set(i, (n.get(i) ?? 0) + 1);
+  return [...n].filter(([, k]) => k >= 2).map(([i, keer]) => ({ i, keer })).sort((a, b) => b.keer - a.keer || a.i - b.i);
 }

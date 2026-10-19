@@ -947,6 +947,28 @@ await scenario("v3.7: ouder plakt een oefentoets, kind oefent en ziet wat nog mo
   const uit = p.getByRole("region", { name: "Uitslag" });
   assert.match(await uit.innerText(), /3 van 4 meteen goed/);
   assert.match(await uit.innerText(), /geen cijfer/);
+  await uit.getByRole("button", { name: "Klaar" }).click();
+  await p.getByRole("button", { name: "Sluiten" }).first().click();
+  // 3.13: papa ziet per keer wat goed en fout ging, en wat Noah antwoordde. Bekijken telt niet als poging.
+  await wissel(p, "Papa");
+  await tab(p, /^Ik/).click();
+  await knop(p, /Huiswerk en Somtoday van de kinderen/).click();
+  const lijst = p.getByRole("region", { name: "Oefentoetsen" });
+  assert.match(await lijst.innerText(), /1× geoefend · laatst 3 van 4 goed/);
+  assert.equal(await lijst.getByRole("button", { name: "Oefenen" }).count(), 0, "ouder oefent niet namens het kind");
+  await lijst.getByRole("button", { name: "Resultaten van Duits H4 woordjes" }).click();
+  const res = p.getByRole("region", { name: "Resultaten Duits H4 woordjes" });
+  assert.match(await res.innerText(), /Noah: de kat/, "wat Noah antwoordde");
+  assert.match(await res.innerText(), /Goed antwoord: de hond/);
+  await res.getByRole("button", { name: /Terug naar de toetsen/ }).click();
+  assert.match(await p.getByRole("region", { name: "Oefentoetsen" }).innerText(), /1× geoefend/, "bekijken voegt geen poging toe");
+  await p.getByRole("region", { name: "Oefentoetsen" }).getByRole("button", { name: "Resultaten van Engels H2 woordjes" }).click();
+  const en = p.getByRole("region", { name: "Resultaten Engels H2 woordjes" });
+  assert.match(await en.innerText(), /Eerste keer 1 van 3 goed, laatste keer 2 van 3\. Noah gaat vooruit/);
+  assert.match(await en.innerText(), /Gaat vaker fout[\s\S]*to borrow/);
+  assert.match(await en.innerText(), /Noah: lijnen/);
+  await en.locator("summary").nth(1).click();
+  assert.match(await en.innerText(), /Noah: wist het niet/, "eerdere poging: Weet ik niet");
 });
 
 // ---------- 3.8: Vandaag met de lijst bovenaan ----------
