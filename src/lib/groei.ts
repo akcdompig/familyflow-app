@@ -14,7 +14,7 @@
 import { addDays, iso } from "./planner";
 import { ETEN, ROUTINE, dagLog, gegeten } from "./dag";
 import { dagprogramma, telt } from "./dagprogramma";
-import { huistaakVoor, klusById, laatst, maandag } from "./huis";
+import { klusById, klusKeyVoor, laatst, maandag } from "./huis";
 import { IDEEEN } from "./samen";
 import { tasksFor, isDone } from "./tasks";
 import { verdeling } from "./verdeling";
@@ -64,7 +64,7 @@ export function dagLijst(s: FamilyState, id: string, d: string): DagItem[] {
   for (const [key, wie] of Object.entries(v.wie)) if (wie === id || v.mee[key] === id) keys.add(key);
   for (const key of gedaan) keys.add(key); // ook wat je extra deed
   // Een losse taak die dezelfde klus is (bijv. "Afval wegbrengen" en "Afval buiten zetten"): één keer in de lijst.
-  const zelfde = (t: { title: string }) => huistaakVoor(s, t.title)?.id;
+  const zelfde = (t: { title: string }) => klusKeyVoor(s, t.title, id);
   for (const t of tasksFor(s, id, d)) {
     if (t.cat === "werk") continue;
     const k = zelfde(t);
@@ -75,7 +75,7 @@ export function dagLijst(s: FamilyState, id: string, d: string): DagItem[] {
   const vandaagGedaan = (key: string) => { const l = laatst(s, key); return !!l && l.by === id && iso(new Date(l.at)) === d; };
   for (const key of keys) {
     const k = klusById(s, key);
-    items.push({ id: `klus:${key}`, soort: "klus", titel: k ? (k.perKind ? "Eigen kamer" : k.label.split(" (")[0]) : key, emoji: k?.emoji ?? "🧹", klaar: gedaan.has(key) || (!key.includes(":") && vandaagGedaan(key)) });
+    items.push({ id: `klus:${key}`, soort: "klus", titel: k ? (k.perKind ? "Eigen kamer" : k.label.split(" (")[0]) : key, emoji: k?.emoji ?? "🧹", klaar: gedaan.has(key) || vandaagGedaan(key) });
   }
   return metStatus(s, id, d, items);
 }

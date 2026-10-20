@@ -12,7 +12,7 @@ import { markeerGeclaimd, metHerkomst, openRegels, type OpenRegel, type Wat } fr
 import { verdeling } from "./verdeling";
 import { DAG_OEFENING_XP } from "./oefendag";
 import { weekDicht } from "./week";
-import { huistaakVoor, klusById as verdeelKlus, maandag } from "./huis";
+import { klusKeyVoor, klusById as verdeelKlus, maandag } from "./huis";
 import { iso } from "./planner";
 import { SCENARIOS } from "./scenarios";
 const routineAf = (l: DagLog) => ROUTINE.filter((r) => r.gewicht > 0).every((r) => l.routine.includes(r.id));
@@ -287,10 +287,10 @@ const isKid = (s: FamilyState, id: string) => !!s.members.find((m) => m.id === i
 
 /** Klus gedaan: losse taken van vandaag die dezelfde klus zijn (bijv. "Afval wegbrengen") staan dan ook op gedaan. Zonder extra punten. */
 function zelfdeTaakAf(s: FamilyState, key: string, by: string, d: string): FamilyState {
-  if (key.includes(":")) return s;
-  const ids = new Set(s.members.flatMap((m) => tasksFor(s, m.id)).filter((t) => huistaakVoor(s, t.title)?.id === key && !s.done[d]?.[t.id]).map((t) => t.id));
-  if (!ids.size) return s;
-  return { ...s, done: { ...s.done, [d]: { ...(s.done[d] ?? {}), ...Object.fromEntries([...ids].map((id) => [id, by])) } } };
+  const af: Record<string, string> = {};
+  for (const m of s.members) for (const t of tasksFor(s, m.id)) if (!s.done[d]?.[t.id] && klusKeyVoor(s, t.title, m.id) === key) af[t.id] = by;
+  if (!Object.keys(af).length) return s;
+  return { ...s, done: { ...s.done, [d]: { ...(s.done[d] ?? {}), ...af } } };
 }
 
 export const actions = {
@@ -490,11 +490,11 @@ export const actions = {
       else day[task.id] = memberId;
       // Is deze taak dezelfde klus als een huistaak (andere naam, zelfde werk)? Dan telt de klus ook als gedaan.
       // Was de klus vandaag al gedaan, dan geen punten nog een keer.
-      const klus = huistaakVoor(s, task.title);
+      const klus = klusKeyVoor(s, task.title, doer);
       const vanVandaag = (k: { at: string }) => new Date(k.at).toLocaleDateString("sv-SE") === d;
-      const klusAlGedaan = !!klus && (s.klusLog ?? []).some((k) => k.klus === klus.id && vanVandaag(k) && k.taak !== task.id);
+      const klusAlGedaan = !!klus && (s.klusLog ?? []).some((k) => k.klus === klus && vanVandaag(k) && k.taak !== task.id);
       let klusLog = s.klusLog;
-      if (klus && !wasDone && !klusAlGedaan) klusLog = [...(s.klusLog ?? []), { id: newId("k"), klus: klus.id, by: doer, at: new Date().toISOString(), taak: task.id }].slice(-300);
+      if (klus && !wasDone && !klusAlGedaan) klusLog = [...(s.klusLog ?? []), { id: newId("k"), klus, by: doer, at: new Date().toISOString(), taak: task.id }].slice(-300);
       if (klus && wasDone) klusLog = (s.klusLog ?? []).filter((k) => !(k.taak === task.id && vanVandaag(k)));
       // Blokjes die een ouder bevestigt: XP pas na bevestigen.
       const metOuder = !!task.study?.ouder && isKid(s, doer);

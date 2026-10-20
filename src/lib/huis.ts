@@ -149,12 +149,17 @@ export function laatst(s: FamilyState, key: string): KlusDone | undefined {
 
 /** Laatste keer dat een losse taak die dezelfde klus is (bijv. "Afval wegbrengen" = "Afval buiten zetten") is afgevinkt. */
 function laatsteAlsTaak(s: FamilyState, key: string): KlusDone | undefined {
-  if (key.includes(":")) return undefined;
-  const ids = new Set((s.tasks ?? []).filter((t) => huistaakVoor(s, t.title)?.id === key).map((t) => t.id));
-  if (!ids.size) return undefined;
+  const [basis] = key.split(":");
+  const kandidaten = (s.tasks ?? []).filter((t) => {
+    const k = huistaakVoor(s, t.title);
+    return k ? k.id === key : key.includes(":") && perKindVoor(s, t.title)?.id === basis;
+  });
+  if (!kandidaten.length) return undefined;
+  const ids = new Set(kandidaten.map((t) => t.id));
   for (const d of Object.keys(s.done ?? {}).sort().reverse()) {
     const dag = s.done[d] ?? {};
-    const id = Object.keys(dag).find((t) => ids.has(t));
+    // Per kind (eigen kamer, bed): alleen als dat kind de taak zelf afvinkte.
+    const id = Object.keys(dag).find((t) => ids.has(t) && (!key.includes(":") || klusKeyVoor(s, kandidaten.find((x) => x.id === t)!.title, dag[t]) === key));
     if (id) return { id: `taak-${d}-${id}`, klus: key, by: dag[id], at: new Date(`${d}T12:00:00`).toISOString(), taak: id };
   }
   return undefined;
@@ -382,6 +387,25 @@ export function huistaakVoor(s: FamilyState, titel: string): Klus | undefined {
   return alleKlussen(s).find((k) => klusAan(s, k) && !k.perKind && (kaal(k.label) === t || kaal(k.label).startsWith(t + " ") || t.startsWith(kaal(k.label) + " ") || (ZELFDE[k.id] ?? []).includes(t)));
 }
 
+/** Per-kind klus met dezelfde betekenis ("Kamer opruimen" = "Eigen kamer netjes"). */
+function perKindVoor(s: FamilyState, titel: string): Klus | undefined {
+  const t = kaal(titel);
+  if (t.length < 4) return undefined;
+  return alleKlussen(s).find((k) => klusAan(s, k) && k.perKind && (kaal(k.label) === t || (ZELFDE[k.id] ?? []).includes(t)));
+}
+
+/**
+  Welke huistaak is deze losse taak eigenlijk? Geeft de sleutel van de klus (bij eigen kamer: "kamer:<kind>"), of niks.
+  `wie` = voor wie de taak is (nodig voor klussen per kind).
+*/
+export function klusKeyVoor(s: FamilyState, titel: string, wie?: string): string | undefined {
+  const k = huistaakVoor(s, titel);
+  if (k) return k.id;
+  if (!wie || !kidsVan(s).some((m) => m.id === wie)) return undefined;
+  const pk = perKindVoor(s, titel);
+  return pk ? klusKey(pk, wie) : undefined;
+}
+
 const kaal = (t: string) => t.toLowerCase().split(" (")[0].replace(/[^a-zà-ÿ0-9 ]/g, "").replace(/\s+/g, " ").trim();
 
 /**
@@ -403,4 +427,24 @@ export const ZELFDE: Record<string, string[]> = {
   boodschappen: ["boodschappen uitpakken", "boodschappen opruimen", "boodschappen wegzetten"],
   "tafel-dekken": ["tafel dekken"],
   "tafel-af": ["tafel afruimen", "tafel opruimen"],
+  "was-vouwen": ["was vouwen", "was vouwen en opruimen", "wasgoed vouwen"],
+  "was-opbergen": ["was opbergen", "was opruimen", "schone was opruimen", "schone was wegleggen"],
+  afwas: ["afwassen", "afwas doen", "vaat doen", "de vaat doen"],
+  papier: ["oud papier wegbrengen", "papier wegbrengen", "oud papier buiten zetten", "papierbak buiten zetten"],
+  gft: ["groene bak buiten zetten", "gft buiten zetten", "gftbak buiten zetten", "gft bak buiten zetten", "groene container buiten zetten"],
+  glas: ["glas wegbrengen", "glas naar de glasbak", "flessen naar de glasbak"],
+  "dier-eten": ["huisdier verzorgen", "huisdier eten geven", "huisdier eten en water geven", "huisdier uitlaten of eten geven", "dieren eten geven", "dieren verzorgen"],
+  "hond-uit": ["hond uitlaten", "met de hond lopen", "rondje met de hond"],
+  kattenbak: ["kattenbak verschonen", "kattenbak schoonmaken", "kattenbak legen"],
+  stofzuigen: ["stofzuigen", "huis stofzuigen", "woonkamer stofzuigen"],
+  dweilen: ["dweilen", "vloer dweilen"],
+  strijken: ["strijken"],
+  "koken-helpen": ["helpen met koken", "helpen koken"],
+  schoenen: ["schoenen opruimen", "schoenen van de trap halen", "je eigen schoenen van de trap halen", "eigen schoenen van de trap halen", "jassen opruimen", "schoenen en jassen opruimen"],
+  // Per kind
+  kamer: ["kamer opruimen", "eigen kamer opruimen", "kamer netjes maken", "slaapkamer opruimen", "kamer netjes"],
+  "bed-op": ["bed opmaken", "bed rechtleggen"],
+  bureau: ["bureau opruimen", "bureau netjes"],
+  broodtrommels: ["broodtrommel legen", "broodtrommel en beker legen", "bidon en broodtrommel legen"],
+  wasmand: ["wasmand naar beneden", "vuile was naar beneden", "wasmand legen", "eigen wasmand naar de wasmachine"],
 };
