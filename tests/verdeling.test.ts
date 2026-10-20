@@ -226,7 +226,14 @@ test("3.16: nooit meer dan de tijd van een kind; geen schooltijden = doordeweeks
   assert.equal(v.verwachting.k2.soort, "school", "geen schooltijden ingevuld: doordeweeks een schooldag");
   assert.equal(v.verwachting.k2.doel, 45);
   for (const id of ["k1", "k2"]) assert.ok(v.vandaag[id] <= v.verwachting[id].doel + 5, `${id}: ${v.vandaag[id]} min, mag ${v.verwachting[id].doel}`);
-  assert.ok(Object.values(v.reden).includes("de kinderen hebben vandaag hun tijd al vol"), "wat niet past, gaat naar een ouder");
+  assert.ok(Object.values(v.reden).includes("de kinderen hebben vandaag hun tijd of hun 3 klussen al vol"), "wat niet past, gaat naar een ouder");
+  for (const dag of ["2026-10-20", "2026-10-21", "2026-10-24", "2026-10-14"]) {
+    const w = verdeling(s, dag);
+    for (const id of ["k1", "k2"]) {
+      const n = Object.entries(w.wie).filter(([k, x]) => x === id && !k.includes(":")).length;
+      assert.ok(n <= 3, `${dag} ${id}: ${n} klussen (hooguit 3, eigen kamer en bed niet meegeteld)`);
+    }
+  }
   assert.equal(v.wie["kamer:k2"], undefined, "kamer staat op 'niet' voor de kinderen");
   assert.equal(v.wie["kamer:k1"], undefined);
   const bed = status(s, at(di, "16:00")).find((k) => k.key === "bed-op:k2");

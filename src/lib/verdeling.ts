@@ -61,6 +61,8 @@ export function hash(t: string) {
 /* ---------- Afspraken (of het voorstel) ---------- */
 
 export const isVastgelegd = (s: FamilyState) => !!s.klusAfspraken?.vastgelegd;
+/** Hooguit zoveel klussen per kind per dag (eigen kamer en bed opmaken tellen niet mee). Liever een paar grotere dan veel kleine. */
+export const MAX_KLUSSEN = 3;
 export const minutenVan = (s: FamilyState, k: Klus) => s.klusAfspraken?.klussen?.[k.id]?.minuten ?? k.minuten;
 export const minutenKey = (s: FamilyState, key: string) => {
   const k = klusVan(s, key);
@@ -189,6 +191,8 @@ function bereken(s: FamilyState, d: string, zonder?: { key: string; id: string }
   const verw: Record<string, Verwachting> = Object.fromEntries(alle.map((m) => [m.id, verwachting(s, m, d)]));
   const { punten, perKlus, laatstDoor } = belasting(s, d);
   const vandaag: Record<string, number> = Object.fromEntries(alle.map((m) => [m.id, 0]));
+  const aantal: Record<string, number> = Object.fromEntries(alle.map((m) => [m.id, 0]));
+  const vol = (m: Member, min: number) => vandaag[m.id] + min > verw[m.id].doel + 5 || (isKind(m) && aantal[m.id] >= MAX_KLUSSEN);
   const wie: Record<string, string> = {};
   const mee: Record<string, string> = {};
   const reden: Record<string, string> = {};
@@ -201,10 +205,10 @@ function bereken(s: FamilyState, d: string, zonder?: { key: string; id: string }
     if (!kandidaten.length) return undefined;
     const last = (m: Member) => ((punten[m.id] ?? 0) + vandaag[m.id] * 2) / Math.max(10, verw[m.id].doel);
     const score = (m: Member) => {
-      const vol = vandaag[m.id] + minutenVan(s, k) > verw[m.id].doel + 5 ? 1000 : 0;
+      const isVol = vol(m, minutenVan(s, k)) ? 1000 : 0;
       const zelfde = (perKlus[`${k.id}|${m.id}`] ?? 0) * 0.6;
       const lang = -(dagMs - (laatstDoor[`${k.id}|${m.id}`] ?? 0)) / 864e5 / 1000;
-      return vol + last(m) + zelfde + lang + hash(`${d}|${key}|${m.id}`) * 0.01;
+      return isVol + last(m) + zelfde + lang + hash(`${d}|${key}|${m.id}`) * 0.01;
     };
     const gekozen = [...kandidaten].sort((a, b) => score(a) - score(b))[0];
     const anderen = kandidaten.filter((m) => m.id !== gekozen.id);
@@ -249,25 +253,26 @@ function bereken(s: FamilyState, d: string, zonder?: { key: string; id: string }
       // Zit iedereen vandaag al vol (school, werk) en kan het nog wachten? Dan schuift het door naar een rustigere dag.
       // Dagelijkse klussen en klussen die echt te lang blijven liggen gaan altijd door.
       const pool = (m.k.iedereen ? alle : kids).filter((x) => verw[x.id].doel > 0 && magDoen(s, x, m.k));
-      const vol = pool.every((x) => vandaag[x.id] + minutenVan(s, m.k) > verw[x.id].doel + 5);
-      if (m.k.elke > 1 && vol && m.ago !== null && m.ago < m.k.elke * 2) {
+      const allesVol = pool.every((x) => vol(x, minutenVan(s, m.k)));
+      if (m.k.elke > 1 && allesVol && m.ago !== null && m.ago < m.k.elke * 2) {
         uitgesteld.add(m.key);
         continue;
       }
       lid = kies(m.k, m.key, m.k.iedereen ? alle : kids);
-      if (lid && isKind(lid) && vandaag[lid.id] + minutenVan(s, m.k) > verw[lid.id].doel + 5) {
+      if (lid && isKind(lid) && vol(lid, minutenVan(s, m.k))) {
         const ouder = alle
           .filter((x) => !isKind(x) && magDoen(s, x, m.k) && verw[x.id].soort !== "vrijstelling" && !(zonder && zonder.key === m.key && zonder.id === x.id))
           .sort((x, y) => vandaag[x.id] - verw[x.id].doel - (vandaag[y.id] - verw[y.id].doel) || hash(`${d}|${m.key}|${x.id}`) - hash(`${d}|${m.key}|${y.id}`))[0];
         if (ouder) {
           lid = ouder;
-          reden[m.key] = "de kinderen hebben vandaag hun tijd al vol";
+          reden[m.key] = "de kinderen hebben vandaag hun tijd of hun 3 klussen al vol";
         }
       }
     }
     if (!lid) continue;
     wie[m.key] = lid.id;
     vandaag[lid.id] += minutenVan(s, m.k);
+    if (!m.kind) aantal[lid.id]++;
   }
 
   // 2. Vrije dag en nog ruimte? Dan hooguit één klus erbij die binnenkort toch moet. Zo is vrij geen luie dag,
@@ -275,12 +280,13 @@ function bereken(s: FamilyState, d: string, zonder?: { key: string; id: string }
   kan.sort((a, b) => minutenVan(s, b.k) - minutenVan(s, a.k) || hash(d + a.key) - hash(d + b.key));
   const kreegExtra = new Set<string>();
   for (const x of kan) {
-    const ruimte = kids.filter((m) => verw[m.id].soort !== "school" && verw[m.id].doel > 0 && !kreegExtra.has(m.id) && vandaag[m.id] < verw[m.id].doel && vandaag[m.id] + minutenVan(s, x.k) <= verw[m.id].doel + 5);
+    const ruimte = kids.filter((m) => verw[m.id].soort !== "school" && verw[m.id].doel > 0 && !kreegExtra.has(m.id) && vandaag[m.id] < verw[m.id].doel && !vol(m, minutenVan(s, x.k)));
     if (!ruimte.length) continue;
     const lid = kies(x.k, x.key, ruimte);
     if (!lid) continue;
     wie[x.key] = lid.id;
     vandaag[lid.id] += minutenVan(s, x.k);
+    aantal[lid.id]++;
     reden[x.key] = "is vandaag vrij, dus deze mag alvast";
     extra.add(x.key);
     kreegExtra.add(lid.id);
