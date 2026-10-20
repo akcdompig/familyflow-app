@@ -42,6 +42,8 @@ export interface Verdeling {
   verwachting: Record<string, Verwachting>;
   /** Minuten die iedereen vandaag kreeg. */
   vandaag: Record<string, number>;
+  /** Er is voor deze dag (nog) niks verdeeld door een ouder: alleen eigen kamer en bed staan erin. */
+  nietVerdeeld?: boolean;
 }
 
 const leden = (s: FamilyState) => s.members.filter((m) => m.joined !== false);
@@ -175,6 +177,19 @@ function laatstVoor(s: FamilyState, key: string, d: string): string | null {
 export const OVERSLAAN = "-";
 
 const cache = new WeakMap<FamilyState, Map<string, Verdeling>>();
+const voorstelCache = new WeakMap<FamilyState, Map<string, Verdeling>>();
+/**
+  Het voorstel van de app: de eerlijke verdeling (tijd, wie het recent deed, roosters, leeftijd).
+  Alleen voor "Verdeel de taken" en "lukt me niet". Kinderen krijgen het pas als een ouder het vastlegt.
+*/
+export function voorstel(s: FamilyState, d = iso(new Date())): Verdeling {
+  const c = voorstelCache.get(s)?.get(d);
+  if (c) return c;
+  const uit = bereken(s, d, undefined, true);
+  if (!voorstelCache.has(s)) voorstelCache.set(s, new Map());
+  voorstelCache.get(s)!.set(d, uit);
+  return uit;
+}
 
 export function verdeling(s: FamilyState, d = iso(new Date())): Verdeling {
   const c = cache.get(s)?.get(d);
@@ -185,7 +200,7 @@ export function verdeling(s: FamilyState, d = iso(new Date())): Verdeling {
   return uit;
 }
 
-function bereken(s: FamilyState, d: string, zonder?: { key: string; id: string }): Verdeling {
+function bereken(s: FamilyState, d: string, zonder?: { key: string; id: string }, alsVoorstel = false): Verdeling {
   const alle = leden(s);
   const kids = alle.filter(isKind);
   const verw: Record<string, Verwachting> = Object.fromEntries(alle.map((m) => [m.id, verwachting(s, m, d)]));
@@ -294,6 +309,19 @@ function bereken(s: FamilyState, d: string, zonder?: { key: string; id: string }
 
   // 3a. Een door ouders bevestigde weekplanning gaat voor de berekening van de dag.
   const plan = s.klusAfspraken?.planning?.[d];
+  // Huisklussen geeft de app niet zelf: alleen wat een ouder verdeelde (planning) of zelf aan iemand gaf (wissel).
+  // Eigen kamer en bed opmaken (per kind) blijven vanzelf.
+  if (!alsVoorstel) {
+    for (const key of Object.keys(wie)) {
+      if (key.includes(":")) continue;
+      vandaag[wie[key]] -= minutenKey(s, key);
+      delete wie[key];
+      delete reden[key];
+      delete mee[key];
+    }
+    extra.clear();
+    uitgesteld.clear();
+  }
   if (plan) {
     for (const [key, r] of Object.entries(plan)) {
       const k = klusVan(s, key);
@@ -322,9 +350,18 @@ function bereken(s: FamilyState, d: string, zonder?: { key: string; id: string }
       delete reden[key];
       continue;
     }
-    if (!wie[key] || !alle.some((m) => m.id === id) || wie[key] === id) continue;
+    if (!alle.some((m) => m.id === id) || wie[key] === id) continue;
     if (zonder && zonder.key === key && zonder.id === id) continue;
     const min = minutenKey(s, key);
+    if (!wie[key]) {
+      // Nog bij niemand: een ouder geeft hem zelf aan iemand.
+      const k = klusVan(s, key);
+      if (alsVoorstel || id === OVERSLAAN || !k || !klusAan(s, k)) continue;
+      wie[key] = id;
+      vandaag[id] = (vandaag[id] ?? 0) + min;
+      reden[key] = "ingedeeld door een ouder";
+      continue;
+    }
     vandaag[wie[key]] -= min;
     vandaag[id] = (vandaag[id] ?? 0) + min;
     wie[key] = id;
@@ -339,12 +376,12 @@ function bereken(s: FamilyState, d: string, zonder?: { key: string; id: string }
     reden[key] = "doen jullie samen";
   }
 
-  return { wie, mee, reden, extra, uitgesteld, verwachting: verw, vandaag };
+  return { wie, mee, reden, extra, uitgesteld, verwachting: verw, vandaag, nietVerdeeld: !alsVoorstel && !plan };
 }
 
 /** Wie is de beste volgende voor deze klus als `zonder` hem vandaag niet kan? (Voor "lukt me niet".) */
 export function volgende(s: FamilyState, d: string, key: string, zonder: string): string | undefined {
-  const v = bereken(s, d, { key, id: zonder });
+  const v = bereken(s, d, { key, id: zonder }, true);
   const w = v.wie[key];
   return w && w !== zonder ? w : undefined;
 }

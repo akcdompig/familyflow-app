@@ -165,7 +165,7 @@ export function klusStatus(s: FamilyState, nu = new Date()): KlusStatus[] {
       // Te laat = langer liggen dan de bedoeling. Een dagelijkse klus van gisteren moet vandaag, maar is nog niet te laat.
       const teLaat = ago === null ? 0 : Math.max(0, ago - k.elke);
       const ingedeeld = lid(v.wie[r.key]);
-      out.push({ key: r.key, klus: k, kind: r.kind, laatst: l, dagenGeleden: ago, teLaat, nodig: ago === null || ago >= k.elke, vandaagGedaan: ago === 0, beurt: ingedeeld ?? r.kind ?? beurtVoor(s, k, nu), ingedeeld: !!ingedeeld, extra: v.extra.has(r.key), uitgesteld: v.uitgesteld.has(r.key), mee: lid(v.mee[r.key]), reden: v.reden[r.key], minuten: minutenVan(s, k) });
+      out.push({ key: r.key, klus: k, kind: r.kind, laatst: l, dagenGeleden: ago, teLaat, nodig: ago === null || ago >= k.elke, vandaagGedaan: ago === 0, beurt: ingedeeld ?? r.kind, ingedeeld: !!ingedeeld, extra: v.extra.has(r.key), uitgesteld: v.uitgesteld.has(r.key), mee: lid(v.mee[r.key]), reden: v.reden[r.key], minuten: minutenVan(s, k) });
     }
   }
   return out;

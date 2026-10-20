@@ -169,7 +169,7 @@ export function PlanStatus({ state }: { state: FamilyState }) {
     <details className="v2-meer-details">
       <summary>
         <b>{tot ? `Planning bevestigd t/m ${dagNaam(tot)}` : "Nog geen weekplanning"}</b>{" "}
-        <span className="ff-small ff-muted">{tot ? "eerdere verdelingen en wijzigingen" : "de app verdeelt nu elke dag zelf"}</span>
+        <span className="ff-small ff-muted">{tot ? "eerdere verdelingen en wijzigingen" : "de kinderen krijgen pas klussen als jij ze verdeelt"}</span>
       </summary>
       <div className="ff-stack-s">
         {!log.length && <span className="ff-small ff-muted">Nog niks veranderd.</span>}

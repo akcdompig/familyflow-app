@@ -44,6 +44,7 @@ export function VerdelingVandaag({ state, me, lijst, onOpen }: { state: FamilySt
   return (
     <section className="ff-card ff-stack-s" aria-label="Wie doet wat vandaag">
       <b>Vandaag</b>
+      {v.nietVerdeeld && me.role === "ouder" && <p className="ff-small v2-let-op" role="note">Nog niet verdeeld. De kinderen krijgen vandaag alleen hun eigen kamer en bed. Tik op <b>Verdeel de taken</b> om de klussen te verdelen.</p>}
       {leden.map((m) => {
         const mijn = lijst.filter((k) => (k.beurt?.id === m.id || k.mee?.id === m.id) && (k.ingedeeld || (k.klus.naKoken && (k.nodig || k.vandaagGedaan))));
         const w = v.verwachting[m.id];

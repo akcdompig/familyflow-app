@@ -1,5 +1,6 @@
 import type { FamilyState } from "./types";
 import { DEFAULT_REWARDS } from "./xp";
+import { maakPlan } from "./takenplan";
 
 const daysAgo = (n: number, h = 18) => {
   const d = new Date();
@@ -77,7 +78,13 @@ function demoGeschiedenis() {
 }
 
 /** Voorbeeldgezin. Alle namen en gegevens zijn verzonnen. */
+/** De demo zoals een ouder hem gebruikt: de klussen van de komende twee weken zijn verdeeld met "Verdeel de taken". */
 export function demoFamily(): FamilyState {
+  const s = demoBasis();
+  return { ...s, klusAfspraken: { ...(s.klusAfspraken ?? {}), planning: maakPlan(s, today(), 14) } };
+}
+
+function demoBasis(): FamilyState {
   const d = today();
   const g = demoGeschiedenis();
   return {

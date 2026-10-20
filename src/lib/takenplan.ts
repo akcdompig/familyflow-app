@@ -1,6 +1,6 @@
 import { klusById } from "./huis";
 import { addDays } from "./planner";
-import { magDoen, verdeling, verwachting } from "./verdeling";
+import { magDoen, voorstel, verwachting } from "./verdeling";
 import type { FamilyState, KlusDone, Member, PlanRegel, TaakGevoel } from "./types";
 
 /*
@@ -45,7 +45,7 @@ export function maakPlan(s: FamilyState, start: string, dagen = 7): Plan {
   const nam = (id?: string) => s.members.find((m) => m.id === id)?.name ?? "";
 
   for (const d of datums) {
-    const v = verdeling(sim, d);
+    const v = voorstel(sim, d);
     const regels: Record<string, PlanRegel> = {};
     for (const [key, id] of Object.entries(v.wie)) regels[key] = { wie: id, reden: v.reden[key] };
     const beschikbaar = (m: Member) => verwachting(sim, m, d).doel > 0;
