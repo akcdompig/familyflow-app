@@ -73,7 +73,12 @@ function TaakForm({ state, me, datum, onTerug, onKlaar }: { state: FamilyState; 
   const [dagen, setDagen] = useState<number[]>([]);
   const [tijd, setTijd] = useState("");
   const leden = state.members.filter((m) => m.joined !== false);
-  const lijst = CATALOGUS.filter((c) => c.cat === groep && (isOuder || !c.ouder) && (c.pet ? state.pet.has : true));
+  const mag = (c: CatalogTaak) => groepen.includes(c.cat) && (isOuder || !c.ouder) && (c.pet ? state.pet.has : true);
+  const lijst = CATALOGUS.filter((c) => c.cat === groep && mag(c));
+  // Zoeken: in alle soorten tegelijk, zonder eerst een tab te kiezen.
+  const zoekt = !!titel.trim() && !gekozen;
+  const gevonden = zoekt ? zoekTaken(titel, CATALOGUS.filter(mag)) : [];
+  const kies = (c: CatalogTaak) => { setTitel(c.title); setGekozen(c); setGroep(c.cat); };
   const klus = huistaakVoor(state, titel);
   const voorLid = leden.find((m) => m.id === voor);
   const ok = !!titel.trim() && !klus && (wanneer !== "vast" || dagen.length > 0) && (wanneer !== "dag" || !!dag);
@@ -101,14 +106,24 @@ function TaakForm({ state, me, datum, onTerug, onKlaar }: { state: FamilyState; 
     <div className="ff-stack-s">
       <button className="v2-terug" onClick={onTerug}>‹ Iets anders toevoegen</button>
       <h2 className="ff-h2">Taak toevoegen</h2>
-      <span className="ff-small ff-muted">Kies er een of typ zelf. Een tijd hoeft niet.</span>
-      <div className="v2-cat-tabs" role="tablist" aria-label="Soort taak">
-        {groepen.map((g) => <button key={g} role="tab" aria-selected={groep === g} className="v2-cat-tab" onClick={() => setGroep(g)}>{g === "overig" ? "Regelen en overig" : g === "huishouden" ? "Huishouden en boodschappen" : CATS[g].label}</button>)}
-      </div>
-      <div className="ff-chips v2-taak-keuzes" aria-label="Kies een taak">
-        {lijst.map((c) => <button key={c.title} className="ff-chip" aria-pressed={titel === c.title} onClick={() => { setTitel(c.title); setGekozen(c); }}>{titel === c.title ? "✓ " : "+ "}{c.title}</button>)}
-      </div>
-      <label className="ff-field"><span className="ff-eyebrow">Of typ zelf</span><input value={titel} maxLength={60} onChange={(e) => { setTitel(e.target.value); setGekozen(null); }} placeholder="Bijv. boodschappen doen" aria-label="Wat moet er gebeuren?" /></label>
+      <span className="ff-small ff-muted">Zoek, kies er een of typ zelf. Een tijd hoeft niet.</span>
+      <label className="ff-field"><span className="ff-eyebrow">Zoek of typ zelf</span><input type="search" value={titel} maxLength={60} onChange={(e) => { setTitel(e.target.value); setGekozen(null); }} placeholder="Bijv. was, gym, tandarts" aria-label="Wat moet er gebeuren?" /></label>
+      {zoekt ? (
+        gevonden.length ? (
+          <div className="ff-chips v2-taak-keuzes" aria-label="Gevonden taken">
+            {gevonden.map((c) => <button key={c.title} className="ff-chip" onClick={() => kies(c)}>+ {c.title}</button>)}
+          </div>
+        ) : !klus && <p className="ff-small ff-muted">Niks gevonden in de lijst. Je voegt "{titel.trim()}" toe als eigen taak.</p>
+      ) : (
+        <>
+          <div className="v2-cat-tabs" role="tablist" aria-label="Soort taak">
+            {groepen.map((g) => <button key={g} role="tab" aria-selected={groep === g} className="v2-cat-tab" onClick={() => setGroep(g)}>{g === "overig" ? "Regelen en overig" : g === "huishouden" ? "Huishouden en boodschappen" : CATS[g].label}</button>)}
+          </div>
+          <div className="ff-chips v2-taak-keuzes" aria-label="Kies een taak">
+            {lijst.map((c) => <button key={c.title} className="ff-chip" aria-pressed={titel === c.title} onClick={() => kies(c)}>{titel === c.title ? "✓ " : "+ "}{c.title}</button>)}
+          </div>
+        </>
+      )}
       {klus && <p className="ff-small v2-let-op">Dit is een klus voor het huis ({klus.label.toLowerCase()}). Die staat al bij Gezin en wordt eerlijk verdeeld.</p>}
 
       {isOuder && (
@@ -133,4 +148,15 @@ function TaakForm({ state, me, datum, onTerug, onKlaar }: { state: FamilyState; 
       <button className="ff-btn ff-btn-primary ff-btn-wide" disabled={!ok} onClick={opslaan}>Taak toevoegen</button>
     </div>
   );
+}
+
+/** Zoeken zonder hoofdletters en accenten; elk woord moet ergens in de naam staan. Wat met je woord begint, komt eerst. */
+export function zoekTaken(q: string, lijst: CatalogTaak[]): CatalogTaak[] {
+  const norm = (t: string) => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const woorden = norm(q).split(/\s+/).filter(Boolean);
+  if (!woorden.length) return [];
+  return lijst
+    .filter((c) => woorden.every((w) => norm(c.title).includes(w)))
+    .sort((a, b) => Number(!norm(a.title).startsWith(woorden[0])) - Number(!norm(b.title).startsWith(woorden[0])) || a.title.localeCompare(b.title))
+    .slice(0, 12);
 }

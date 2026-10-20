@@ -1,2 +1,2 @@
-export const VERSION = "3.16";
-export const VERSION_NAME = "Klussen binnen de tijd";
+export const VERSION = "3.17";
+export const VERSION_NAME = "Zoeken bij taak toevoegen";

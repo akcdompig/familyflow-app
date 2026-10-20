@@ -1011,6 +1011,26 @@ await scenario("v3.14: ouder zet turven en sterren aan, geeft een turf; kind zie
   assert.ok(!(await p.locator("body").innerText()).includes("Gelogen"), "Lina ziet de turven van Noah niet");
 });
 
+// ---------- 3.17: zoeken bij taak toevoegen ----------
+await scenario("v3.17: taak toevoegen: zoeken in alle soorten, kiezen, of zelf typen", v2, "16:00", async (p) => {
+  await wissel(p, "Papa");
+  await p.getByRole("button", { name: /^Toevoegen: taak/ }).click();
+  await p.getByRole("dialog").getByRole("button", { name: /^Taak Iets wat je/ }).click();
+  const dlg = p.getByRole("dialog");
+  await dlg.getByLabel("Wat moet er gebeuren?").fill("gym");
+  const gevonden = dlg.getByLabel("Gevonden taken");
+  assert.ok(await gevonden.count(), "er staan gevonden taken");
+  assert.equal(await dlg.getByRole("tablist", { name: "Soort taak" }).count(), 0, "tijdens zoeken geen tabbladen");
+  const eerste = gevonden.getByRole("button").first();
+  const naam = (await eerste.innerText()).replace(/^\+\s*/, "");
+  await eerste.click();
+  assert.equal(await dlg.getByLabel("Wat moet er gebeuren?").inputValue(), naam);
+  assert.ok(await dlg.getByRole("button", { name: `✓ ${naam}` }).count(), "gekozen taak staat aangevinkt in zijn soort");
+  await dlg.getByLabel("Wat moet er gebeuren?").fill("Fiets van oma ophalen");
+  assert.match(await dlg.innerText(), /Je voegt "Fiets van oma ophalen" toe als eigen taak/);
+  assert.ok(!(await dlg.getByRole("button", { name: "Taak toevoegen" }).isDisabled()));
+});
+
 // ---------- 3.8: Vandaag met de lijst bovenaan ----------
 await scenario("v3.8: kind ziet de lijst van nu bovenaan, zonder te scrollen; geen losse Nu doen-kaart en geen +2-labels", v2, "16:00", async (p) => {
   await wissel(p, "Noah");
