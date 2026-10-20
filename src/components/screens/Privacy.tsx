@@ -24,7 +24,7 @@ export function Privacy({ state, me, onToast, onTerug }: { state: FamilyState; m
     const blob = new Blob([JSON.stringify(snapshot(), null, 2)], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `familyflow-${me.name.toLowerCase()}-${new Date().toLocaleDateString("sv-SE")}.json`;
+    a.download = `thuisclub-${me.name.toLowerCase()}-${new Date().toLocaleDateString("sv-SE")}.json`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
     onToast("Je gegevens worden gedownload");

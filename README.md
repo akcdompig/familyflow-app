@@ -1,4 +1,4 @@
-# FamilyFlow (versie 1.2, pilotweek)
+# Thuisclub (voorheen FamilyFlow)
 
 Minder strijd, meer samen. Eén app voor het hele gezin: een huiskamer met levende avatars, check-ins, een rustplan, ruzies oplossen en coaching. Later ook voor school en wijkteam.
 
