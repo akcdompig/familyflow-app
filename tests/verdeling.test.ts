@@ -14,6 +14,8 @@ const WERK = {
   k2: [{ id: "w4", naam: "ROC", soort: "vast" as const, days: [1, 2, 4], van: "09:00", tot: "13:00", look: "school" as const }],
 };
 const lid = (s: FamilyState, id: string) => s.members.find((m) => m.id === id)!;
+/** Herfstvakantie voor beide kinderen: een echte vrije dag (zonder schooltijden is doordeweeks anders een schooldag). */
+const HERFST = { k1: [{ naam: "Herfst", van: "2026-10-12", tot: "2026-10-18" }], k2: [{ naam: "Herfst", van: "2026-10-12", tot: "2026-10-18" }] };
 const som = (v: ReturnType<typeof verdeling>, id: string) => v.vandaag[id];
 
 test("verwachting: vrij terwijl ouders werken = meer, schooldag = minder, werkende ouder = weinig", () => {
@@ -34,7 +36,7 @@ test("verdeling: niet steeds dezelfde de vaatwasser", () => {
   const log: KlusDone[] = [];
   // De afgelopen 6 dagen deed Noah (k1) steeds de vaatwasser uitruimen.
   for (let i = 1; i <= 6; i++) log.push({ id: `x${i}`, klus: "vaat-uit", by: "k1", at: at(`2026-10-${String(15 - i).padStart(2, "0")}`, "08:00").toISOString() });
-  const s = gezin({ klusLog: log });
+  const s = gezin({ klusLog: log, vakanties: HERFST });
   const v = verdeling(s, "2026-10-15");
   assert.equal(v.wie["vaat-uit"], "k2");
 });
@@ -127,7 +129,7 @@ test("afspraken: klus uit, niet voor dit kind, leeftijd, en vrijstelling", () =>
   const uit = gezin({ klusAfspraken: { klussen: { "vaat-uit": { aan: false } } } });
   assert.equal(verdeling(uit, "2026-10-15").wie["vaat-uit"], undefined);
   // Niet voor k1: dan k2.
-  const niet = gezin({ klusAfspraken: { klussen: { "vaat-uit": { niet: ["k1"] } } } });
+  const niet = gezin({ vakanties: HERFST, klusAfspraken: { klussen: { "vaat-uit": { niet: ["k1"] } } } });
   assert.equal(verdeling(niet, "2026-10-15").wie["vaat-uit"], "k2");
   // Vrijstelling: vandaag niks, ook geen eigen kamer.
   const vrij = gezin({ vrijstelling: { "2026-10-15": { k1: "ziek" } } });
@@ -139,7 +141,8 @@ test("afspraken: klus uit, niet voor dit kind, leeftijd, en vrijstelling", () =>
 test("afspraken: eigen verwachting per kind telt", () => {
   const school = gezin({ werk: WERK, klusAfspraken: { verwachting: { k1: { school: 5, vrij: 40 } } } });
   assert.equal(verwachting(school, lid(school, "k1"), "2026-10-15").doel, 5);
-  const vrij = gezin({ klusAfspraken: { verwachting: { k1: { school: 5, vrij: 40 } } } });
+  const vrij = gezin({ vakanties: HERFST, klusAfspraken: { verwachting: { k1: { school: 5, vrij: 40 } } } });
+  assert.equal(verwachting(gezin({ klusAfspraken: { verwachting: { k1: { school: 5, vrij: 40 } } } }), lid(vrij, "k1"), "2026-10-15").doel, 5, "geen schooltijden ingevuld: doordeweeks schooldag");
   assert.equal(verwachting(vrij, lid(vrij, "k1"), "2026-10-15").doel, 40);
   assert.equal(verwachting(vrij, lid(vrij, "k1"), "2026-10-17").doel, 30, "weekend: 80% van vrij");
 });
@@ -205,4 +208,32 @@ test("drukke schooldag: wat kan wachten schuift door, dagelijkse klussen niet", 
   // Echt te lang blijven liggen: dan toch.
   const oud: KlusDone[] = [{ id: "s", klus: "stofzuigen", by: "k2", at: at("2026-10-05", "15:00").toISOString() }];
   assert.ok(verdeling(gezin({ werk: WERK, klusLog: oud }), "2026-10-15").wie["stofzuigen"]);
+});
+
+test("3.16: nooit meer dan de tijd van een kind; geen schooltijden = doordeweeks schooldag; kamer-regel en namen kloppen", async () => {
+  const { klusStatus: status, naamKlus } = await import("@/lib/huis");
+  const aan = (ids: string[]) => Object.fromEntries(ids.map((id) => [id, { aan: true }]));
+  const s = gezin({
+    werk: { p1: WERK.p1, p2: WERK.p2, k1: WERK.k1 }, // k2 heeft geen schooltijden in de app
+    vakanties: { k1: [{ naam: "Herfstvakantie", van: "2026-10-12", tot: "2026-10-18" }] },
+    klusAfspraken: {
+      verwachting: { k1: { school: 30, vrij: 60 }, k2: { school: 45, vrij: 60 } },
+      klussen: { ...aan(["afwas", "afdrogen", "woonkamer", "was-vouwen", "trap", "aanrecht", "bed-op", "tafel-dekken", "planten", "schoenen"]), kamer: { niet: ["k1", "k2"] } },
+    },
+  });
+  const di = "2026-10-20"; // dinsdag na de herfstvakantie, papa en mama werken
+  const v = verdeling(s, di);
+  assert.equal(v.verwachting.k2.soort, "school", "geen schooltijden ingevuld: doordeweeks een schooldag");
+  assert.equal(v.verwachting.k2.doel, 45);
+  for (const id of ["k1", "k2"]) assert.ok(v.vandaag[id] <= v.verwachting[id].doel + 5, `${id}: ${v.vandaag[id]} min, mag ${v.verwachting[id].doel}`);
+  assert.ok(Object.values(v.reden).includes("de kinderen hebben vandaag hun tijd al vol"), "wat niet past, gaat naar een ouder");
+  assert.equal(v.wie["kamer:k2"], undefined, "kamer staat op 'niet' voor de kinderen");
+  assert.equal(v.wie["kamer:k1"], undefined);
+  const bed = status(s, at(di, "16:00")).find((k) => k.key === "bed-op:k2");
+  assert.ok(bed, "bed opmaken is er wel");
+  assert.equal(naamKlus(bed!, "p1"), "Bed opmaken", "geen tweede 'Kamer van'");
+  // In de herfstvakantie van de broer telt het voor haar ook als vakantie.
+  assert.equal(verwachting(s, lid(s, "k2"), "2026-10-14").soort, "vakantie");
+  // Weekend blijft weekend.
+  assert.equal(verwachting(s, lid(s, "k2"), "2026-10-24").soort, "weekend");
 });

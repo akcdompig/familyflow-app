@@ -11,7 +11,7 @@ import { actions } from "@/lib/store";
 import { timeLabel } from "@/lib/mood";
 import { MijnWeek, PlanStatus, VerdeelTaken } from "./VerdeelTaken";
 import {
-  BELONINGEN, klusById, bijdragen, dagKort, eters, euro, isGeregeld, klusStatus, kookplan, naamKlus, magRestjes, maandag, parseEuro, potStand, werkOp, werktTijdensEten, type KlusStatus,
+  BELONINGEN, klusById, bijdragen, dagKort, eters, euro, isGeregeld, isKamer, klusStatus, kookplan, naamKlus, magRestjes, maandag, parseEuro, potStand, werkOp, werktTijdensEten, type KlusStatus,
 } from "@/lib/huis";
 import type { FamilyState, Member } from "@/lib/types";
 import { KlusSheet } from "./KlusSheet";
@@ -164,7 +164,7 @@ export function Klussen({ state, me, lijst, onToast, simpel = false }: { state: 
           <button key={k.key} className={`ff-klus${k.vandaagGedaan ? " is-klaar" : k.teLaat > 0 ? " is-laat" : ""}`} onClick={() => setOpenKey(k.key)}>
             <span className="ff-klus-emoji" aria-hidden="true">{k.klus.emoji}</span>
             <span className="ff-grow">
-              <b>{k.klus.perKind && k.kind ? `Kamer ${k.kind.id === me.id ? "van jou" : k.kind.name}` : k.klus.label}</b>
+              <b>{isKamer(k.klus) && k.kind ? `Kamer ${k.kind.id === me.id ? "van jou" : k.kind.name}` : k.klus.label}</b>
               <span className="ff-small ff-muted ff-block">
                 {k.minuten} min · {k.laatst ? `laatst: ${k.laatst.by === me.id ? "jij" : naam(state, k.laatst.by)}, ${dagenTekst(k.dagenGeleden!)}` : "nog niet bijgehouden"}
                 {k.klus.naKoken ? " · na het eten" : k.klus.elke > 1 ? ` · elke ${k.klus.elke} dagen` : " · elke dag"}{!k.vandaagGedaan && k.teLaat > 0 ? ` · ${k.teLaat} ${k.teLaat === 1 ? "dag" : "dagen"} te laat` : ""}{k.extra && !k.vandaagGedaan ? " · mag alvast" : ""}{k.uitgesteld && !k.vandaagGedaan ? " · schuift door naar een rustigere dag" : ""}

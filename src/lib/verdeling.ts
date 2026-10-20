@@ -96,6 +96,16 @@ function werkt(s: FamilyState, id: string, d: string) {
 function opSchool(s: FamilyState, id: string, d: string) {
   return werkOp(s, id, d).some((w) => !w.vrij && lookVoor(w.werk) === "school");
 }
+/** Staan er voor dit kind nergens schooltijden (geen school bij werk, geen Somtoday-rooster)? */
+function geenSchooltijden(s: FamilyState, id: string) {
+  return !(s.werk?.[id] ?? []).some((w) => lookVoor(w) === "school") && !(s.rooster?.[id] ?? []).length;
+}
+/** Vakanties van het kind; staan er geen, dan die van een broer of zus (meestal dezelfde regio). */
+function vakantiesVan(s: FamilyState, m: Member) {
+  const eigen = s.vakanties?.[m.id] ?? [];
+  if (eigen.length) return eigen;
+  return leden(s).filter((x) => isKind(x) && x.id !== m.id).flatMap((x) => s.vakanties?.[x.id] ?? []);
+}
 /** Werkt tot na half 10 's avonds (of 's nachts): die dag geen klussen. */
 function totLaat(s: FamilyState, id: string, d: string) {
   return werkOp(s, id, d).some((w) => !w.vrij && lookVoor(w.werk) !== "school" && (mins(w.tot) <= mins(w.van) || mins(w.tot) > 21 * 60 + 30));
@@ -117,8 +127,10 @@ export function verwachting(s: FamilyState, m: Member, d: string): Verwachting {
   const werkend = ouders.filter((o) => werkt(s, o.id, d)).map((o) => o.name.toLowerCase());
   const allemaal = ouders.length > 0 && werkend.length === ouders.length;
   const eigen = eigenVerwachting(s, m);
-  const vakantie = (s.vakanties?.[m.id] ?? []).some((v) => d >= v.van && d <= v.tot);
+  const vakantie = vakantiesVan(s, m).some((v) => d >= v.van && d <= v.tot);
   if (opSchool(s, m.id, d)) return { id: m.id, soort: "school", doel: eigen.school, reden: "schooldag" };
+  // Geen schooltijden ingevuld? Dan doordeweeks (buiten vakanties) uitgaan van een schooldag: liever te weinig klussen dan te veel.
+  if (!weekend && !vakantie && geenSchooltijden(s, m.id)) return { id: m.id, soort: "school", doel: eigen.school, reden: "schooldag (geen schooltijden ingevuld)" };
   if (weekend) return { id: m.id, soort: "weekend", doel: Math.round((eigen.vrij * 0.8) / 5) * 5, reden: "weekend" };
   const werkTekst = allemaal ? (werkend.length > 1 ? `${werkend.join(" en ")} werken` : `${werkend[0]} werkt`) : "";
   return { id: m.id, soort: vakantie ? "vakantie" : "vrij", doel: eigen.vrij + (allemaal ? 10 : 0), reden: [vakantie ? "vakantie" : "vrij", werkTekst].filter(Boolean).join(", ") };
@@ -226,11 +238,12 @@ function bereken(s: FamilyState, d: string, zonder?: { key: string; id: string }
     const n = (k.iedereen ? alle : kids).map((m) => perKlus[`${k.id}|${m.id}`] ?? 0);
     return n.length ? Math.max(...n) - Math.min(...n) : 0;
   };
-  moet.sort((a, b) => minutenVan(s, b.k) - minutenVan(s, a.k) || scheefKlus(b.k) - scheefKlus(a.k) || a.key.localeCompare(b.key));
+  // Eerst wat van het kind zelf is (eigen kamer, bed): dat telt als eerste mee in zijn tijd. Daarna de langste klussen.
+  moet.sort((a, b) => Number(!!b.kind) - Number(!!a.kind) || minutenVan(s, b.k) - minutenVan(s, a.k) || scheefKlus(b.k) - scheefKlus(a.k) || a.key.localeCompare(b.key));
   for (const m of moet) {
     let lid: Member | undefined;
     if (m.kind) {
-      lid = verw[m.kind.id].doel > 0 ? m.kind : undefined;
+      lid = verw[m.kind.id].doel > 0 && magDoen(s, m.kind, m.k) ? m.kind : undefined;
       if (lid) reden[m.key] = "het is je eigen kamer";
     } else {
       // Zit iedereen vandaag al vol (school, werk) en kan het nog wachten? Dan schuift het door naar een rustigere dag.
@@ -242,6 +255,15 @@ function bereken(s: FamilyState, d: string, zonder?: { key: string; id: string }
         continue;
       }
       lid = kies(m.k, m.key, m.k.iedereen ? alle : kids);
+      if (lid && isKind(lid) && vandaag[lid.id] + minutenVan(s, m.k) > verw[lid.id].doel + 5) {
+        const ouder = alle
+          .filter((x) => !isKind(x) && magDoen(s, x, m.k) && verw[x.id].soort !== "vrijstelling" && !(zonder && zonder.key === m.key && zonder.id === x.id))
+          .sort((x, y) => vandaag[x.id] - verw[x.id].doel - (vandaag[y.id] - verw[y.id].doel) || hash(`${d}|${m.key}|${x.id}`) - hash(`${d}|${m.key}|${y.id}`))[0];
+        if (ouder) {
+          lid = ouder;
+          reden[m.key] = "de kinderen hebben vandaag hun tijd al vol";
+        }
+      }
     }
     if (!lid) continue;
     wie[m.key] = lid.id;

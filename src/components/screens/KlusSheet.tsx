@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Avatar } from "@/components/avatar/Avatar";
 import { Sheet } from "@/components/ui/Sheet";
-import { naamKlus, type KlusStatus } from "@/lib/huis";
+import { isKamer, naamKlus, type KlusStatus } from "@/lib/huis";
 import { samenwerken } from "@/lib/samenwerken";
 import { actions } from "@/lib/store";
 import { todayKey } from "@/lib/tasks";
@@ -84,7 +84,7 @@ export function KlusSheet({ state, me, klus, onClose, onToast }: { state: Family
       <div className="ff-stack">
         {stap.s === "menu" && (
           <>
-            <h2 className="ff-h2">{klus.klus.emoji} {klus.klus.perKind && klus.kind ? `Kamer van ${klus.kind.id === me.id ? "jou" : klus.kind.name}` : klus.klus.label}</h2>
+            <h2 className="ff-h2">{klus.klus.emoji} {isKamer(klus.klus) && klus.kind ? `Kamer van ${klus.kind.id === me.id ? "jou" : klus.kind.name}` : klus.klus.label}</h2>
             <div className="ff-klus-info">
               <span>⏱️ ongeveer {klus.minuten} minuten</span>
               {klus.beurt && !klus.vandaagGedaan && (

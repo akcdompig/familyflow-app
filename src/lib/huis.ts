@@ -319,7 +319,9 @@ export function werkOp(s: FamilyState, member: string, d: string): { werk: WerkI
 }
 
 /** Leesbare naam van een klus in een lijst. */
-export const naamKlus = (k: KlusStatus, me: string) => (k.klus.perKind && k.kind ? (k.kind.id === me ? "Je kamer netjes" : `Kamer van ${k.kind.name}`) : k.klus.label);
+/** Is dit "Eigen kamer netjes" (per kind)? Alleen die heet "Kamer van ...". */
+export const isKamer = (k: { id: string; perKind?: boolean }) => !!k.perKind && k.id === "kamer";
+export const naamKlus = (k: KlusStatus, me: string) => (isKamer(k.klus) && k.kind ? (k.kind.id === me ? "Je kamer netjes" : `Kamer van ${k.kind.name}`) : k.klus.label);
 
 export type WerkTaak = { key: string; naam: string; van: string; tot: string; status: "vrij" | "gepland" | "bezig" | "gedaan"; pct: number; werkId: string; dienstId?: string; school: boolean };
 

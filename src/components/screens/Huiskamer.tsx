@@ -4,7 +4,7 @@ import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { Avatar } from "@/components/avatar/Avatar";
 import { restTekst, slaapt, werktNu, type Bezigheid } from "@/lib/status";
 import { DAGDELEN, DOEL, ETEN, ROUTINE, begroeting, dagdeel, dagLog, dagscore, datumTijd, dorst, gegeten, reeks, tipVanNu, walm } from "@/lib/dag";
-import { honger, isGeregeld, klusStatus, kookplan, naamKlus, rommel } from "@/lib/huis";
+import { honger, isGeregeld, isKamer, klusStatus, kookplan, naamKlus, rommel } from "@/lib/huis";
 import { Meters } from "@/components/screens/MijnDag";
 import { Herinneringen } from "@/components/screens/Herinneringen";
 import { ClaimViering } from "@/components/screens/Viering";
@@ -483,7 +483,7 @@ function KlussenVandaag({ state, me, onGoThuis }: { state: FamilyState; me: Memb
         <div className="ff-chips">
           {rest.map((k) => (
             <button key={k.key} className={`ff-chip${k.teLaat > 0 ? " is-laat" : ""}`} onClick={onGoThuis}>
-              {k.klus.emoji} {k.klus.perKind && k.kind ? `Kamer ${k.kind.name}` : k.klus.label.split(" (")[0]}{k.beurt ? ` · ${k.beurt.name}` : ""}
+              {k.klus.emoji} {isKamer(k.klus) && k.kind ? `Kamer ${k.kind.name}` : k.klus.label.split(" (")[0]}{k.beurt ? ` · ${k.beurt.name}` : ""}
             </button>
           ))}
         </div>

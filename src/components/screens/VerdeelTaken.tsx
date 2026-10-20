@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Avatar } from "@/components/avatar/Avatar";
 import { Icon } from "@/components/ui/Icon";
-import { klusById, maandag } from "@/lib/huis";
+import { isKamer, klusById, maandag } from "@/lib/huis";
 import { addDays, iso } from "@/lib/planner";
 import { samenwerken } from "@/lib/samenwerken";
 import { maakPlan, mijnWeek as mijnWeekVeilig, minutenInPlan, wijzigingen, type Plan } from "@/lib/takenplan";
@@ -92,7 +92,7 @@ export function VerdeelTaken({ state, me, onClose, onToast }: { state: FamilySta
                       <button className="v2-verdeel-taak" aria-expanded={open === id} onClick={() => setOpen(open === id ? null : id)}>
                         <span aria-hidden="true">{k.emoji}</span>
                         <span className="ff-grow ff-stack-xs" style={{ textAlign: "left" }}>
-                          <b>{k.perKind ? `Kamer ${naam(key.split(":")[1])}` : k.label}</b>
+                          <b>{isKamer(k) ? `Kamer ${naam(key.split(":")[1])}` : k.label}</b>
                           <span className="ff-small ff-muted">{r.reden}</span>
                         </span>
                         <span className="v2-verdeel-wie">{naam(r.wie)}{r.mee ? ` + ${naam(r.mee)}` : ""}</span>
