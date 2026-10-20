@@ -65,3 +65,14 @@ test("weekplanning bevestigen en één taak wijzigen: komt in het logboek", asyn
   assert.equal(snapshot().klusAfspraken?.planning?.[d]?.["vaat-uit"].wie, "k2");
   assert.match(snapshot().klusAfspraken?.planLog?.at(-1)?.tekst ?? "", /vaatwasser uitruimen: Noah → Lina/);
 });
+
+test("reset: verdeling van dagen wissen, komt in het logboek", async () => {
+  const { samenwerken } = await import("@/lib/samenwerken");
+  const d1 = new Date(Date.now() + 3 * 864e5).toLocaleDateString("sv-SE");
+  const d2 = new Date(Date.now() + 4 * 864e5).toLocaleDateString("sv-SE");
+  samenwerken.bevestigPlan({ [d1]: { "vaat-uit": { wie: "k1" } }, [d2]: { "vaat-uit": { wie: "k2" } } }, "p1");
+  samenwerken.wisPlan([d1, d2], "p1");
+  assert.equal(snapshot().klusAfspraken?.planning?.[d1], undefined);
+  assert.equal(snapshot().klusAfspraken?.planning?.[d2], undefined);
+  assert.match(snapshot().klusAfspraken?.planLog?.at(-1)?.tekst ?? "", /verdeling gewist/);
+});

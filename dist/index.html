@@ -1180,6 +1180,14 @@ a.ff-onb-choice { text-decoration: none; color: inherit; }
 .v2-verdeel-rij { display: grid; gap: 8px; }
 .v2-verdeel-taak { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: var(--ff-wolk); border-radius: 14px; padding: 10px 12px; font: inherit; color: inherit; cursor: pointer; text-align: left; }
 .v2-verdeel-taak[aria-expanded="true"] { box-shadow: inset 0 0 0 2px var(--ff-munt-donker); }
+.v2-verdeel-regel { display: flex; align-items: stretch; gap: 6px; }
+.v2-verdeel-regel .v2-verdeel-taak { flex: 1; min-width: 0; }
+.v2-verdeel-kruis { flex: none; width: 44px; border: 0; border-radius: 14px; background: var(--ff-wolk); color: var(--ff-tekst-zacht); font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; }
+.v2-verdeel-kruis:hover, .v2-verdeel-kruis:focus-visible { color: var(--ff-koraal); box-shadow: inset 0 0 0 2px currentColor; }
+.v2-verdeel-vink { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.v2-verdeel-vink input { width: 20px; height: 20px; accent-color: var(--ff-munt-donker); flex: none; }
+.v2-verdeel-reset { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 4px; }
+.v2-verdeel-gewist { opacity: .7; border-style: dashed; }
 .v2-verdeel-wie { flex: none; font-weight: 700; font-size: 14px; padding: 4px 10px; border-radius: 999px; background: var(--ff-wit, #fff); white-space: nowrap; }
 .v2-mijnweek-rij { display: flex; align-items: center; gap: 8px; font-size: 14px; }
 .v2-mijnweek-dag { flex: none; width: 56px; font-weight: 700; color: var(--ff-tekst-zacht); font-size: 13px; }
@@ -1435,4 +1443,4 @@ button.v2-samen-actie { justify-self: start; min-height: 34px; padding-left: 0; 
 .v2-avondlijst { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
 .v2-avondlijst li.is-volgende { font-weight: 700; color: var(--ff-actie, #3d52b8); }
 .v2-avondlijst li.is-voorbij { opacity: .55; }
-</style></head><body><div id="root"></div><script src="/config.js"></script><script src="/assets/app-b1194e4a2486.js"></script><script>if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("/sw.js");</script></body></html>
+</style></head><body><div id="root"></div><script src="/config.js"></script><script src="/assets/app-a7b7564c8138.js"></script><script>if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("/sw.js");</script></body></html>

@@ -476,15 +476,42 @@ await scenario("v3.1: ouder verdeelt de taken voor volgende week, wisselt er é�
   assert.match(await rij.innerText(), /aangepast door papa/);
   await knop(p, /^Bevestigen$/).click();
   assert.match(await p.locator("#gezin-klussen .v2-meer-details summary").first().innerText(), /Planning bevestigd t\/m/);
-  // Opnieuw verdelen: eerst zien wat er verandert aan wat al bevestigd was.
+  // Opnieuw openen: de bevestigde week staat er zoals hij bevestigd is (met de wissel).
   await knop(p, /Verdeel de taken/).click();
   await p.getByRole("button", { name: "Volgende week" }).click();
+  const rij2 = p.getByRole("region", { name: /^ma / }).locator(".v2-verdeel-rij", { hasText: "Vaatwasser uitruimen" });
+  assert.equal((await rij2.locator(".v2-verdeel-wie").innerText()).trim(), ander);
+  // Niet eens? Kruisje: eerst zien wat er verandert aan wat al bevestigd was.
+  await rij2.getByRole("button", { name: /weghalen/ }).click();
+  assert.equal(await p.getByRole("region", { name: /^ma / }).locator(".v2-verdeel-rij", { hasText: "Vaatwasser uitruimen" }).count(), 0);
   await knop(p, /^Bevestigen$/).click();
   const check = p.getByRole("region", { name: "Dit verandert" });
-  assert.match(await check.innerText(), /vaatwasser uitruimen/);
+  assert.match(await check.innerText(), /vaatwasser uitruimen: weggehaald/);
   await knop(p, /Ja, doorvoeren/).click();
   await p.locator(".v2-meer-details summary", { hasText: "Planning bevestigd" }).click();
   assert.match(await p.locator(".v2-meer-details", { hasText: "Planning bevestigd" }).last().innerText(), /heeft de taken verdeeld/);
+});
+
+await scenario("v3.18: ouder reset bevestigde dagen (één dag of alle dagen aangevinkt)", v2, "18:00", async (p) => {
+  await wissel(p, "Papa");
+  await gezinTab(p, /^Taken/);
+  await knop(p, /Verdeel de taken/).click();
+  await p.getByRole("button", { name: "Volgende week" }).click();
+  await knop(p, /^Bevestigen$/).click();
+  await knop(p, /Verdeel de taken/).click();
+  await p.getByRole("button", { name: "Volgende week" }).click();
+  // Eén dag aanvinken en resetten.
+  await p.getByRole("checkbox", { name: /^di .* aanvinken$/ }).check();
+  await knop(p, /Reset \(1\)/).click();
+  assert.match(await p.getByRole("region", { name: /^di / }).innerText(), /Gereset/);
+  // Alle dagen aanvinken en resetten.
+  await p.getByRole("checkbox", { name: "Alle dagen" }).check();
+  await knop(p, /Reset \(7\)/).click();
+  await knop(p, /^Bevestigen$/).click();
+  assert.match(await p.getByRole("region", { name: "Dit verandert" }).innerText(), /verdeling gewist/);
+  await knop(p, /Ja, doorvoeren/).click();
+  await p.locator(".v2-meer-details summary", { hasText: /Planning|weekplanning/ }).first().click();
+  assert.match(await p.locator("#gezin-klussen").innerText(), /verdeling gewist/);
 });
 
 await scenario("v3.1: kind ziet zijn week, de uitleg van een taak en geeft aan wat het wil leren", v2, "16:00", async (p) => {

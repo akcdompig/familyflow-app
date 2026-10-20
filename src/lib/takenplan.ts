@@ -106,10 +106,36 @@ export interface Wijziging {
   datum: string;
   key: string;
   van?: string;
-  naar: string;
+  /** Leeg = de taak is weggehaald. */
+  naar?: string;
 }
 
-/** Wat verandert er aan een al bevestigde planning? Alleen dagen die al bevestigd waren. */
+/** Waar het scherm mee begint: wat al bevestigd is blijft zoals het staat, de rest is het voorstel. */
+export function startPlan(s: FamilyState, voorstel: Plan): Plan {
+  const bevestigd = s.klusAfspraken?.planning ?? {};
+  return Object.fromEntries(Object.entries(voorstel).map(([d, regels]) => [d, bevestigd[d] ?? regels]));
+}
+
+/** Eén taak uit een plan halen (het kruisje). De dag blijft staan, ook als hij leeg wordt. */
+export function zonderTaak(plan: Plan, d: string, key: string): Plan {
+  if (!plan[d]?.[key]) return plan;
+  const dag = { ...plan[d] };
+  delete dag[key];
+  return { ...plan, [d]: dag };
+}
+
+/** Alleen de dagen die echt anders zijn dan wat er al bevestigd stond (of nog niet bevestigd waren). */
+export function teBewaren(s: FamilyState, plan: Plan, behalve: Iterable<string> = []): Plan {
+  const bevestigd = s.klusAfspraken?.planning ?? {};
+  const weg = new Set(behalve);
+  const gelijk = (a: Record<string, PlanRegel>, b: Record<string, PlanRegel>) => {
+    const ka = Object.keys(a);
+    return ka.length === Object.keys(b).length && ka.every((k) => b[k] && a[k].wie === b[k].wie && a[k].mee === b[k].mee);
+  };
+  return Object.fromEntries(Object.entries(plan).filter(([d, r]) => !weg.has(d) && !(bevestigd[d] && gelijk(bevestigd[d], r))));
+}
+
+/** Wat verandert er aan een al bevestigde planning? Alleen dagen die al bevestigd waren. Ook weggehaalde taken. */
 export function wijzigingen(s: FamilyState, plan: Plan): Wijziging[] {
   const oud = s.klusAfspraken?.planning ?? {};
   const uit: Wijziging[] = [];
@@ -119,7 +145,7 @@ export function wijzigingen(s: FamilyState, plan: Plan): Wijziging[] {
     for (const key of keys) {
       const a = oud[d][key]?.wie;
       const b = regels[key]?.wie;
-      if (a !== b && b) uit.push({ datum: d, key, van: a, naar: b });
+      if (a !== b && (a || b)) uit.push({ datum: d, key, van: a, naar: b });
     }
   }
   return uit;

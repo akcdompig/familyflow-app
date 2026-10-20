@@ -1,2 +1,2 @@
-export const VERSION = "3.17";
-export const VERSION_NAME = "Zoeken en zelf verdelen";
+export const VERSION = "3.18";
+export const VERSION_NAME = "Weghalen en resetten";

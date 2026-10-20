@@ -41,6 +41,17 @@ export const samenwerken = {
       return metFeed({ ...s, klusAfspraken: nieuw }, door, `${tekst} 📋`);
     });
   },
+  /** Reset: de verdeling van deze dagen wissen. Die dagen staan daarna weer op "nog niet verdeeld". */
+  wisPlan(dagen: string[], door: string) {
+    wijzig((s) => {
+      const a = s.klusAfspraken ?? {};
+      const weg = dagen.filter((d) => a.planning?.[d]).sort();
+      if (!weg.length) return s;
+      const planning = Object.fromEntries(Object.entries(a.planning ?? {}).filter(([d]) => !weg.includes(d)));
+      const tekst = `heeft de verdeling gewist voor ${weg.map((d) => `${dagKort(d)} ${Number(d.slice(8))}/${Number(d.slice(5, 7))}`).join(", ")}`;
+      return { ...s, klusAfspraken: netjes({ ...a, planning, planLog: [...(a.planLog ?? []), { at: new Date().toISOString(), door, tekst }] }) };
+    });
+  },
   /** Eén taak in de bevestigde planning aan iemand anders geven (afwezig, ziek, ruil). Komt in het logboek. */
   wijzigPlan(d: string, key: string, wie: string, door: string) {
     wijzig((s) => {

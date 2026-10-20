@@ -112,3 +112,23 @@ test("over 8 weken wordt het eerlijk: minuten tussen de kinderen liggen dicht bi
   const lina = laatsteWeek.k2 ?? 0;
   assert.ok(Math.abs(noah - lina) / Math.max(noah, lina) < 0.2, `week 8: Noah ${noah} min, Lina ${lina} min`);
 });
+
+test("kruisje en reset: taak weghalen en dagen wissen", async () => {
+  const { zonderTaak, startPlan, teBewaren } = await import("@/lib/takenplan");
+  const s = alleenVaatwasser();
+  const p = maakPlan(s, MA, 3);
+  const bevestigd: FamilyState = { ...s, klusAfspraken: { ...s.klusAfspraken, planning: p } };
+  // Bevestigde dagen staan zo op het scherm als ze bevestigd zijn.
+  assert.deepEqual(startPlan(bevestigd, maakPlan(bevestigd, MA, 3)), p);
+  // Kruisje: de taak is weg, de dag blijft (leeg) staan, en het telt als wijziging.
+  const zonder = zonderTaak(p, MA, "vaat-uit");
+  assert.equal(zonder[MA]["vaat-uit"], undefined);
+  const w = wijzigingen(bevestigd, zonder);
+  assert.deepEqual(w.map((x) => [x.datum, x.key, x.naar]), [[MA, "vaat-uit", undefined]]);
+  // Alleen de veranderde dag hoeft bewaard; gereset dagen nooit.
+  assert.deepEqual(Object.keys(teBewaren(bevestigd, zonder)), [MA]);
+  assert.deepEqual(Object.keys(teBewaren(bevestigd, zonder, [MA])), []);
+  // Een lege bevestigde dag: niemand krijgt de vaatwasser.
+  const leeg: FamilyState = { ...s, klusAfspraken: { ...s.klusAfspraken, planning: zonder } };
+  assert.equal(verdeling(leeg, MA).wie["vaat-uit"], undefined);
+});
