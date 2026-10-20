@@ -1,7 +1,7 @@
 /*
   Herinneringen op je telefoon (web push).
   - Android/Chrome: werkt meteen in de browser en als app.
-  - iPhone: alleen als Thuisclub op het beginscherm staat (Deel › Zet op beginscherm), iOS 16.4 of nieuwer.
+  - iPhone: alleen als FamilyFlow op het beginscherm staat (Deel › Zet op beginscherm), iOS 16.4 of nieuwer.
   De Edge Function "herinneringen" beslist wanneer: na 2 uur stil, of om 9 uur als een kind nog niks deed.
 */
 

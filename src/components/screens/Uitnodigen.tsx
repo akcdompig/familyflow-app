@@ -80,7 +80,7 @@ export function Uitnodigen({ state, me, onToast }: { state: FamilyState; me: Mem
                 <div className="ff-code" aria-label={`Code voor ${m.name}`}>{code}</div>
                 <div className="ff-invite-btns">
                   {m.email && (
-                    <a className="ff-btn ff-btn-primary" href={`mailto:${encodeURIComponent(m.email)}?subject=${encodeURIComponent("Doe je mee met Thuisclub?")}&body=${encodeURIComponent(text(m))}`}>
+                    <a className="ff-btn ff-btn-primary" href={`mailto:${encodeURIComponent(m.email)}?subject=${encodeURIComponent("Doe je mee met FamilyFlow?")}&body=${encodeURIComponent(text(m))}`}>
                       Mailen
                     </a>
                   )}

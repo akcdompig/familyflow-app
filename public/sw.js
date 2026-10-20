@@ -43,7 +43,7 @@ self.addEventListener("fetch", (e) => {
 // Herinneringen: de push is leeg, de tekst halen we op bij de Edge Function.
 self.addEventListener("push", (e) => {
   e.waitUntil((async () => {
-    let titel = "Thuisclub";
+    let titel = "FamilyFlow";
     let tekst = "Even inchecken?";
     try {
       if (e.data) {

@@ -1011,18 +1011,6 @@ await scenario("v3.14: ouder zet turven en sterren aan, geeft een turf; kind zie
   assert.ok(!(await p.locator("body").innerText()).includes("Gelogen"), "Lina ziet de turven van Noah niet");
 });
 
-// ---------- 3.15: Thuisclub ----------
-await scenario("v3.15: de app heet Thuisclub; nergens nog FamilyFlow in beeld", v2, "16:00", async (p) => {
-  assert.equal(await p.title(), "Thuisclub");
-  for (const wie of ["Papa", "Noah"]) {
-    await wissel(p, wie);
-    for (const t of [/Vandaag/, /Week/, /Gezin/, /Ik/]) {
-      await tab(p, t).click();
-      assert.ok(!/FamilyFlow/i.test(await p.locator("body").innerText()), `geen FamilyFlow bij ${wie} op ${t}`);
-    }
-  }
-});
-
 // ---------- 3.8: Vandaag met de lijst bovenaan ----------
 await scenario("v3.8: kind ziet de lijst van nu bovenaan, zonder te scrollen; geen losse Nu doen-kaart en geen +2-labels", v2, "16:00", async (p) => {
   await wissel(p, "Noah");

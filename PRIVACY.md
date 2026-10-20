@@ -1,9 +1,9 @@
-# Privacyverklaring Thuisclub (concept)
+# Privacyverklaring FamilyFlow (concept)
 
 > **Concept.** Laat dit nakijken door iemand met AVG-kennis voordat andere gezinnen, scholen of zorgpartijen de app gaan gebruiken. Vul de [gemarkeerde] delen in.
 
 ## Wie zijn wij
-Thuisclub is een app van [naam onderneming, KvK-nummer, adres]. Contact over privacy: [e-mailadres].
+FamilyFlow is een app van [naam onderneming, KvK-nummer, adres]. Contact over privacy: [e-mailadres].
 
 ## Welke gegevens
 - **Account:** e-mailadres van de ouder(s). Kinderen loggen in met een code van hun ouder, zonder e-mailadres.

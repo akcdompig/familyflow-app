@@ -234,7 +234,7 @@ export function Ik({ state, me, onEditAvatar, onCalm, onToast }: { state: Family
         </section>
       )}
       <Feedback me={me} onToast={onToast} />
-      <p className="ff-small ff-muted ff-center">Thuisclub {VERSION} · {VERSION_NAME}</p>
+      <p className="ff-small ff-muted ff-center">FamilyFlow {VERSION} · {VERSION_NAME}</p>
     </div>
   );
 }

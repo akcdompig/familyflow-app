@@ -13,7 +13,7 @@ export function Welkom({ onParent, onCode }: { onParent: (mode: "nieuw" | "inlog
     <div className="ff-screen ff-onb">
       <div className="ff-onb-hero">
         <Flo size={96} />
-        <h1 className="ff-h1">Welkom bij Thuisclub</h1>
+        <h1 className="ff-h1">Welkom bij FamilyFlow</h1>
         <p className="ff-muted">Minder gedoe thuis. Eerlijk verdeelde klussen, een rustige dag voor de kinderen, en samen huisregels maken die echt werken.</p>
       </div>
       <ul className="ff-onb-punten">
@@ -210,7 +210,7 @@ export function CodeInvullen({ onJoined, onBack }: { onJoined: (state: FamilySta
       {ios && !standalone && (
         <div className="ff-card ff-stack-s ff-install">
           <b>Zet de app eerst op je beginscherm</b>
-          <p className="ff-small">Tik onderin op <b>Deel</b> (het vierkantje met de pijl) en kies <b>Zet op beginscherm</b>. Open daarna Thuisclub vanaf je beginscherm en vul daar je code in.</p>
+          <p className="ff-small">Tik onderin op <b>Deel</b> (het vierkantje met de pijl) en kies <b>Zet op beginscherm</b>. Open daarna FamilyFlow vanaf je beginscherm en vul daar je code in.</p>
         </div>
       )}
       <form className="ff-card ff-stack" onSubmit={(e) => { e.preventDefault(); void go(); }}>

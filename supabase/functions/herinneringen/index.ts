@@ -329,7 +329,7 @@ Deno.serve(async (req) => {
       case "bericht": {
         if (!body.endpoint) throw new Fout("Geen endpoint");
         const rows = await db(`push_subs?endpoint=eq.${encodeURIComponent(body.endpoint)}&select=last_title,last_body`);
-        return json(rows?.length ? { titel: rows[0].last_title ?? "Thuisclub", tekst: rows[0].last_body ?? "" } : { titel: "Thuisclub", tekst: "Even inchecken?" });
+        return json(rows?.length ? { titel: rows[0].last_title ?? "FamilyFlow", tekst: rows[0].last_body ?? "" } : { titel: "FamilyFlow", tekst: "Even inchecken?" });
       }
 
       case "ronde":
