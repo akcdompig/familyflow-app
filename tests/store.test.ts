@@ -76,3 +76,39 @@ test("reset: verdeling van dagen wissen, komt in het logboek", async () => {
   assert.equal(snapshot().klusAfspraken?.planning?.[d2], undefined);
   assert.match(snapshot().klusAfspraken?.planLog?.at(-1)?.tekst ?? "", /verdeling gewist/);
 });
+
+test("zelfde klus, andere naam: 'Afval wegbrengen' afvinken = 'Afval buiten zetten' gedaan, niet te laat, geen dubbele punten", async () => {
+  const { huistaakVoor, klusStatus } = await import("@/lib/huis");
+  const s0 = snapshot();
+  assert.equal(huistaakVoor(s0, "Afval wegbrengen")?.id, "afval");
+  const d = new Date().toLocaleDateString("sv-SE");
+  actions.addTask({ title: "Afval wegbrengen", icon: "afval", xp: 5, assignee: "k1", date: d, repeat: "eenmalig", cat: "huishouden" } as never);
+  const taak = snapshot().tasks.find((t) => t.title === "Afval wegbrengen")!;
+  actions.toggleTask(taak, "k1");
+  const na = xp("k1");
+  const st = klusStatus(snapshot()).find((k) => k.key === "afval")!;
+  assert.ok(st.vandaagGedaan, "huistaak staat op gedaan");
+  assert.equal(st.teLaat, 0, "niet te laat");
+  // De klus nog eens afvinken geeft geen extra punten.
+  actions.klusGedaan("afval", "k1", 5, "Afval buiten zetten");
+  assert.equal(xp("k1"), na);
+  // Terugzetten: de 5 punten van de taak eraf, klus weer open.
+  actions.toggleTask(taak, "k1");
+  assert.equal(xp("k1"), na - 5);
+  assert.equal(snapshot().klusLog?.some((k) => k.taak === taak.id), false);
+});
+
+test("andersom: huistaak gedaan zet de losse taak met dezelfde klus op gedaan, zonder extra punten", async () => {
+  const { isDone } = await import("@/lib/tasks");
+  const d = new Date().toLocaleDateString("sv-SE");
+  actions.addTask({ title: "Vuilnis buiten zetten", icon: "afval", xp: 5, assignee: "k2", date: d, repeat: "eenmalig", cat: "huishouden" } as never);
+  const taak = snapshot().tasks.find((t) => t.title === "Vuilnis buiten zetten")!;
+  // Schone dag voor de klus: eventuele eerdere regels van vandaag weg.
+  for (const k of (snapshot().klusLog ?? []).filter((k) => k.klus === "afval")) actions.klusWeg(k.id, 0);
+  actions.klusGedaan("afval", "k2", 5, "Afval buiten zetten");
+  assert.ok(isDone(snapshot(), taak.id), "taak staat op gedaan");
+  // Terugzetten van de taak haalt geen punten weg: die kreeg je voor de klus, niet voor de taak.
+  const na = xp("k2");
+  actions.toggleTask(taak, "k2");
+  assert.equal(xp("k2"), na);
+});

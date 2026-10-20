@@ -140,7 +140,23 @@ export const klusKey = (k: Klus, kind?: string) => (k.perKind && kind ? `${k.id}
 
 export function laatst(s: FamilyState, key: string): KlusDone | undefined {
   const log = s.klusLog ?? [];
-  for (let i = log.length - 1; i >= 0; i--) if (log[i].klus === key) return log[i];
+  let uit: KlusDone | undefined;
+  for (let i = log.length - 1; i >= 0; i--) if (log[i].klus === key) { uit = log[i]; break; }
+  // Dezelfde klus als losse taak afgevinkt (andere naam, zelfde werk)? Dan is hij ook gedaan.
+  const taak = laatsteAlsTaak(s, key);
+  return taak && (!uit || iso(new Date(taak.at)) > iso(new Date(uit.at))) ? taak : uit;
+}
+
+/** Laatste keer dat een losse taak die dezelfde klus is (bijv. "Afval wegbrengen" = "Afval buiten zetten") is afgevinkt. */
+function laatsteAlsTaak(s: FamilyState, key: string): KlusDone | undefined {
+  if (key.includes(":")) return undefined;
+  const ids = new Set((s.tasks ?? []).filter((t) => huistaakVoor(s, t.title)?.id === key).map((t) => t.id));
+  if (!ids.size) return undefined;
+  for (const d of Object.keys(s.done ?? {}).sort().reverse()) {
+    const dag = s.done[d] ?? {};
+    const id = Object.keys(dag).find((t) => ids.has(t));
+    if (id) return { id: `taak-${d}-${id}`, klus: key, by: dag[id], at: new Date(`${d}T12:00:00`).toISOString(), taak: id };
+  }
   return undefined;
 }
 
@@ -361,8 +377,30 @@ export function werkTaken(s: FamilyState, member: string, nu = new Date()): Werk
   Vergelijkt de naam zonder hoofdletters en leestekens; "Vaatwasser inruimen" past ook bij "Vaatwasser inruimen en aanzetten".
 */
 export function huistaakVoor(s: FamilyState, titel: string): Klus | undefined {
-  const kaal = (t: string) => t.toLowerCase().split(" (")[0].replace(/[^a-zà-ÿ0-9 ]/g, "").replace(/\s+/g, " ").trim();
   const t = kaal(titel);
   if (t.length < 4) return undefined;
-  return alleKlussen(s).find((k) => klusAan(s, k) && !k.perKind && (kaal(k.label) === t || kaal(k.label).startsWith(t + " ") || t.startsWith(kaal(k.label) + " ")));
+  return alleKlussen(s).find((k) => klusAan(s, k) && !k.perKind && (kaal(k.label) === t || kaal(k.label).startsWith(t + " ") || t.startsWith(kaal(k.label) + " ") || (ZELFDE[k.id] ?? []).includes(t)));
 }
+
+const kaal = (t: string) => t.toLowerCase().split(" (")[0].replace(/[^a-zà-ÿ0-9 ]/g, "").replace(/\s+/g, " ").trim();
+
+/**
+  Andere namen voor dezelfde klus. "Afval wegbrengen" (losse taak) en "Afval buiten zetten" (huistaak) is hetzelfde werk:
+  is de één gedaan, dan is de ander ook gedaan, en dan is hij niet te laat.
+*/
+export const ZELFDE: Record<string, string[]> = {
+  afval: ["afval wegbrengen", "afval weggooien", "afval buiten zetten", "afval buitenzetten", "vuilnis buiten zetten", "vuilnis wegbrengen", "vuilniszak wegbrengen", "vuilniszak buiten zetten", "prullenbak legen", "vuilnisbak legen", "kliko aan de straat", "kliko buiten zetten", "container aan de straat", "container buiten zetten"],
+  "vaat-uit": ["vaatwasser uitruimen", "vaatwasser leeghalen", "vaatwasser legen"],
+  "vaat-in": ["vaatwasser inruimen", "vaatwasser aanzetten", "vaatwasser vullen"],
+  flessen: ["flessen wegbrengen", "lege flessen wegbrengen", "statiegeld wegbrengen", "statiegeldflessen wegbrengen"],
+  keuken: ["keuken schoonmaken", "keuken opruimen"],
+  was: ["was doen", "was draaien", "wassen", "was ophangen", "wasje draaien"],
+  bedden: ["bedden verschonen", "bed verschonen", "beddengoed verschonen"],
+  ramen: ["ramen lappen", "ramen zemen", "ramen wassen"],
+  badkamer: ["badkamer schoonmaken", "badkamer poetsen"],
+  wc: ["wc schoonmaken", "toilet schoonmaken", "wc poetsen"],
+  stoffen: ["stoffen", "stof afnemen", "afstoffen"],
+  boodschappen: ["boodschappen uitpakken", "boodschappen opruimen", "boodschappen wegzetten"],
+  "tafel-dekken": ["tafel dekken"],
+  "tafel-af": ["tafel afruimen", "tafel opruimen"],
+};

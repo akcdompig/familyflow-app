@@ -3,7 +3,7 @@
 import { useSyncExternalStore } from "react";
 import * as cloud from "./cloud";
 import { demoFamily } from "./demo";
-import { phoneTaskTitle, todayKey } from "./tasks";
+import { phoneTaskTitle, tasksFor, todayKey } from "./tasks";
 import { XP } from "./xp";
 import { DOEL, ROUTINE, basisXp, type DagLog } from "./dag";
 import { nieuweBadges } from "./badges";
@@ -12,7 +12,7 @@ import { markeerGeclaimd, metHerkomst, openRegels, type OpenRegel, type Wat } fr
 import { verdeling } from "./verdeling";
 import { DAG_OEFENING_XP } from "./oefendag";
 import { weekDicht } from "./week";
-import { klusById as verdeelKlus, maandag } from "./huis";
+import { huistaakVoor, klusById as verdeelKlus, maandag } from "./huis";
 import { iso } from "./planner";
 import { SCENARIOS } from "./scenarios";
 const routineAf = (l: DagLog) => ROUTINE.filter((r) => r.gewicht > 0).every((r) => l.routine.includes(r.id));
@@ -285,6 +285,14 @@ function dagWat(oud: DagLog, nieuw: DagLog): string {
 }
 const isKid = (s: FamilyState, id: string) => !!s.members.find((m) => m.id === id) && s.members.find((m) => m.id === id)!.role !== "ouder";
 
+/** Klus gedaan: losse taken van vandaag die dezelfde klus zijn (bijv. "Afval wegbrengen") staan dan ook op gedaan. Zonder extra punten. */
+function zelfdeTaakAf(s: FamilyState, key: string, by: string, d: string): FamilyState {
+  if (key.includes(":")) return s;
+  const ids = new Set(s.members.flatMap((m) => tasksFor(s, m.id)).filter((t) => huistaakVoor(s, t.title)?.id === key && !s.done[d]?.[t.id]).map((t) => t.id));
+  if (!ids.size) return s;
+  return { ...s, done: { ...s.done, [d]: { ...(s.done[d] ?? {}), ...Object.fromEntries([...ids].map((id) => [id, by])) } } };
+}
+
 export const actions = {
   /** Alleen demo: wissel van gezinslid. */
   switchMe(id: string) {
@@ -376,18 +384,19 @@ export const actions = {
       const v = verdeling(s, d);
       const partner = v.mee[key] ? (by === v.mee[key] ? v.wie[key] : by === v.wie[key] ? v.mee[key] : undefined) : undefined;
       const tekst = (label ? label.replace(/ \(alvast\)$/, "") : "een klus").toLowerCase();
+      const taakOok = (x: FamilyState) => zelfdeTaakAf(x, key, by, d);
       if (partner) {
         const half = Math.ceil(xp / 2);
         const groep = newId("g");
         const s1 = { ...s, klusLog: [...(s.klusLog ?? []), { id, klus: key, by, at, samen: groep }, { id: newId("k"), klus: key, by: partner, at, samen: groep }].slice(-300) };
         const s2 = { ...s1, xp: addXp({ ...s1, xp: addXp(s1, by, half) }, partner, half) };
         wat = (w) => `${klusNaam} (samen met ${w === by ? naamVan(s, partner) : naamVan(s, by)})`;
-        return metFeed(s2, by, `en ${s.members.find((m) => m.id === partner)?.name ?? "iemand"} deden samen: ${tekst} 🤝`, half);
+        return metFeed(taakOok(s2), by, `en ${s.members.find((m) => m.id === partner)?.name ?? "iemand"} deden samen: ${tekst} 🤝`, half);
       }
       const netjes = (s.uitdagingen ?? []).some((u) => u.klus === key && u.verliezer === by && (u.manier === "spel" || u.manier === "loting" || !u.manier) && new Date(u.at).toDateString() === new Date().toDateString());
       const totaal = xp + (netjes ? 3 : 0);
       wat = netjes ? `${klusNaam} (netjes gedaan +3)` : klusNaam;
-      return metFeed({ ...s, klusLog: [...(s.klusLog ?? []), { id, klus: key, by, at }].slice(-300), xp: totaal ? addXp(s, by, totaal) : s.xp }, by, `heeft gedaan: ${tekst} ✓${netjes ? " Netjes 💪" : ""}`, totaal);
+      return metFeed(taakOok({ ...s, klusLog: [...(s.klusLog ?? []), { id, klus: key, by, at }].slice(-300), xp: totaal ? addXp(s, by, totaal) : s.xp }), by, `heeft gedaan: ${tekst} ✓${netjes ? " Netjes 💪" : ""}`, totaal);
     }, (w) => (typeof wat === "function" ? wat(w) : wat));
     return id;
   },
@@ -479,17 +488,27 @@ export const actions = {
       const doer = wasDone ? day[task.id] : memberId;
       if (wasDone) delete day[task.id];
       else day[task.id] = memberId;
+      // Is deze taak dezelfde klus als een huistaak (andere naam, zelfde werk)? Dan telt de klus ook als gedaan.
+      // Was de klus vandaag al gedaan, dan geen punten nog een keer.
+      const klus = huistaakVoor(s, task.title);
+      const vanVandaag = (k: { at: string }) => new Date(k.at).toLocaleDateString("sv-SE") === d;
+      const klusAlGedaan = !!klus && (s.klusLog ?? []).some((k) => k.klus === klus.id && vanVandaag(k) && k.taak !== task.id);
+      let klusLog = s.klusLog;
+      if (klus && !wasDone && !klusAlGedaan) klusLog = [...(s.klusLog ?? []), { id: newId("k"), klus: klus.id, by: doer, at: new Date().toISOString(), taak: task.id }].slice(-300);
+      if (klus && wasDone) klusLog = (s.klusLog ?? []).filter((k) => !(k.taak === task.id && vanVandaag(k)));
       // Blokjes die een ouder bevestigt: XP pas na bevestigen.
       const metOuder = !!task.study?.ouder && isKid(s, doer);
       const bevestigd = !!s.checked?.[d]?.[task.id];
-      const telt = !metOuder || (wasDone && bevestigd);
+      // Terugzetten haalt alleen punten weg die er ook bij kwamen (niet als de klus al gedaan was of hem zelf afvinkte).
+      const verdiend = wasDone ? !klus || (s.klusLog ?? []).some((k) => k.taak === task.id && vanVandaag(k)) : !klusAlGedaan;
+      const telt = verdiend && (!metOuder || (wasDone && bevestigd));
       let checked = s.checked;
       if (wasDone && bevestigd) {
         const c = { ...(s.checked?.[d] ?? {}) };
         delete c[task.id];
         checked = { ...(s.checked ?? {}), [d]: c };
       }
-      return { ...s, checked, done: { ...s.done, [d]: day }, xp: telt && task.xp ? addXp(s, doer, wasDone ? -task.xp : task.xp) : s.xp };
+      return { ...s, checked, klusLog, done: { ...s.done, [d]: day }, xp: telt && task.xp ? addXp(s, doer, wasDone ? -task.xp : task.xp) : s.xp };
     }, task.title);
     return nowDone;
   },

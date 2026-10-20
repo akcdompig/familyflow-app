@@ -14,7 +14,7 @@
 import { addDays, iso } from "./planner";
 import { ETEN, ROUTINE, dagLog, gegeten } from "./dag";
 import { dagprogramma, telt } from "./dagprogramma";
-import { klusById, maandag } from "./huis";
+import { huistaakVoor, klusById, laatst, maandag } from "./huis";
 import { IDEEEN } from "./samen";
 import { tasksFor, isDone } from "./tasks";
 import { verdeling } from "./verdeling";
@@ -57,19 +57,25 @@ export function dagLijst(s: FamilyState, id: string, d: string): DagItem[] {
   const nodig = ROUTINE.filter((r) => r.gewicht > 0);
   items.push({ id: "routine", soort: "routine", titel: "Ochtendroutine", emoji: "🚿", klaar: nodig.every((r) => log.routine.includes(r.id)) });
   for (const e of ETEN) items.push({ id: `eten:${e.id}`, soort: "eten", titel: e.label, emoji: e.emoji, klaar: gegeten(log, e.id) });
-  for (const t of tasksFor(s, id, d)) {
-    if (t.cat === "werk") continue;
-    items.push({ id: `taak:${t.id}`, soort: "taak", titel: t.title, emoji: t.study ? "📚" : "📌", klaar: isDone(s, t.id, d) });
-  }
   const v = verdeling(s, d);
   const log2 = (s.klusLog ?? []).filter((k) => iso(new Date(k.at)) === d && k.by === id);
   const gedaan = new Set(log2.map((k) => k.klus));
   const keys = new Set<string>();
   for (const [key, wie] of Object.entries(v.wie)) if (wie === id || v.mee[key] === id) keys.add(key);
   for (const key of gedaan) keys.add(key); // ook wat je extra deed
+  // Een losse taak die dezelfde klus is (bijv. "Afval wegbrengen" en "Afval buiten zetten"): één keer in de lijst.
+  const zelfde = (t: { title: string }) => huistaakVoor(s, t.title)?.id;
+  for (const t of tasksFor(s, id, d)) {
+    if (t.cat === "werk") continue;
+    const k = zelfde(t);
+    if (k && keys.has(k)) continue;
+    items.push({ id: `taak:${t.id}`, soort: "taak", titel: t.title, emoji: t.study ? "📚" : "📌", klaar: isDone(s, t.id, d) });
+  }
+  // Vandaag al gedaan als losse taak met een andere naam? Dan staat de klus ook af.
+  const vandaagGedaan = (key: string) => { const l = laatst(s, key); return !!l && l.by === id && iso(new Date(l.at)) === d; };
   for (const key of keys) {
     const k = klusById(s, key);
-    items.push({ id: `klus:${key}`, soort: "klus", titel: k ? (k.perKind ? "Eigen kamer" : k.label.split(" (")[0]) : key, emoji: k?.emoji ?? "🧹", klaar: gedaan.has(key) });
+    items.push({ id: `klus:${key}`, soort: "klus", titel: k ? (k.perKind ? "Eigen kamer" : k.label.split(" (")[0]) : key, emoji: k?.emoji ?? "🧹", klaar: gedaan.has(key) || (!key.includes(":") && vandaagGedaan(key)) });
   }
   return metStatus(s, id, d, items);
 }

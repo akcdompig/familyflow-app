@@ -1,2 +1,2 @@
-export const VERSION = "3.18";
-export const VERSION_NAME = "Weghalen en resetten";
+export const VERSION = "3.19";
+export const VERSION_NAME = "Zelfde klus, andere naam";

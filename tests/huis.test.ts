@@ -101,3 +101,16 @@ test("potje: stand, uitgaven en bedragen invoeren", () => {
   assert.equal(parseEuro("-4"), 0);
   assert.equal(euro(875), "€ 8,75");
 });
+
+test("afval: 's ochtends 'Afval wegbrengen' afgevinkt (oude gegevens, zonder klusregel) = 'Afval buiten zetten' niet te laat", async () => {
+  const { klusStatus } = await import("@/lib/huis");
+  const nu = new Date("2026-10-20T16:00:00");
+  const s = gezin({
+    tasks: [{ id: "t-afval", title: "Afval wegbrengen", icon: "afval", xp: 5, assignee: "k1", repeat: "dagelijks", cat: "huishouden" } as never],
+    done: { "2026-10-20": { "t-afval": "k1" } },
+    klusLog: [{ id: "oud", klus: "afval", by: "k2", at: new Date("2026-10-10T18:00:00").toISOString() }],
+  });
+  const st = klusStatus(s, nu).find((k) => k.key === "afval")!;
+  assert.equal(st.teLaat, 0);
+  assert.ok(st.vandaagGedaan);
+});

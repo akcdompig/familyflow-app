@@ -417,6 +417,8 @@ export interface KlusDone {
   at: string;
   /** Samen gedaan: ieder de helft van de tijd en de punten. Zelfde `samen`-id bij beide regels. */
   samen?: string;
+  /** Gedaan via een losse taak met een andere naam (bijv. "Afval wegbrengen"): id van die taak. Geen extra punten. */
+  taak?: string;
 }
 
 export interface PotItem {
