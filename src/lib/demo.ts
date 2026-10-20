@@ -78,10 +78,11 @@ function demoGeschiedenis() {
 }
 
 /** Voorbeeldgezin. Alle namen en gegevens zijn verzonnen. */
-/** De demo zoals een ouder hem gebruikt: de klussen van de komende twee weken zijn verdeeld met "Verdeel de taken". */
+/** De demo zoals een ouder hem gebruikt: de klussen van de rest van deze week zijn verdeeld met "Verdeel de taken". Volgende week mag je zelf proberen. */
 export function demoFamily(): FamilyState {
   const s = demoBasis();
-  return { ...s, klusAfspraken: { ...(s.klusAfspraken ?? {}), planning: maakPlan(s, today(), 14) } };
+  const restVanDeWeek = 7 - ((new Date().getDay() + 6) % 7); // maandag 7 dagen, zondag 1
+  return { ...s, klusAfspraken: { ...(s.klusAfspraken ?? {}), planning: maakPlan(s, today(), restVanDeWeek) } };
 }
 
 function demoBasis(): FamilyState {
