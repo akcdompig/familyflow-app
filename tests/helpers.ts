@@ -29,6 +29,7 @@ export function gezin(extra: Partial<FamilyState> = {}): FamilyState {
     vrij: {},
     sleep: {},
     badgesStart: "2000-01-01T00:00:00.000Z",
+    klusAfspraken: undefined,
     ...extra,
   };
 }

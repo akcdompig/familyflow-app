@@ -90,6 +90,8 @@ export function demoFamily(): FamilyState {
       { id: "k1", name: "Noah", role: "kind", age: 13, bedtime: "21:30", energy: 0.5, avatar: { skin: "s4", hair: "krullen", hairColor: "#2b1b14", extras: [], outfit: "hoodie", outfitColor: "#ff6b57" } },
       { id: "k2", name: "Lina", role: "tiener", age: 17, bedtime: "22:30", energy: 0.5, avatar: { skin: "s3", hair: "knot", hairColor: "#3a2418", extras: ["sproeten", "koptelefoon"], outfit: "tshirt", outfitColor: "#8fa6ff" } },
     ],
+    // Zo zou een ouder het instellen: wat meer dan de standaard, zodat er ook op een schooldag iets te doen is.
+    klusAfspraken: { verwachting: { k1: { school: 25, vrij: 40 }, k2: { school: 30, vrij: 45 } } },
     checkins: {
       p1: { mood: 3, rest: false, topics: ["Thuis"], wantsTalk: false, at: at(8, 5) },
       p2: { mood: 5, rest: false, topics: [], wantsTalk: false, at: at(7, 40) },
