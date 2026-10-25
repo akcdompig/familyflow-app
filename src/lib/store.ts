@@ -311,8 +311,7 @@ export const actions = {
     }, "Ingecheckt");
   },
   /** Dagelijkse basis bijwerken (routine, kleding, water, fruit, ontbijt, sport). Kinderen krijgen er XP voor. */
-  updateDag(memberId: string, fn: (log: DagLog) => DagLog) {
-    const d = todayKey();
+  updateDag(memberId: string, fn: (log: DagLog) => DagLog, d = todayKey()) {
     let wat = "Mijn dag";
     update((s) => {
       const oud: DagLog = { routine: [], water: 0, fruit: 0, ...(s.dag?.[d]?.[memberId] ?? {}) };
@@ -325,7 +324,7 @@ export const actions = {
       const grens = new Date(Date.now() - 63 * 864e5).toLocaleDateString("sv-SE");
       const dag = Object.fromEntries(Object.entries(s.dag ?? {}).filter(([k]) => k >= grens));
       let uit: FamilyState = { ...s, dag: { ...dag, [d]: { ...(dag[d] ?? {}), [memberId]: nieuw } }, xp: delta ? addXp(s, memberId, delta) : s.xp };
-      if (!routineAf(oud) && routineAf(nieuw)) uit = metFeed(uit, memberId, "heeft de ochtendroutine gedaan 🚿", ROUTINE.filter((r) => r.gewicht > 0).length * 2 + 5);
+      if (d === todayKey() && !routineAf(oud) && routineAf(nieuw)) uit = metFeed(uit, memberId, "heeft de ochtendroutine gedaan 🚿", ROUTINE.filter((r) => r.gewicht > 0).length * 2 + 5);
       if (oud.water < DOEL.water && nieuw.water >= DOEL.water) uit = metFeed(uit, memberId, "heeft genoeg water gedronken 💧", 5);
       if (oud.fruit < DOEL.fruit && nieuw.fruit >= DOEL.fruit) uit = metFeed(uit, memberId, "heeft 2 stuks fruit gegeten 🍎", 5);
       wat = dagWat(oud, nieuw);
@@ -479,8 +478,7 @@ export const actions = {
     });
   },
   /** Taak afvinken of terugzetten. Geeft terug of de taak nu af is. */
-  toggleTask(task: Task, memberId: string): boolean {
-    const d = todayKey();
+  toggleTask(task: Task, memberId: string, d = todayKey()): boolean {
     const nowDone = !state.done[d]?.[task.id];
     update((s) => {
       const day = { ...(s.done[d] ?? {}) };
@@ -640,37 +638,63 @@ export const actions = {
   },
   /** Een ouder vinkt vandaag iets af voor een kind ("wel gedaan, vergeten aan te vinken"). Punten gaan naar het kind. */
   ouderAfvinken(kind: string, itemId: string): boolean {
-    const d = todayKey();
-    if (weekDicht(state, kind, d)) return false;
+    return actions.ouderZet(kind, todayKey(), itemId, true);
+  },
+  /** Toch niet gedaan: het vinkje van vandaag weer weg, met de punten. */
+  ouderTerug(kind: string, itemId: string): boolean {
+    return actions.ouderZet(kind, todayKey(), itemId, false);
+  },
+  /**
+    Een ouder zet een vinkje goed, ook op een eerdere dag: wel gedaan (vergeten af te vinken) of toch niet gedaan
+    (afgevinkt maar niet gedaan). Geldt voor taken, huistaken, de ochtendroutine en eetmomenten. De punten gaan mee:
+    erbij of eraf. Niet in de toekomst en niet in een week die een ouder al heeft afgesloten.
+  */
+  ouderZet(kind: string, d: string, itemId: string, af: boolean): boolean {
+    if (d > todayKey() || weekDicht(state, kind, d)) return false;
     if (itemId.startsWith("taak:")) {
       const t = state.tasks.find((x) => x.id === itemId.slice(5));
       if (!t) return false;
-      if (!state.done[d]?.[t.id]) actions.toggleTask(t, kind);
+      if (af !== !!state.done[d]?.[t.id]) actions.toggleTask(t, kind, d);
       return true;
     }
     if (itemId.startsWith("klus:")) {
       const key = itemId.slice(5);
       const k = verdeelKlus(state, key);
+      const opDag = (x: { at: string }) => new Date(x.at).toLocaleDateString("sv-SE") === d;
+      if (!af) {
+        const logs = (state.klusLog ?? []).filter((x) => x.klus === key && x.by === kind && opDag(x));
+        for (const l of logs) actions.klusWeg(l.id, k?.xp ?? 0);
+        // Ook een losse taak die dezelfde klus is (bijv. "Afval wegbrengen") gaat dan weer open.
+        update((s) => {
+          const dag = { ...(s.done[d] ?? {}) };
+          let weg = false;
+          for (const t of tasksFor(s, kind, d)) if (dag[t.id] === kind && klusKeyVoor(s, t.title, kind) === key) { delete dag[t.id]; weg = true; }
+          return weg ? { ...s, done: { ...s.done, [d]: dag } } : s;
+        });
+        return logs.length > 0;
+      }
       if (!k) return false;
-      actions.klusGedaan(key, kind, k.xp, k.label);
+      if (d === todayKey()) { actions.klusGedaan(key, kind, k.xp, k.label); return true; }
+      if ((state.klusLog ?? []).some((x) => x.klus === key && x.by === kind && opDag(x))) return true;
+      update((s) => ({
+        ...s,
+        klusLog: [...(s.klusLog ?? []), { id: newId("k"), klus: key, by: kind, at: new Date(`${d}T12:00:00`).toISOString() }].slice(-300),
+        xp: k.xp ? addXp(s, kind, k.xp) : s.xp,
+      }), `${k.label.split(" (")[0]} (door ouder afgevinkt)`);
       return true;
     }
-    return false;
-  },
-  /** Toch niet gedaan: het vinkje van vandaag weer weg (taak of huistaak), met de punten. */
-  ouderTerug(kind: string, itemId: string): boolean {
-    const d = todayKey();
-    if (weekDicht(state, kind, d)) return false;
-    if (itemId.startsWith("taak:")) {
-      const t = state.tasks.find((x) => x.id === itemId.slice(5));
-      if (t && state.done[d]?.[t.id]) actions.toggleTask(t, kind);
-      return !!t;
+    if (itemId === "routine") {
+      const nodig = ROUTINE.filter((r) => r.gewicht > 0).map((r) => r.id);
+      actions.updateDag(kind, (l) => ({ ...l, routine: af ? [...new Set([...l.routine, ...nodig])] : l.routine.filter((x) => !nodig.includes(x)) }), d);
+      return true;
     }
-    if (itemId.startsWith("klus:")) {
-      const key = itemId.slice(5);
-      const log = [...(state.klusLog ?? [])].reverse().find((x) => x.klus === key && x.by === kind && new Date(x.at).toLocaleDateString("sv-SE") === d);
-      if (log) actions.klusWeg(log.id, verdeelKlus(state, key)?.xp ?? 0);
-      return !!log;
+    if (itemId.startsWith("eten:")) {
+      const id = itemId.slice(5);
+      actions.updateDag(kind, (l) => {
+        const zonder = (l.eten ?? []).filter((x) => x !== id);
+        return { ...l, eten: af ? [...zonder, id] : zonder, ontbijt: id === "ontbijt" ? af : l.ontbijt };
+      }, d);
+      return true;
     }
     return false;
   },

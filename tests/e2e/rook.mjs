@@ -860,7 +860,7 @@ await scenario("v3.7: ouder helpt: wel gedaan, ging niet door, en de telling pas
   await tab(p, /Vandaag/).click();
   await p.getByRole("region", { name: "De kinderen vandaag" }).getByRole("button", { name: /^Noah/ }).click();
   const dag = p.getByRole("region", { name: "Vandaag van Noah" });
-  const telling = async () => (await dag.locator(".ff-row .ff-small").innerText()).trim();
+  const telling = async () => (await dag.locator(".v2-lid-telling").innerText()).trim();
   const voor = await telling();
   const open = dag.locator("li.is-helpen:not(.is-af)", { hasText: "huistaak" }).filter({ hasNotText: /kamer/i }).first();
   const titel = (await open.locator(".ff-lijst-titel").innerText()).trim();
@@ -1282,6 +1282,24 @@ await scenario("v3.12: kind voegt zelf een taak toe met een tijd; geen klus-keuz
   await p.locator(".v2-deel-kop", { hasText: "Avond" }).click();
   const rij = p.locator(".v2-stap", { hasText: "Gymtas inpakken" });
   assert.match(await rij.innerText(), /19\.30/);
+});
+
+await scenario("v3.21: ouder bladert terug naar gisteren en zet een vinkje terug (toch niet gedaan)", v2, "19:00", async (p) => {
+  await wissel(p, "Papa");
+  await tab(p, /Vandaag/).click();
+  await p.getByRole("region", { name: "De kinderen vandaag" }).getByRole("button", { name: /^Noah/ }).click();
+  await p.getByRole("button", { name: "Dag eerder", exact: true }).click();
+  const dag = p.getByRole("region", { name: "Gisteren van Noah" });
+  await dag.waitFor();
+  const telling = async () => Number((await dag.locator(".v2-lid-telling").innerText()).trim().split(" ")[0]);
+  const voor = await telling();
+  assert.ok(voor > 0, "gisteren staat er iets als gedaan");
+  await dag.locator("li.is-helpen.is-af").first().locator(".v2-lid-item").click();
+  await dag.getByRole("button", { name: "Toch niet gedaan" }).click();
+  assert.equal(await telling(), voor - 1, "één minder gedaan");
+  assert.equal(await p.getByRole("button", { name: "Dag later", exact: true }).isEnabled(), true);
+  await p.getByRole("button", { name: "Dag later", exact: true }).click();
+  assert.equal(await p.getByRole("button", { name: "Dag later", exact: true }).isEnabled(), false, "niet verder dan vandaag");
 });
 
 await browser.close();
