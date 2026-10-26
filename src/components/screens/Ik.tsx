@@ -234,7 +234,8 @@ export function Ik({ state, me, onEditAvatar, onCalm, onToast }: { state: Family
         </section>
       )}
       <Feedback me={me} onToast={onToast} />
-      <p className="ff-small ff-muted ff-center">FamilyFlow {VERSION} · {VERSION_NAME}</p>
+      <img className="ff-brand-logo ff-brand-logo-s" src="/stairhop-logo.png" alt="StairHop – Samen stap voor stap groeien" width={180} height={63} />
+      <p className="ff-small ff-muted ff-center">StairHop {VERSION} · {VERSION_NAME}</p>
     </div>
   );
 }

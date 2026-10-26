@@ -6,9 +6,9 @@ import { pushAan, pushStatus, pushTest, pushUit, type PushStatus } from "@/lib/p
 const UITLEG: Record<PushStatus, string> = {
   aan: "Staat aan. Ben je 2 uur stil in de app, dan krijg je een seintje.",
   uit: "Krijg een seintje als je 2 uur niks hebt afgevinkt. Kinderen krijgen om 9 uur een wekmelding als ze nog niks deden.",
-  geblokkeerd: "Meldingen staan uit voor FamilyFlow. Zet ze aan bij de instellingen van je telefoon (Meldingen › FamilyFlow).",
-  beginscherm: "Op de iPhone werkt dit alleen als FamilyFlow op je beginscherm staat: tik op Deel › Zet op beginscherm, en open de app vanaf daar.",
-  "kan-niet": "Deze browser kan geen meldingen. Open FamilyFlow in Chrome of Safari, of zet hem op je beginscherm.",
+  geblokkeerd: "Meldingen staan uit voor StairHop. Zet ze aan bij de instellingen van je telefoon (Meldingen › StairHop).",
+  beginscherm: "Op de iPhone werkt dit alleen als StairHop op je beginscherm staat: tik op Deel › Zet op beginscherm, en open de app vanaf daar.",
+  "kan-niet": "Deze browser kan geen meldingen. Open StairHop in Chrome of Safari, of zet hem op je beginscherm.",
   demo: "In de demo kun je geen meldingen krijgen.",
 };
 

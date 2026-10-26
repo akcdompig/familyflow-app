@@ -34,13 +34,13 @@ const fonts = '<link rel="preconnect" href="https://fonts.googleapis.com"><link 
 // Volledige pagina, voor lokaal testen.
 writeFileSync(
   resolve(out, "index.html"),
-  `<!doctype html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>FamilyFlow</title>${fonts}<style>${css}</style></head><body><div id="root"></div><script>${js}</script></body></html>`,
+  `<!doctype html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>StairHop</title>${fonts}<style>${css}</style></head><body><div id="root"></div><script>${js}</script></body></html>`,
 );
 
 // Inhoud voor een Claude-artifact (die zet zelf het html/head/body-kader eromheen).
 writeFileSync(
   resolve(out, "artifact.html"),
-  `<title>${UI === "v1" ? "FamilyFlow 1.x" : "FamilyFlow"}</title>\n<meta name="claude:viewport-fit-sides" content="cover">\n${fonts}\n<style>${css}\n.ff-app{padding-top:12px}</style>\n<div id="root"></div>\n<script>${js}</script>\n`,
+  `<title>${UI === "v1" ? "StairHop 1.x" : "StairHop"}</title>\n<meta name="claude:viewport-fit-sides" content="cover">\n${fonts}\n<style>${css}\n.ff-app{padding-top:12px}</style>\n<div id="root"></div>\n<script>${js}</script>\n`,
 );
 
 // Oude versie of lokaal ontwikkelen: alleen de preview bouwen, dist/ (wat live staat) niet aanraken.
@@ -61,11 +61,12 @@ if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
 const head = [
   '<meta charset="utf-8">',
   '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">',
-  "<title>FamilyFlow</title>",
+  "<title>StairHop – Samen stap voor stap groeien</title>",
+  '<meta name="description" content="StairHop: de gezinsapp voor taken, geld, groen en goede gesprekken. Samen stap voor stap groeien.">',
   '<meta name="theme-color" content="#fff6ee">',
   '<meta name="apple-mobile-web-app-capable" content="yes">',
   '<meta name="mobile-web-app-capable" content="yes">',
-  '<meta name="apple-mobile-web-app-title" content="FamilyFlow">',
+  '<meta name="apple-mobile-web-app-title" content="StairHop">',
   '<meta name="apple-mobile-web-app-status-bar-style" content="default">',
   '<link rel="manifest" href="/manifest.webmanifest">',
   '<link rel="icon" href="/favicon.png">',

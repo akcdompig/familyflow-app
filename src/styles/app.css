@@ -473,6 +473,8 @@ p { margin: 0; }
 /* ---------- Release 1: aanmelden en uitnodigen ---------- */
 a.ff-btn { text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
 .ff-onb { padding-top: 12px; }
+.ff-brand-logo { display: block; width: min(280px, 78vw); height: auto; margin: 0 auto; }
+.ff-brand-logo-s { width: 160px; margin-top: 16px; opacity: .9; }
 .ff-onb-hero { display: grid; justify-items: center; text-align: center; gap: 10px; padding: 24px 8px 8px; }
 .ff-onb-load { min-height: 70vh; display: grid; place-items: center; animation: ff-breath 3s ease-in-out infinite; }
 .ff-onb-choice { width: 100%; display: flex; align-items: center; gap: 14px; text-align: left; border: 0; background: var(--ff-vlak); border-radius: var(--ff-rond-l); padding: 16px; box-shadow: var(--ff-schaduw-s); }

@@ -1,8 +1,8 @@
-// FamilyFlow service worker: app opent ook met slechte verbinding.
+// StairHop service worker: app opent ook met slechte verbinding.
 // Gezinsgegevens gaan altijd rechtstreeks naar Supabase en worden hier niet bewaard.
-const CACHE = "familyflow-v3";
+const CACHE = "stairhop-v4";
 try { importScripts("/config.js"); } catch (e) { /* zonder config geen herinneringen */ }
-const SHELL = ["/", "/config.js", "/manifest.webmanifest", "/icon-192.png", "/icon-512.png", "/apple-touch-icon.png"];
+const SHELL = ["/", "/config.js", "/manifest.webmanifest", "/icon-192.png", "/icon-512.png", "/apple-touch-icon.png", "/stairhop-logo.png"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -43,7 +43,7 @@ self.addEventListener("fetch", (e) => {
 // Herinneringen: de push is leeg, de tekst halen we op bij de Edge Function.
 self.addEventListener("push", (e) => {
   e.waitUntil((async () => {
-    let titel = "FamilyFlow";
+    let titel = "StairHop";
     let tekst = "Even inchecken?";
     try {
       if (e.data) {

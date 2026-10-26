@@ -1,7 +1,7 @@
 {
-  "name": "FamilyFlow",
-  "short_name": "FamilyFlow",
-  "description": "Samen thuis: check-ins, taken, ruzies oplossen en gezinsoverleg.",
+  "name": "StairHop",
+  "short_name": "StairHop",
+  "description": "Samen stap voor stap groeien. De gezinsapp voor taken, geld, groen en goede gesprekken.",
   "lang": "nl",
   "start_url": "/",
   "scope": "/",
