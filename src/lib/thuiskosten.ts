@@ -1,16 +1,19 @@
 /*
-  3.22 Wat kost thuis? Echte prijzen, zodat kinderen zien dat douchen, licht en apparaten geld kosten,
+  3.22 Zuinig thuis. Echte prijzen en milieucijfers, zodat kinderen zien dat douchen, licht en apparaten geld kosten,
   en wat een eigen huis straks per maand kost. Alles is een schatting; de bronnen staan erbij.
 
   Bronnen (opgezocht oktober 2026):
   - Gas € 1,76 per m³, stroom € 0,32 per kWh: gemiddelde consumentenprijs oktober 2026 (energievergelijk.nl).
   - Water € 1,82 per m³: Vitens 2026, incl. btw en belasting op leidingwater.
   - Douchen: ~8 liter per minuut, ~0,04 m³ gas per minuut (Milieu Centraal: 4 minuten korter per dag scheelt ~60 m³ gas per jaar).
+  - CO2: aardgas 2,134 kg per m³, stroom (gemiddelde mix) 0,328 kg per kWh (co2emissiefactoren.nl, 2026, hele keten).
   - Vaste lasten: Nibud-minimumvoorbeeldbegroting alleenstaande, huurwoning (peildatum juli 2025).
 */
 
 export const PRIJS = { gas: 1.76, stroom: 0.32, water: 1.82 };
 export const DOUCHE = { liter: 8, gasM3: 0.04 };
+/** kg CO2 per m³ gas en per kWh stroom. */
+export const CO2 = { gas: 2.134, stroom: 0.328 };
 
 /** Wat kost één minuut douchen, in centen. */
 export const doucheMinuut = () => (DOUCHE.liter / 1000) * PRIJS.water * 100 + DOUCHE.gasM3 * PRIJS.gas * 100;
@@ -18,8 +21,22 @@ export const doucheMinuut = () => (DOUCHE.liter / 1000) * PRIJS.water * 100 + DO
 /** Douchen per beurt, per maand en per jaar (één keer per dag), in centen. */
 export function douchen(minuten: number, personen = 1) {
   const beurt = doucheMinuut() * minuten;
-  return { beurt: Math.round(beurt), maand: Math.round(beurt * 30.4 * personen), jaar: Math.round(beurt * 365 * personen) };
+  const keer = 365 * personen;
+  return {
+    beurt: Math.round(beurt),
+    maand: Math.round(beurt * 30.4 * personen),
+    jaar: Math.round(beurt * keer),
+    /** Per jaar: liters water en kg CO2 (van het gas voor warm water). */
+    liter: Math.round(DOUCHE.liter * minuten * keer),
+    co2: Math.round(DOUCHE.gasM3 * CO2.gas * minuten * keer),
+  };
 }
+
+/** kg CO2 van een apparaat voor een aantal uur of keer. */
+export const apparaatCo2 = (a: { kwh: number }, n = 1) => a.kwh * CO2.stroom * n;
+
+/** "2.920 liter" / "62 kg CO2" leesbaar. */
+export const getal = (n: number) => Math.round(n).toLocaleString("nl-NL");
 
 export interface Apparaat {
   id: string;

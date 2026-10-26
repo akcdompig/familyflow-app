@@ -78,3 +78,9 @@ test("wat kost thuis: douchen en vaste lasten kloppen ongeveer", () => {
   assert.ok(Math.abs(douchen(10).jaar - Math.round(minuut * 10 * 365)) <= 1);
   assert.equal(vasteLastenTotaal(), 174_700, "Nibud: € 1.747 per maand");
 });
+
+test("zuinig thuis: liters water en CO2 bij douchen", () => {
+  const d = douchen(10);
+  assert.equal(d.liter, 8 * 10 * 365, "8 liter per minuut");
+  assert.equal(d.co2, Math.round(0.04 * 2.134 * 10 * 365), "gas voor warm water");
+});

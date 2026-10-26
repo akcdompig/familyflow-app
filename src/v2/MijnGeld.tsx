@@ -11,7 +11,7 @@ import { WatKostThuis } from "./WatKostThuis";
 /*
   3.22 Mijn geld. Wat komt erbij, wat gaat eraf, waar spaar je voor. De ouder is de bank: de app houdt bij, betaalt niks.
   Kinderen zien alleen hun eigen geld. Ouders zien dat van elk kind en stellen het zakgeld in.
-  Tweede tab: Wat kost thuis? (douchen, apparaten, straks op jezelf).
+  Tweede tab: Zuinig thuis (douchen, apparaten, straks op jezelf).
 */
 
 const maandNaam = (ym: string) => new Date(ym + "-15T12:00:00").toLocaleDateString("nl-NL", { month: "long" });
@@ -78,7 +78,7 @@ export function MijnGeld({ state, me, onClose, onToast, onWerk }: { state: Famil
 
       <div className="ff-seg" role="tablist">
         <button role="tab" aria-selected={tab === "geld"} onClick={() => setTab("geld")}>💶 Geld</button>
-        <button role="tab" aria-selected={tab === "thuis"} onClick={() => setTab("thuis")}>🏠 Wat kost thuis?</button>
+        <button role="tab" aria-selected={tab === "thuis"} onClick={() => setTab("thuis")}>🌱 Zuinig thuis</button>
       </div>
 
       {tab === "thuis" ? <WatKostThuis state={state} lid={lid} /> : (

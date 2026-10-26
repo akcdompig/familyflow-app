@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { euro, minimumloonVoor, uurloonVan, urenWerk } from "@/lib/geld";
-import { APPARATEN, PRIJS, VASTE_LASTEN, apparaatKost, douchen, doucheMinuut, prijsTekst, urenPerMaand, vasteLastenTotaal } from "@/lib/thuiskosten";
+import { APPARATEN, PRIJS, VASTE_LASTEN, apparaatCo2, apparaatKost, douchen, getal, doucheMinuut, prijsTekst, urenPerMaand, vasteLastenTotaal } from "@/lib/thuiskosten";
 import type { FamilyState, Member } from "@/lib/types";
 
 /*
-  3.22 Wat kost thuis? Laat zien dat douchen, apparaten en een eigen huis echt geld kosten.
+  3.22 Zuinig thuis. Laat zien dat douchen, apparaten en een eigen huis geld kosten, en wat het milieu ervan merkt (liters water, kg CO2).
   Rekent met de prijzen van nu (zie thuiskosten.ts). Waar het kan ook in uren werk, met je eigen uurloon.
 */
 
@@ -16,7 +16,8 @@ export function WatKostThuis({ state, lid }: { state: FamilyState; lid: Member }
   const [open, setOpen] = useState<string | null>(null);
   const personen = gezin ? state.members.length : 1;
   const d = douchen(min, personen);
-  const korter = douchen(2, personen).jaar;
+  const minder = douchen(2, personen);
+  const korter = minder.jaar;
   const uurloon = uurloonVan(state, lid.id) ?? minimumloonVoor(lid.age);
   const totaal = vasteLastenTotaal();
   const min21 = minimumloonVoor(21)!;
@@ -24,7 +25,7 @@ export function WatKostThuis({ state, lid }: { state: FamilyState; lid: Member }
   return (
     <>
       <section className="ff-card ff-stack-s" aria-label="Douchen">
-        <b>🚿 Wat kost douchen?</b>
+        <b>🚿 Douchen: geld en milieu</b>
         <span className="ff-small ff-muted">Warm water kost gas én water. Eén minuut douchen kost ongeveer {euro(Math.round(doucheMinuut()))}.</span>
         <label className="ff-field">
           <span className="ff-eyebrow">Zo lang douche {gezin ? "iedereen" : "ik"}: {min} minuten</span>
@@ -39,18 +40,22 @@ export function WatKostThuis({ state, lid }: { state: FamilyState; lid: Member }
           <span className="ff-stat"><span>per maand</span><b>{euro(d.maand)}</b></span>
           <span className="ff-stat"><span>per jaar</span><b>{euro(d.jaar)}</b></span>
         </div>
-        <span className="ff-small v2-geld-tip">💡 Elke dag 2 minuten korter scheelt {gezin ? "het gezin" : "jou"} {euro(korter)} per jaar.{urenWerk(korter, uurloon) ? ` Dat is ${urenWerk(korter, uurloon)}.` : ""}</span>
+        <div className="v2-geld-baan">
+          <span className="ff-stat"><span>water per jaar</span><b>{getal(d.liter)} L</b></span>
+          <span className="ff-stat"><span>CO₂ per jaar</span><b>{getal(d.co2)} kg</b></span>
+        </div>
+        <span className="ff-small v2-geld-tip">🌱 Elke dag 2 minuten korter scheelt {gezin ? "het gezin" : "jou"} per jaar {getal(minder.liter)} liter water, {getal(minder.co2)} kg CO₂ en {euro(korter)}.{urenWerk(korter, uurloon) ? ` Dat geld is ${urenWerk(korter, uurloon)}.` : ""}</span>
       </section>
 
       <section className="ff-card ff-stack-s" aria-label="Apparaten">
-        <b>🔌 Wat kosten apparaten?</b>
+        <b>🔌 Apparaten: geld en milieu</b>
         <span className="ff-small ff-muted">Stroom kost nu ongeveer {euro(Math.round(PRIJS.stroom * 100))} per kWh. Tik voor een tip.</span>
         <ul className="v2-geld-lijst">
           {APPARATEN.map((a) => (
             <li key={a.id} className="v2-geld-app">
               <button className="v2-lid-item" aria-expanded={open === a.id} onClick={() => setOpen(open === a.id ? null : a.id)}>
                 <span aria-hidden="true">{a.emoji}</span>
-                <span className="ff-grow">{a.naam}<span className="ff-block ff-small ff-muted">elke dag = {prijsTekst(apparaatKost(a, 365))} per jaar</span></span>
+                <span className="ff-grow">{a.naam}<span className="ff-block ff-small ff-muted">elke dag = {prijsTekst(apparaatKost(a, 365))} en {getal(apparaatCo2(a, 365))} kg CO₂ per jaar</span></span>
                 <b>{prijsTekst(apparaatKost(a))}<span className="ff-small ff-muted"> /{a.per}</span></b>
               </button>
               {open === a.id && a.tip && <span className="ff-small v2-geld-tip">{a.tip}</span>}
@@ -76,7 +81,7 @@ export function WatKostThuis({ state, lid }: { state: FamilyState; lid: Member }
         <span className="ff-small ff-muted">Vanaf 21 is het minimumloon {euro(min21)} per uur: dan is het {urenPerMaand(totaal, min21)} uur per maand. Daarom loont een diploma, en sparen voordat je op jezelf gaat. Bedragen zijn bruto en een schatting.</span>
       </section>
 
-      <p className="ff-small ff-muted">Prijzen oktober 2026: gas {euro(Math.round(PRIJS.gas * 100))} per m³, stroom {euro(Math.round(PRIJS.stroom * 100))} per kWh, water {euro(Math.round(PRIJS.water * 100))} per m³. Bronnen: Milieu Centraal, Vitens, Nibud.</p>
+      <p className="ff-small ff-muted">Prijzen oktober 2026: gas {euro(Math.round(PRIJS.gas * 100))} per m³, stroom {euro(Math.round(PRIJS.stroom * 100))} per kWh, water {euro(Math.round(PRIJS.water * 100))} per m³. CO₂: aardgas 2,13 kg per m³, stroom 0,33 kg per kWh. Bronnen: Milieu Centraal, Vitens, Nibud, co2emissiefactoren.nl.</p>
     </>
   );
 }

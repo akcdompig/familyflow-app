@@ -1315,7 +1315,7 @@ await scenario("v3.22: Mijn geld: uitgave eraf, in uren werk, en wat kost thuis"
   await knop(p, "Eraf halen").click();
   assert.notEqual(await saldo(), voor, "saldo is lager");
   assert.match(await p.locator(".v2-geld-lijst").first().innerText(), /Pizza[\s\S]*− € 11,84/);
-  await p.getByRole("tab", { name: /Wat kost thuis/ }).click();
+  await p.getByRole("tab", { name: /Zuinig thuis/ }).click();
   assert.match(await p.getByRole("region", { name: "Douchen" }).innerText(), /per jaar/);
   assert.match(await p.getByRole("region", { name: "Straks op jezelf" }).innerText(), /1\.747,00/);
 });
