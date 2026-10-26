@@ -1302,6 +1302,40 @@ await scenario("v3.21: ouder bladert terug naar gisteren en zet een vinkje terug
   assert.equal(await p.getByRole("button", { name: "Dag later", exact: true }).isEnabled(), false, "niet verder dan vandaag");
 });
 
+await scenario("v3.22: Mijn geld: uitgave eraf, in uren werk, en wat kost thuis", v2, "19:00", async (p) => {
+  await wissel(p, "Lina");
+  await tab(p, /^Ik/).click();
+  await p.getByRole("button", { name: "Mijn geld bekijken" }).click();
+  const saldo = async () => (await p.locator(".v2-geld-bedrag").innerText()).trim();
+  const voor = await saldo();
+  await knop(p, "− Uitgegeven").click();
+  await p.locator("#geld-bedrag").fill("11,84");
+  assert.match(await p.locator(".v2-geld-uren").innerText(), /2 uur werken/);
+  await p.locator("#geld-wat").fill("Pizza");
+  await knop(p, "Eraf halen").click();
+  assert.notEqual(await saldo(), voor, "saldo is lager");
+  assert.match(await p.locator(".v2-geld-lijst").first().innerText(), /Pizza[\s\S]*− € 11,84/);
+  await p.getByRole("tab", { name: /Wat kost thuis/ }).click();
+  assert.match(await p.getByRole("region", { name: "Douchen" }).innerText(), /per jaar/);
+  assert.match(await p.getByRole("region", { name: "Straks op jezelf" }).innerText(), /1\.747,00/);
+});
+
+await scenario("v3.22: ouder ziet geld per kind en stelt zakgeld in; kind ziet geen geld van broer of zus", v2, "19:00", async (p) => {
+  await wissel(p, "Papa");
+  await tab(p, /^Ik/).click();
+  await p.getByRole("button", { name: /Geld van de kinderen/ }).click();
+  await p.getByRole("group", { name: "Kies een kind" }).getByRole("button", { name: "Noah" }).click();
+  await p.locator("#zakgeld-bedrag").fill("6");
+  await p.getByRole("region", { name: "Zakgeld" }).getByRole("button", { name: "Opslaan" }).click();
+  assert.match(await p.getByRole("region", { name: "Zakgeld" }).innerText(), /€ 6,00 per week/);
+  await p.getByRole("button", { name: "Terug" }).click();
+  await wissel(p, "Noah");
+  await tab(p, /^Ik/).click();
+  await p.getByRole("button", { name: "Mijn geld bekijken" }).click();
+  assert.equal(await p.getByRole("group", { name: "Kies een kind" }).count(), 0);
+  assert.equal(await p.getByRole("region", { name: "Zakgeld" }).count(), 0, "zakgeld stelt alleen een ouder in");
+});
+
 await browser.close();
 if (fouten) {
   console.log(`\n${fouten} scenario('s) mislukt`);

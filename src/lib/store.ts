@@ -14,6 +14,7 @@ import { DAG_OEFENING_XP } from "./oefendag";
 import { weekDicht } from "./week";
 import { klusKeyVoor, klusById as verdeelKlus, maandag } from "./huis";
 import { iso } from "./planner";
+import { parseEuro } from "./geld";
 import { SCENARIOS } from "./scenarios";
 const routineAf = (l: DagLog) => ROUTINE.filter((r) => r.gewicht > 0).every((r) => l.routine.includes(r.id));
 import type { GedragAfspraak, Turf, WeekTrede, OefenToets, AgendaItem, InzetItem, InzetSoort, Kookplan, PotItem, Dienst, WerkItem, CoachRun, Quest, AvatarConfig, CalmPlan, CheckIn, Conflict, ConflictSide, FamilyState, Meeting, ProKind, Task } from "./types";
@@ -716,7 +717,15 @@ export const actions = {
       const w = s.weekAfsluiting?.[kind]?.[maandagVan];
       if (!w) return s;
       const { betaald: _oud, ...rest } = w;
-      return { ...s, weekAfsluiting: { ...s.weekAfsluiting, [kind]: { ...s.weekAfsluiting![kind], [maandagVan]: betaald ? { ...rest, betaald: new Date().toISOString() } : rest } } };
+      const uit = { ...s, weekAfsluiting: { ...s.weekAfsluiting, [kind]: { ...s.weekAfsluiting![kind], [maandagVan]: betaald ? { ...rest, betaald: new Date().toISOString() } : rest } } };
+      // 3.22: staat er een bedrag in de bonus ("€ 5")? Dan komt hij in Mijn geld, en gaat hij er bij terugzetten weer af.
+      const cents = parseEuro(w.beloning) ?? 0;
+      const id = `bonus:${maandagVan}`;
+      const g = s.geld?.[kind] ?? { posten: [] };
+      const zonder = g.posten.filter((x) => x.id !== id);
+      if (!cents && zonder.length === g.posten.length) return uit;
+      const post = { id, datum: iso(new Date()), cents, soort: "bonus" as const, wat: `Weekbonus (week van ${new Date(maandagVan + "T12:00:00").toLocaleDateString("nl-NL", { day: "numeric", month: "short" })})`, door: s.me, at: new Date().toISOString() };
+      return { ...uit, geld: { ...(s.geld ?? {}), [kind]: { ...g, posten: betaald && cents ? [...zonder, post] : zonder } } };
     });
   },
   /** Week afsluiten: de stand van nu staat vast. Al afgesloten? Dan verandert er niks. */

@@ -246,7 +246,40 @@ function demoBasis(): FamilyState {
       p1: [{ id: "w1", naam: "Kantoor", soort: "vast", days: [1, 2, 4, 5], van: "08:00", tot: "17:00", inkomen: true }],
       p2: [{ id: "w2", naam: "Gemeente", soort: "vast", days: [1, 2, 3, 4], van: "08:30", tot: "17:00", inkomen: true }],
       k1: [{ id: "w3", naam: "School", soort: "vast", days: [1, 2, 3, 4, 5], van: "08:30", tot: "15:00", look: "school" }],
-      k2: [{ id: "w4", naam: "ROC", soort: "vast", days: [1, 2, 4], van: "09:00", tot: "13:00", look: "school" }],
+      k2: [
+        { id: "w4", naam: "ROC", soort: "vast", days: [1, 2, 4], van: "09:00", tot: "13:00", look: "school" },
+        { id: "w5", naam: "Toko Sari", soort: "wisselend", inkomen: true, uurloon: 592, look: "keuken" },
+      ],
+    },
+    // 3.22 Bijbaan van Lina: losse diensten bij de toko.
+    diensten: [
+      { id: "d1", member: "k2", werkId: "w5", date: day(-12), van: "12:00", tot: "17:00" },
+      { id: "d2", member: "k2", werkId: "w5", date: day(-9), van: "16:00", tot: "20:00" },
+      { id: "d3", member: "k2", werkId: "w5", date: day(-5), van: "12:00", tot: "18:00" },
+      { id: "d4", member: "k2", werkId: "w5", date: day(-2), van: "16:00", tot: "20:00" },
+      { id: "d5", member: "k2", werkId: "w5", date: day(3), van: "12:00", tot: "17:00" },
+    ],
+    // 3.22 Mijn geld.
+    geld: {
+      k1: {
+        zakgeld: { cents: 500, per: "week", vanaf: day(-30) },
+        doel: { wat: "Nieuwe controller", cents: 7000 },
+        posten: [
+          { id: "g1", datum: day(-20), cents: 2000, soort: "cadeau", wat: "Verjaardag oma", door: "k1", at: daysAgo(20, 15) },
+          { id: "g2", datum: day(-6), cents: -450, soort: "uitgave", cat: "eten", wat: "Snacks na school", door: "k1", at: daysAgo(6, 16) },
+          { id: "g3", datum: day(-3), cents: -799, soort: "uitgave", cat: "gamen", wat: "V-Bucks", door: "k1", at: daysAgo(3, 20) },
+        ],
+      },
+      k2: {
+        zakgeld: { cents: 2500, per: "maand", vanaf: day(-60) },
+        doel: { wat: "Nieuwe sneakers", cents: 14000 },
+        posten: [
+          { id: "g4", datum: day(-25), cents: 8880, soort: "loon", wat: "Loon vorige maand", door: "k2", at: daysAgo(25, 12) },
+          { id: "g5", datum: day(-15), cents: -1250, soort: "uitgave", cat: "uitgaan", wat: "Bioscoop met vriendinnen", door: "k2", at: daysAgo(15, 22) },
+          { id: "g6", datum: day(-8), cents: -2499, soort: "uitgave", cat: "kleding", wat: "Hoodie", door: "k2", at: daysAgo(8, 17) },
+          { id: "g7", datum: day(-4), cents: -600, soort: "uitgave", cat: "eten", wat: "Bubble tea", door: "k2", at: daysAgo(4, 16) },
+        ],
+      },
     },
     klusLog: [
       ...g.klusLog!.reverse(),

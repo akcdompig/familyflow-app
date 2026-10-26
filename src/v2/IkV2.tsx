@@ -14,9 +14,10 @@ import { actions } from "@/lib/store";
 import type { OpenRegel } from "@/lib/herkomst";
 import { geclaimd, levelProgress, teClaimen } from "@/lib/xp";
 import type { FamilyState, Member } from "@/lib/types";
+import { doelStand, euro, saldo } from "@/lib/geld";
 
 /** Ik: je level, schatkist, achievements en je instellingen. Alles wat over jou gaat op één plek. */
-export function IkV2({ state, me, onToast, onAvatar, onWerk, onMeer, onOuders, onPrivacy, onPlanner, onUitleg }: { state: FamilyState; me: Member; onToast: (m: string) => void; onAvatar: () => void; onWerk: () => void; onMeer: () => void; onOuders?: () => void; onPrivacy?: () => void; onPlanner?: () => void; onUitleg?: () => void }) {
+export function IkV2({ state, me, onToast, onAvatar, onWerk, onMeer, onOuders, onPrivacy, onPlanner, onUitleg, onGeld }: { state: FamilyState; me: Member; onToast: (m: string) => void; onAvatar: () => void; onWerk: () => void; onMeer: () => void; onOuders?: () => void; onPrivacy?: () => void; onPlanner?: () => void; onUitleg?: () => void; onGeld?: () => void }) {
   const xp = geclaimd(state, me.id);
   const lp = levelProgress(xp);
   const kist = teClaimen(state, me.id);
@@ -48,9 +49,26 @@ export function IkV2({ state, me, onToast, onAvatar, onWerk, onMeer, onOuders, o
       {isOuder && (onOuders || onPlanner) && (
         <section className="v2-menu" aria-label="Gezin regelen">
           {onOuders && <button className="v2-menu-rij" onClick={onOuders}><span aria-hidden="true">👨‍👩‍👧</span><b className="ff-grow">Gezin instellen: uitnodigen, beloningen, bedtijden</b><span aria-hidden="true">›</span></button>}
+          {onGeld && <button className="v2-menu-rij" onClick={onGeld}><span aria-hidden="true">💶</span><b className="ff-grow">Geld van de kinderen: zakgeld, sparen, uitgaven</b><span aria-hidden="true">›</span></button>}
           {onPlanner && <button className="v2-menu-rij" onClick={onPlanner}><span aria-hidden="true">📚</span><b className="ff-grow">Huiswerk en Somtoday van de kinderen</b><span aria-hidden="true">›</span></button>}
         </section>
       )}
+
+      {/* 3.22 Mijn geld: wat je hebt en waar je voor spaart. Tik = alles. */}
+      {!isOuder && onGeld && (() => {
+        const d = doelStand(state, me.id);
+        return (
+          <button className="ff-card v2-geld-kaart" onClick={onGeld} aria-label="Mijn geld bekijken">
+            <span className="v2-geld-kaart-emoji" aria-hidden="true">💶</span>
+            <span className="ff-grow">
+              <b className="ff-block">Mijn geld · {euro(saldo(state, me.id))}</b>
+              <span className="ff-small ff-muted">{d ? `${d.wat}: ${d.pct}% gespaard` : "Bijhouden wat erbij komt en wat eraf gaat"}</span>
+              {d && <span className="ff-bezig-balk is-klein"><i style={{ width: `${d.pct}%` }} /></span>}
+            </span>
+            <span aria-hidden="true">›</span>
+          </button>
+        );
+      })()}
 
       {kist > 0 && (
         <section className="ff-card ff-schatkist">

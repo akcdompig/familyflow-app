@@ -1,48 +1,31 @@
-# FamilyFlow 2.0 – acceptatieversie
+# Acceptatie 3.22: Mijn geld
 
-Deze versie staat op de tak `acceptatie`. De pilot (tak `main`, map `dist/`) is niet veranderd.
-Bouwen: `FF_UI=v2 node preview/build.mjs` → `preview/dist/index.html` (demo, raakt `dist/` niet aan).
+Tak `acceptatie-geld`. De pilot (`main`, map `dist/`) is niet veranderd. Testen gaat met de demo (geen echte gezinsdata).
+Bouwen: `FF_DEV=1 npm run build` → `preview/dist/index.html`.
 
-## Het doel van de app, in één zin
-Kinderen leren zelfstandig hun dag te doen (hygiëne, eten, school, klussen), met aandacht voor lijf en hoofd, en weten wat ze moeten doen bij ruzie of boosheid. Ouders hoeven minder te sturen.
+## Waarom
+Kinderen leren de waarde van geld: geld komt binnen (zakgeld, loon uit een bijbaan, weekbonus, cadeau) en gaat eraf als je iets koopt.
+Ze zien wat thuis kost (douchen, apparaten) en wat een eigen huis straks per maand kost. Geen bank: de ouder is de bank.
 
-## Van 5 tabs en ±12 kaarten naar 4 tabs met een duidelijke taak
+## Wat erin zit
+- **Mijn geld** (Ik): saldo, in/uit per maand, ＋ Erbij en − Uitgegeven, waar het heen ging (per soort), geschiedenis.
+- **In uren werk**: met een uurloon zie je bij elke aankoop hoeveel uur werken het is ("Sneakers = 15 uur werken").
+- **Bijbaan**: uurloon bij School en bijbaan. Uren uit vaste dagen en diensten × uurloon = bruto loon per maand. "Loon ontvangen" zet het erbij.
+- **Spaardoel**: hoeveel nog, en hoeveel weken bij je tempo van de laatste 4 weken.
+- **Zakgeld** (alleen ouders): per week (maandag) of maand (1e), komt vanzelf binnen. Verhogen verandert het verleden niet.
+- **Weekbonus**: "Uitbetaald" bij de week zet het bedrag uit de bonus (bijv. "€ 2,50") in Mijn geld.
+- **Wat kost thuis?**: douchen (schuif minuten, ik of hele gezin), apparaten per uur/keer, en "Straks op jezelf" (Nibud) met hoeveel uur je daarvoor moet werken.
+- Privacy: kind ziet alleen eigen geld; ouders zien alle kinderen; broers en zussen niet bij elkaar.
 
-| Tab | Voor wie | Wat erin staat |
-|---|---|---|
-| **Vandaag** | iedereen, vooral de kinderen | Eén dagprogramma: voortgangsring, water/fruit met één tik, gevoel met één tik, **Nu doen** (één ding tegelijk) en de dag per dagdeel. Werk en school staan er vanzelf in. |
-| **Gezin** | het hele gezin | Nu (huiskamer, aandacht voor ouders, berichten school/zorg, net gedaan, klassement) · Eten · Klussen · Potje · Planning (taken van iedereen + week). |
-| **Hulp** | iedereen | Ik word boos · Ruzie of gedoe · coach-tip van vandaag · oefeningen · leerplanner. |
-| **Ik** | iedereen | Level, schatkist, achievements, interesses, herinneringen, avatar, werk/rooster, rustplan; ouders: overleg, beloningen, school en zorg. |
-
-## Keuzes (bekeken als app-ontwikkelaar)
-
-**Samengevoegd**
-- Huiskamer + Thuis + Taken → *Vandaag* (mijn dag) en *Gezin* (ons huis). Eén plek per vraag: "wat moet ik?" en "hoe gaat het thuis?".
-- Mijn dag-paneel, Jouw dag-kaart, Klussen-kaart, Taken-lijst → één dagprogramma met dezelfde vinkjes.
-- Oefenen + coach + rust → *Hulp*.
-- Check-in: 5 gezichtjes direct op Vandaag; het uitgebreide scherm alleen bij "niet goed" of "⋯".
-
-**Voor kinderen met ADHD/ADD**
-- Eén lijst, op volgorde van de dag; alleen het huidige dagdeel staat open.
-- "Nu doen" toont precies één ding met één grote knop.
-- Tijdens werk/school staat er "Nu bezig" met een balk, en wat er straks komt.
-- Direct effect: vinkje springt, +punten vliegen omhoog, ring loopt vol.
-
-**Geparkeerd voor deze versie** (code blijft bestaan, alleen niet in beeld)
-- Leeslog (lezen-minuten) – kan later terug als quest.
-- Losse "Wie doet wat"-statistieken – ouders zien het nu in klassement en planning.
-- Uurlijkse tips bovenaan – vervangen door één coach-tip in Hulp.
-
-**Niet veranderd onder de motorkap**
-- Zelfde gezinsstand en database: geen migratie nodig, pilotdata blijft bruikbaar.
-- Somtoday, herinneringen, achievements, schatkist, koken, klussen, potje en werk werken hetzelfde.
+## Bronnen (oktober 2026)
+Minimumjeugdloon 1 juli 2026 (15: € 4,50 · 16: € 5,17 · 17: € 5,92 · 18: € 7,50 · 21+: € 14,99). Gas € 1,76/m³ en stroom € 0,32/kWh (gemiddelde oktober 2026).
+Water € 1,82/m³ (Vitens 2026). Douchen ±8 liter en ±0,04 m³ gas per minuut (Milieu Centraal). Vaste lasten: Nibud-minimumbegroting alleenstaande, juli 2025.
 
 ## Testen (acceptatie)
-1. Kies **Noah** bovenaan. Vink de ochtendroutine af via "Nu doen". Klopt de volgorde? Is het duidelijk?
-2. Zet de klok op schooltijd (of kijk na 8.30): staat "Nu bezig · School" goed?
-3. Kies **Papa** › Gezin › Nu: zie je in één oogopslag wat aandacht nodig heeft?
-4. Gezin › Eten/Klussen/Potje: alles bereikbaar in 1–2 tikken?
-5. Ik: snap je schatkist en achievements zonder uitleg?
+1. Kies **Lina** › Ik › Mijn geld. Snap je in één blik wat je hebt en wat eraf ging?
+2. Tik − Uitgegeven, typ 89,99: zie je hoeveel uur werken dat is?
+3. Wat kost thuis? › schuif het douchen. Voelt het bedrag per jaar echt?
+4. Kies **Papa** › Ik › Geld van de kinderen › Noah › zakgeld instellen.
+5. Papa › Week › sluit een week af met bonus "€ 2,50" en tik Uitgebetaald: staat hij bij Lina's geld?
 
 Wat goed is, gaat naar `main` en wordt de nieuwe pilotversie.

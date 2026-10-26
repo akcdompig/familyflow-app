@@ -1368,3 +1368,32 @@ button.v2-samen-actie { justify-self: start; min-height: 34px; padding-left: 0; 
 .v2-avondlijst { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
 .v2-avondlijst li.is-volgende { font-weight: 700; color: var(--ff-actie, #3d52b8); }
 .v2-avondlijst li.is-voorbij { opacity: .55; }
+
+/* 3.22 Mijn geld */
+.v2-geld-kaart { display: flex; gap: 12px; align-items: center; width: 100%; border: 0; text-align: left; font: inherit; color: inherit; cursor: pointer; box-shadow: var(--ff-schaduw-s); }
+.v2-geld-kaart .ff-bezig-balk { margin-top: 6px; }
+.v2-geld-kaart-emoji { font-size: 1.8rem; width: 48px; height: 48px; display: grid; place-items: center; border-radius: 50%; background: var(--ff-munt-zacht); flex: none; }
+.v2-geld-saldo { display: grid; gap: 6px; text-align: center; justify-items: center; }
+.v2-geld-bedrag { font-family: var(--ff-font-speels); font-size: 2.6rem; line-height: 1.05; font-weight: 600; color: var(--ff-munt-donker); font-variant-numeric: tabular-nums; }
+.v2-geld-saldo.is-rood .v2-geld-bedrag { color: var(--ff-koraal-knop); }
+.v2-geld-let { color: var(--ff-koraal-knop); font-weight: 700; }
+.v2-geld-in { color: var(--ff-munt-donker); font-weight: 700; }
+.v2-geld-uit { color: var(--ff-koraal-knop); font-weight: 700; }
+.v2-geld-knoppen { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; margin-top: 6px; }
+.v2-geld-invoer input, .v2-geld-klein { font: inherit; font-size: var(--ff-t-m); padding: 12px 14px; border-radius: var(--ff-rond-s); border: 2px solid var(--ff-lijn); background: var(--ff-vlak); color: inherit; min-width: 0; }
+.v2-geld-klein { width: 110px; }
+.v2-geld-uren, .v2-geld-tip { background: var(--ff-zon-zacht); border-radius: var(--ff-rond-s); padding: 8px 12px; display: block; }
+.v2-geld-baan { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 8px; }
+.v2-geld-baan .ff-stat { background: var(--ff-grond); text-align: center; justify-items: center; }
+.v2-geld-baan .ff-stat b { font-size: 1.2rem; white-space: nowrap; }
+.v2-geld-baan .ff-stat { padding: 10px 6px; }
+.v2-geld-cat { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; align-items: center; }
+.v2-geld-cat .ff-bezig-balk { grid-column: 1 / -1; }
+.v2-geld-lijst { list-style: none; margin: 0; padding: 0; display: grid; }
+.v2-geld-lijst > li { display: flex; gap: 10px; align-items: center; padding: 9px 0; border-top: 1px solid var(--ff-lijn); flex-wrap: wrap; }
+.v2-geld-lijst > li:first-child { border-top: 0; }
+.v2-geld-lijst > li > b { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.v2-geld-app .v2-lid-item { min-height: 44px; }
+.v2-geld-app .v2-geld-tip { width: 100%; }
+.v2-geld-totaal { font-size: var(--ff-t-m); }
+.v2-geld input[type="range"] { width: 100%; accent-color: var(--ff-actie); }

@@ -159,8 +159,10 @@ export interface WerkItem {
   days?: number[];
   van?: string; // "08:30"
   tot?: string; // "17:00"
-  /** Hier verdient iemand geld mee (geen bedragen). */
+  /** Hier verdient iemand geld mee. */
   inkomen?: boolean;
+  /** 3.22 Bruto uurloon in centen (bijbaan). Dan rekent Mijn geld uit wat je verdiend hebt. */
+  uurloon?: number;
   /** Hoe de avatar eruitziet tijdens dit werk. */
   look?: Bezig;
 }
@@ -233,6 +235,8 @@ export interface FamilyState {
   klusLog?: KlusDone[];
   /** Het gezinspotje: sparen voor iets leuks samen. Geen bank, alleen bijhouden. */
   pot?: { doel: string; cents: number; items: PotItem[] };
+  /** 3.22 Mijn geld: per gezinslid een eigen geldoverzicht (de ouder is de bank). */
+  geld?: Record<string, import("./geld").Geld>;
   /** Punten die al geclaimd zijn (stand van xp bij de laatste claim). Het verschil wacht in je schatkist. */
   claim?: Record<string, number>;
   /** Gehaalde achievements. gezien = wie de viering al heeft gezien. */

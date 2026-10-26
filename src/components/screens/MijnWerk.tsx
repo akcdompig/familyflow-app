@@ -7,6 +7,7 @@ import { duur, uren } from "@/lib/stats";
 import { actions } from "@/lib/store";
 import { lookVoor } from "@/lib/status";
 import type { FamilyState, Member, WerkItem } from "@/lib/types";
+import { euro, minimumloonVoor, parseEuro } from "@/lib/geld";
 
 const DAG = ["zo", "ma", "di", "wo", "do", "vr", "za"];
 const nieuwId = () => "w" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
@@ -95,6 +96,13 @@ export function MijnWerk({ state, me, onClose, onToast }: { state: FamilyState; 
             </div>
           </div>
           <button className="ff-chip ff-chip-l" aria-pressed={!!bewerk.inkomen} onClick={() => set({ inkomen: !bewerk.inkomen })}>Hier verdien ik mee</button>
+          {bewerk.inkomen && lid.role !== "ouder" && (
+            <label className="ff-field">
+              <span className="ff-eyebrow">Uurloon (bruto)</span>
+              <input id="werk-uurloon" inputMode="decimal" placeholder={minimumloonVoor(lid.age) ? (minimumloonVoor(lid.age)! / 100).toFixed(2).replace(".", ",") : "6,00"} defaultValue={bewerk.uurloon ? (bewerk.uurloon / 100).toFixed(2).replace(".", ",") : ""} onChange={(e) => set({ uurloon: parseEuro(e.target.value) })} />
+              <span className="ff-small ff-muted">Dan zie je bij Mijn geld wat je verdient.{minimumloonVoor(lid.age) ? ` Minimumloon voor ${lid.age} jaar: ${euro(minimumloonVoor(lid.age)!)} per uur.` : ""}</span>
+            </label>
+          )}
           <button className="ff-btn ff-btn-primary ff-btn-wide" onClick={() => opslaan(bewerk)}>Opslaan</button>
           {lijst.some((x) => x.id === bewerk.id) && (
             <button className="ff-link" onClick={() => { actions.setWerk(wie, lijst.filter((x) => x.id !== bewerk.id)); setBewerk(null); onToast("Verwijderd"); }}>Verwijderen</button>

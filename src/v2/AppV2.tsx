@@ -20,6 +20,7 @@ import { DUUR, oefeningVanVandaag } from "@/lib/oefendag";
 import { iso } from "@/lib/planner";
 import { EersteKeer, UitlegPagina, type UitlegTab } from "@/components/screens/Uitleg";
 import { MijnWerk } from "@/components/screens/MijnWerk";
+import { MijnGeld } from "./MijnGeld";
 import { Oefenen } from "@/components/screens/Oefenen";
 import { ProApp } from "@/components/screens/Pro";
 import { Privacy } from "@/components/screens/Privacy";
@@ -47,7 +48,7 @@ import { WeekTab } from "./WeekTab";
 import { Toevoegen } from "@/components/screens/Toevoegen";
 
 type Tab = "vandaag" | "week" | "gezin" | "ik";
-type Pagina = null | "avatar" | "werk" | "meer" | "ouders" | "planner" | "privacy" | "uitleg" | "rust";
+type Pagina = null | "avatar" | "werk" | "geld" | "meer" | "ouders" | "planner" | "privacy" | "uitleg" | "rust";
 
 const NAV: { id: Tab; label: string; icon: IconName }[] = [
   { id: "vandaag", label: "Vandaag", icon: "taken" },
@@ -160,6 +161,7 @@ export function AppV2() {
   }
   else if (pagina === "avatar") vol = <AvatarMaker key={me.id} member={me} onClose={() => setPagina(null)} onSaved={setToast} />;
   else if (pagina === "werk") vol = <MijnWerk state={state} me={me} onClose={() => setPagina(null)} onToast={setToast} />;
+  else if (pagina === "geld") vol = <MijnGeld key={me.id} state={state} me={me} onClose={() => setPagina(null)} onToast={setToast} onWerk={() => setPagina("werk")} />;
   else if (pagina === "planner") vol = <Leerplanner key={me.id} state={state} me={me} onClose={() => setPagina(null)} onToast={setToast} />;
   else if (dagOefening) {
     const sc = oefeningVanVandaag(state, me.id, iso(new Date()));
@@ -202,7 +204,7 @@ export function AppV2() {
                 </>
               } />
           )}
-          {!pagina && tab === "ik" && <IkV2 state={state} me={me} onToast={setToast} onAvatar={() => setPagina("avatar")} onWerk={() => setPagina("werk")} onMeer={() => setPagina("meer")} onPrivacy={() => setPagina("privacy")} onUitleg={() => setPagina("uitleg")} onOuders={isOuder ? () => setPagina("ouders") : undefined} onPlanner={isOuder && state.members.some((m) => m.role !== "ouder") ? () => setPagina("planner") : undefined} />}
+          {!pagina && tab === "ik" && <IkV2 state={state} me={me} onToast={setToast} onAvatar={() => setPagina("avatar")} onWerk={() => setPagina("werk")} onMeer={() => setPagina("meer")} onPrivacy={() => setPagina("privacy")} onUitleg={() => setPagina("uitleg")} onOuders={isOuder ? () => setPagina("ouders") : undefined} onGeld={!isOuder || state.members.some((m) => m.role !== "ouder") ? () => setPagina("geld") : undefined} onPlanner={isOuder && state.members.some((m) => m.role !== "ouder") ? () => setPagina("planner") : undefined} />}
 
           <nav className="ff-nav v2-nav" aria-label="Hoofdmenu" style={{ gridTemplateColumns: `repeat(${NAV.length + 1}, minmax(0, 1fr))` }}>
             {NAV.map((n, i) => {
