@@ -1397,3 +1397,5 @@ button.v2-samen-actie { justify-self: start; min-height: 34px; padding-left: 0; 
 .v2-geld-app .v2-geld-tip { width: 100%; }
 .v2-geld-totaal { font-size: var(--ff-t-m); }
 .v2-geld input[type="range"] { width: 100%; accent-color: var(--ff-actie); }
+.v2-zuinig-kop { display: grid; gap: 4px; padding: 0 4px; }
+.v2-zuinig-kop .ff-h2 { margin: 0; text-wrap: balance; }

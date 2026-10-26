@@ -24,6 +24,10 @@ export function WatKostThuis({ state, lid }: { state: FamilyState; lid: Member }
 
   return (
     <>
+      <section className="v2-zuinig-kop">
+        <h2 className="ff-h2">Zuinig thuis en goed voor het milieu</h2>
+        <span className="ff-small ff-muted">Minder water, minder stroom, minder CO₂. En meer geld over.</span>
+      </section>
       <section className="ff-card ff-stack-s" aria-label="Douchen">
         <b>🚿 Douchen: geld en milieu</b>
         <span className="ff-small ff-muted">Warm water kost gas én water. Eén minuut douchen kost ongeveer {euro(Math.round(doucheMinuut()))}.</span>

@@ -14,7 +14,7 @@ Ze zien wat thuis kost (douchen, apparaten) en wat een eigen huis straks per maa
 - **Spaardoel**: hoeveel nog, en hoeveel weken bij je tempo van de laatste 4 weken.
 - **Zakgeld** (alleen ouders): per week (maandag) of maand (1e), komt vanzelf binnen. Verhogen verandert het verleden niet.
 - **Weekbonus**: "Uitbetaald" bij de week zet het bedrag uit de bonus (bijv. "€ 2,50") in Mijn geld.
-- **Zuinig thuis** (geld én milieu): douchen (schuif minuten, ik of hele gezin) in euro, liters water en kg CO₂, apparaten per uur/keer met CO₂ per jaar, en "Straks op jezelf" (Nibud) met hoeveel uur je daarvoor moet werken.
+- **Zuinig thuis en goed voor het milieu** (idee Rodney): douchen (schuif minuten, ik of hele gezin) in euro, liters water en kg CO₂, apparaten per uur/keer met CO₂ per jaar, en "Straks op jezelf" (Nibud) met hoeveel uur je daarvoor moet werken.
 - Privacy: kind ziet alleen eigen geld; ouders zien alle kinderen; broers en zussen niet bij elkaar.
 
 ## Bronnen (oktober 2026)
