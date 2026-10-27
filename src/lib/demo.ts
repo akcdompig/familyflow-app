@@ -201,8 +201,8 @@ function demoBasis(): FamilyState {
     // Weekafspraak (vooraf, vast) en een oefentoets die papa plakte.
     // Weekbonus: zakgeld krijgen ze altijd; de bonus komt erbovenop in twee treden.
     weekAfspraak: {
-      k1: { drempel: 70, beloning: "€ 2,50", treden: [{ pct: 70, wat: "€ 2,50" }, { pct: 85, wat: "€ 5" }], zakgeld: "€ 5" },
-      k2: { drempel: 70, beloning: "€ 3,75", treden: [{ pct: 70, wat: "€ 3,75" }, { pct: 85, wat: "€ 7,50" }], zakgeld: "€ 10" },
+      k1: { drempel: 71, beloning: "€ 1", treden: [{ pct: 71, dagen: 5, wat: "€ 1" }, { pct: 86, dagen: 6, wat: "€ 2" }], zakgeld: "€ 5" },
+      k2: { drempel: 71, beloning: "€ 1,50", treden: [{ pct: 71, dagen: 5, wat: "€ 1,50" }, { pct: 86, dagen: 6, wat: "€ 3" }], zakgeld: "€ 8" },
     },
     // Twee eerder afgesloten weken van Noah: één met de hele bonus (uitbetaald), één net niet gehaald.
     weekAfsluiting: (() => {

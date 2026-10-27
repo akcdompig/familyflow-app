@@ -87,6 +87,7 @@ export function WeekRegel({ state, me, onWeek }: { state: FamilyState; me: Membe
 function Treden({ k }: { k: Kaart }) {
   if (!k.treden.some((t) => t.wat)) return null;
   return (
+    <>
     <ul className="v2-treden" aria-label="Weekbonus">
       {k.treden.map((t, i) => {
         const binnen = k.gesloten ? k.gesloten.trede !== undefined && i <= k.gesloten.trede : i <= k.behaald;
@@ -99,6 +100,8 @@ function Treden({ k }: { k: Kaart }) {
         );
       })}
     </ul>
+    {k.treden.length > 1 && <span className="ff-small ff-muted">Je krijgt wat bij je hoogste stap hoort, niet allebei bij elkaar.</span>}
+    </>
   );
 }
 
