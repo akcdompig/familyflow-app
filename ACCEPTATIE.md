@@ -1,4 +1,21 @@
-# Acceptatie 3.22: Mijn geld
+# Acceptatie 3.23: Groene dagen + 3.22: Mijn geld
+
+## 3.23 Groene dagen (de weekkaart, opnieuw ontworpen)
+De weekkaart was te ingewikkeld: drie soorten procenten, een balk met streepjes zonder uitleg, sterren +3% en turven −5%,
+en "nog 6 vinkjes" klonk alsof je met 6 vinkjes klaar was voor de hele week.
+- **Kind ziet geen procenten meer.** Zeven bolletjes (ma–zo). Groen = die dag 80% gedaan. Oranje = meer dan de helft.
+- **Eén doel**: "Nog 3 groene dagen voor € 2,50". **Eén actie**: "Vandaag: nog 2 vinkjes voor een groene dag".
+- **Elke dag begint opnieuw.** In één keer inhalen kan niet: dat is één groene dag.
+- **Turf = die dag wordt niet groen** (geen −5% meer). Goedgemaakt telt weer.
+- **Bonus in groene dagen** (bijv. 5 → € 2,50, 6 → € 5). Oude afspraken worden vanzelf omgezet: 70% → 5 dagen, 85% → 6.
+- **Op Vandaag** één regel: de bolletjes + "Nog 2 vinkjes voor een groene dag".
+- **Ouder**: dezelfde bolletjes per kind, "Per dag bekijken", afsluiten in dagen ("Net niet: 1 groene dag te weinig").
+- "Hoe werkt het?" legt het in 4 korte regels uit.
+
+Testen: kies **Noah** › Week en Vandaag. Snapt een kind van 13 het in 5 seconden? Kies **Papa** › Week › Noah.
+
+---
+
 
 Tak `acceptatie-geld`. De pilot (`main`, map `dist/`) is niet veranderd. Testen gaat met de demo (geen echte gezinsdata).
 Bouwen: `FF_DEV=1 npm run build` → `preview/dist/index.html`.

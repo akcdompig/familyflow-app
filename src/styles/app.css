@@ -1399,3 +1399,34 @@ button.v2-samen-actie { justify-self: start; min-height: 34px; padding-left: 0; 
 .v2-geld input[type="range"] { width: 100%; accent-color: var(--ff-actie); }
 .v2-zuinig-kop { display: grid; gap: 4px; padding: 0 4px; }
 .v2-zuinig-kop .ff-h2 { margin: 0; text-wrap: balance; }
+
+/* 3.23 Groene dagen */
+.v2-dagen { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.v2-dagen li { display: grid; justify-items: center; gap: 4px; }
+.v2-dagen small { font-size: var(--ff-t-xs); font-weight: 700; color: var(--ff-tekst-zacht); }
+.v2-dagen .is-vandaag small { color: var(--ff-tekst); }
+.v2-dag-bol { width: 100%; max-width: 40px; aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 1rem; color: #fff; background: var(--ff-wolk); border: 2px solid transparent; box-sizing: border-box; }
+.v2-dagen .is-groen .v2-dag-bol { background: var(--ff-munt); }
+.v2-dagen .is-bijna .v2-dag-bol { background: var(--ff-zon-zacht); border-color: var(--ff-zon); }
+.v2-dagen .is-grijs .v2-dag-bol, .v2-dagen .is-leeg .v2-dag-bol { background: var(--ff-lijn); }
+.v2-dagen .is-turf .v2-dag-bol { background: var(--ff-koraal-zacht); color: var(--ff-koraal-knop); border-color: var(--ff-koraal); }
+.v2-dagen .is-later .v2-dag-bol { background: transparent; border: 2px dashed var(--ff-lijn); }
+.v2-dagen .is-vandaag:not(.is-groen):not(.is-turf) .v2-dag-bol { background: conic-gradient(var(--ff-munt) var(--p, 0%), var(--ff-wolk) 0); border: 0; position: relative; }
+.v2-dagen .is-vandaag:not(.is-groen):not(.is-turf) .v2-dag-bol::after { content: ""; position: absolute; inset: 5px; border-radius: 50%; background: var(--ff-vlak); }
+.v2-dagen .is-vandaag .v2-dag-bol { outline: 2px solid var(--ff-nacht); outline-offset: 2px; }
+.v2-dagen.is-klein { display: flex; gap: 3px; flex: none; }
+.v2-dagen.is-klein .v2-dag-bol { width: 12px; height: 12px; font-size: 0; border-width: 1px; }
+.v2-dagen.is-klein .is-vandaag .v2-dag-bol { outline-width: 1.5px; outline-offset: 1px; }
+.v2-dagen.is-klein .is-vandaag:not(.is-groen):not(.is-turf) .v2-dag-bol::after { inset: 2px; }
+.v2-groen-teller { display: inline-flex; align-items: center; gap: 4px; font-size: var(--ff-t-s); color: var(--ff-munt-donker); }
+.v2-groen-teller b { font-family: var(--ff-font-speels); font-size: 1.3rem; }
+.v2-bonuszin { font-size: var(--ff-t-m); line-height: 1.3; }
+.v2-vandaagzin { display: block; background: var(--ff-munt-zacht); color: var(--ff-munt-donker); border-radius: var(--ff-rond-s); padding: 8px 12px; font-weight: 700; font-size: var(--ff-t-s); }
+.v2-trede-bol { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: var(--ff-t-xs); font-weight: 800; background: var(--ff-vlak); border: 2px solid var(--ff-munt); color: var(--ff-munt-donker); flex: none; }
+.v2-treden .is-binnen .v2-trede-bol { background: var(--ff-munt); color: #fff; }
+.v2-treden .is-binnen { background: var(--ff-munt-zacht); }
+.v2-uitleg-kort { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; color: var(--ff-tekst-zacht); }
+.v2-weekblok { padding-top: 4px; }
+.v2-weekblok + .v2-weekblok { border-top: 1px solid var(--ff-lijn); padding-top: 12px; }
+.v2-dagstip { white-space: nowrap; font-size: var(--ff-t-s); }
+.v2-dagstip.is-turf { color: var(--ff-koraal-knop); }

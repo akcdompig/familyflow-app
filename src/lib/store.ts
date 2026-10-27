@@ -705,7 +705,13 @@ export const actions = {
     Oude aanroep (drempel, beloning) werkt nog: dat is één trede.
   */
   setWeekAfspraak(kind: string, tredenOfDrempel: WeekTrede[] | number, zakgeldOfBeloning = "") {
-    const schoon = (t: WeekTrede[]) => t.map((x) => ({ pct: Math.max(50, Math.min(100, Math.round(x.pct))), wat: x.wat.trim().slice(0, 60) })).sort((a, b) => a.pct - b.pct).filter((x, i, a) => i === 0 || x.pct > a[i - 1].pct).slice(0, 2);
+    // 3.23: treden in groene dagen (1–7). Een trede zonder dagen (oude aanroep) houdt zijn percentage.
+    const schoon = (t: WeekTrede[]) =>
+      t
+        .map((x) => (x.dagen ? { pct: Math.round((Math.max(1, Math.min(7, Math.round(x.dagen))) * 100) / 7), dagen: Math.max(1, Math.min(7, Math.round(x.dagen))), wat: x.wat.trim().slice(0, 60) } : { pct: Math.max(50, Math.min(100, Math.round(x.pct))), wat: x.wat.trim().slice(0, 60) }))
+        .sort((a, b) => (a.dagen ?? a.pct) - (b.dagen ?? b.pct))
+        .filter((x, i, a) => i === 0 || (x.dagen ?? x.pct) > (a[i - 1].dagen ?? a[i - 1].pct))
+        .slice(0, 2);
     const treden = typeof tredenOfDrempel === "number" ? schoon([{ pct: tredenOfDrempel, wat: zakgeldOfBeloning }]) : schoon(tredenOfDrempel);
     if (!treden.length) return;
     const zakgeld = typeof tredenOfDrempel === "number" ? state.weekAfspraak?.[kind]?.zakgeld : zakgeldOfBeloning.trim().slice(0, 30) || undefined;
@@ -729,13 +735,14 @@ export const actions = {
     });
   },
   /** Week afsluiten: de stand van nu staat vast. Al afgesloten? Dan verandert er niks. */
-  weekAfsluiten(kind: string, door: string, k: { maandag: string; af: number; totaal: number; pct: number; gehaald: boolean; beloning?: string; behaald?: number }): boolean {
+  weekAfsluiten(kind: string, door: string, k: { maandag: string; af: number; totaal: number; pct: number; groen?: number; gehaald: boolean; beloning?: string; behaald?: number }): boolean {
     if (state.weekAfsluiting?.[kind]?.[k.maandag]) return false;
     const at = new Date().toISOString();
     update((s) => {
       if (s.weekAfsluiting?.[kind]?.[k.maandag]) return s;
-      const uit = { ...s, weekAfsluiting: { ...(s.weekAfsluiting ?? {}), [kind]: { ...(s.weekAfsluiting?.[kind] ?? {}), [k.maandag]: { af: k.af, totaal: k.totaal, pct: k.pct, gehaald: k.gehaald, beloning: k.gehaald ? k.beloning : undefined, ...(k.gehaald && k.behaald !== undefined && k.behaald >= 0 ? { trede: k.behaald } : {}), door, at } } } };
-      return metFeed(uit, kind, k.gehaald ? `heeft de week gehaald (${k.pct}%) 🏁` : `sloot de week af met ${k.pct}%`, 0);
+      const uit = { ...s, weekAfsluiting: { ...(s.weekAfsluiting ?? {}), [kind]: { ...(s.weekAfsluiting?.[kind] ?? {}), [k.maandag]: { af: k.af, totaal: k.totaal, pct: k.pct, ...(k.groen !== undefined ? { groen: k.groen } : {}), gehaald: k.gehaald, beloning: k.gehaald ? k.beloning : undefined, ...(k.gehaald && k.behaald !== undefined && k.behaald >= 0 ? { trede: k.behaald } : {}), door, at } } } };
+      const wat = k.groen !== undefined ? `${k.groen} groene ${k.groen === 1 ? "dag" : "dagen"}` : `${k.pct}%`;
+      return metFeed(uit, kind, k.gehaald ? `heeft de week gehaald (${wat}) 🏁` : `sloot de week af met ${wat}`, 0);
     });
     return true;
   },

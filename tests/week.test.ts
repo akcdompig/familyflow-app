@@ -61,25 +61,26 @@ test("oefentoets lezen: V/A/O, ook met vet of nummers; rommel wordt overgeslagen
   assert.ok(!zelfde("kat", "de hond"));
 });
 
-test("weekbonus: twee treden, gesorteerd, en wat je nog nodig hebt", () => {
-  actions.setWeekAfspraak("k1", [{ pct: 85, wat: "€ 5" }, { pct: 70, wat: "€ 2,50" }], "€ 5");
-  assert.deepEqual(tredenVan(snapshot(), "k1"), [{ pct: 70, wat: "€ 2,50" }, { pct: 85, wat: "€ 5" }]);
+test("weekbonus in groene dagen: twee treden, gesorteerd, en hoeveel dagen nog", () => {
+  actions.setWeekAfspraak("k1", [{ pct: 86, dagen: 6, wat: "€ 5" }, { pct: 71, dagen: 5, wat: "€ 2,50" }], "€ 5");
+  assert.deepEqual(tredenVan(snapshot(), "k1").map((t) => [t.dagen, t.wat]), [[5, "€ 2,50"], [6, "€ 5"]]);
   assert.equal(snapshot().weekAfspraak?.k1?.zakgeld, "€ 5");
-  assert.equal(snapshot().weekAfspraak?.k1?.drempel, 70, "drempel = eerste trede (oude code blijft werken)");
   const k = weekKaart(snapshot(), "k1");
-  const verwacht = [70, 85].filter((p) => k.totaal && k.pct >= p).length - 1;
-  assert.equal(k.behaald, verwacht);
-  if (k.volgende) assert.equal(k.volgende.nog, vinkjesNodig(k.af, k.totaal, k.volgende.pct));
-  assert.equal(vinkjesNodig(5, 10, 70), 2);
-  assert.equal(vinkjesNodig(7, 10, 70), 0);
-  assert.equal(vinkjesNodig(0, 0, 70), 0);
+  assert.equal(k.groen, k.week.filter((x) => x.kleur === "groen").length);
+  assert.equal(k.behaald, [5, 6].filter((n) => k.groen >= n).length - 1);
+  if (k.volgende) assert.equal(k.volgende.nogDagen, k.volgende.dagen! - k.groen);
+  assert.equal(vinkjesNodig(5, 10, 80), 3);
+  assert.equal(vinkjesNodig(0, 0, 80), 0);
 });
 
-test("weekbonus: oude afspraak (één drempel) is één trede; dubbele of te veel treden worden opgeschoond", () => {
+test("weekbonus: oude afspraken in procenten worden groene dagen; dubbel of te veel wordt opgeschoond", () => {
   actions.setWeekAfspraak("k2", 80, "Film kiezen");
-  assert.deepEqual(tredenVan(snapshot(), "k2"), [{ pct: 80, wat: "Film kiezen" }]);
+  assert.deepEqual(tredenVan(snapshot(), "k2").map((t) => [t.dagen, t.wat]), [[6, "Film kiezen"]], "80% van 7 dagen = 6");
   actions.setWeekAfspraak("k2", [{ pct: 75, wat: "a" }, { pct: 75, wat: "b" }, { pct: 90, wat: "c" }, { pct: 95, wat: "d" }], "");
-  assert.deepEqual(tredenVan(snapshot(), "k2").map((t) => t.pct), [75, 90]);
+  assert.deepEqual(tredenVan(snapshot(), "k2").map((t) => t.dagen), [5, 6]);
+  // Twee oude treden die op hetzelfde aantal dagen uitkomen: de tweede schuift een dag op.
+  actions.setWeekAfspraak("k2", [{ pct: 80, wat: "a" }, { pct: 85, wat: "b" }], "");
+  assert.deepEqual(tredenVan(snapshot(), "k2").map((t) => t.dagen), [6, 7]);
 });
 
 test("weekbonus: afsluiten onthoudt de trede, uitbetaald aan en uit", () => {

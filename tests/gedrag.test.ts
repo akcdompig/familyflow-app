@@ -52,7 +52,7 @@ test("redenen gebruiken de avondtijden van het kind", () => {
   assert.equal(redenen(s, "k2").find((r) => r.tekst === "Gelogen")?.n, 2);
 });
 
-test("turf geven, goedmaken (1 per week) en de weekscore in de weekkaart", () => {
+test("turf geven, goedmaken (1 per week) en een turf-dag wordt niet groen", () => {
   const vandaag = new Date();
   const d = vandaag.toLocaleDateString("sv-SE");
   actions.setGedragAfspraak("k2", { sinds: d });
@@ -61,7 +61,9 @@ test("turf geven, goedmaken (1 per week) en de weekscore in de weekkaart", () =>
   const b = actions.turf("k2", "Gelogen", 2, "p1", d)!;
   const na = weekKaart(snapshot(), "k2");
   assert.equal(na.gedrag?.turven, 3);
-  if (voor.totaal) assert.equal(na.pct, Math.max(0, voor.takenPct - 15), "−15% (3 turven)");
+  // 3.23: een turf maakt de dag niet groen (geen procenten meer van de weekscore af).
+  assert.equal(na.week.find((x) => x.vandaag)?.kleur, "turf");
+  assert.equal(na.pct, voor.pct, "de taken zelf tellen gewoon");
   assert.ok(magGoedmaken(snapshot(), "k2", d));
   assert.equal(actions.turfGoedgemaakt("k2", b, "p1"), true);
   assert.equal(actions.turfGoedgemaakt("k2", a, "p1"), false, "maar één per week");

@@ -1,7 +1,7 @@
 "use client";
 
 import { Avatar } from "@/components/avatar/Avatar";
-import { MijnWeekKort } from "@/components/screens/WeekKaart";
+import { DagenRij, MijnWeekKort, bonusZin } from "@/components/screens/WeekKaart";
 import { GedragKind } from "@/components/screens/Gedrag";
 import { TaskRow } from "@/components/screens/Taken";
 import { Week as WerkWeek } from "@/components/screens/Thuis";
@@ -41,12 +41,12 @@ export function WeekTab({ state, me, onToast, onOpenLid, onCoach, onPlanner, onT
           {kinderen.map((k) => {
             const w = weekKaart(state, k.id);
             return (
-              <button key={k.id} className="v2-weekrij" onClick={() => onOpenLid(k.id)} aria-label={`${k.name}: ${w.pct}% van de week, doel ${w.drempel}%. Openen om af te vinken, af te sluiten of de bonus in te stellen`}>
+              <button key={k.id} className="v2-weekrij" onClick={() => onOpenLid(k.id)} aria-label={`${k.name}: ${bonusZin(w)}. Openen om af te vinken, af te sluiten of de bonus in te stellen`}>
                 <Avatar config={k.avatar} expression={expressionFor(state.checkins[k.id])} headOnly size={32} animate={false} label="" />
                 <span className="ff-grow ff-stack-xs">
-                  <span className="ff-row"><b className="ff-grow">{k.name}</b><span className="ff-small ff-muted">{w.gesloten ? (w.gesloten.gehaald ? `🔒 ${w.gesloten.beloning ?? "gehaald"}${w.gesloten.betaald ? " · betaald" : ""}` : "🔒 afgesloten") : `${w.pct}% · ${w.behaald >= 0 ? `${w.treden[w.behaald].wat || "bonus"} binnen` : `doel ${w.drempel}%`}`}</span></span>
-                  {w.gedrag && <span className="ff-small ff-muted">⭐ {w.gedrag.sterren} · {w.gedrag.turven} {w.gedrag.turven === 1 ? "turf" : "turven"}</span>}
-                  <span className="v2-weekbalk" aria-hidden="true"><i style={{ width: `${Math.min(100, w.pct)}%` }} />{w.treden.map((t) => <b key={t.pct} style={{ left: `${t.pct}%` }} />)}</span>
+                  <span className="ff-row"><b className="ff-grow">{k.name}</b><span className="v2-groen-teller"><b>{w.groen}</b> 🟢</span></span>
+                  <DagenRij k={w} klein />
+                  <span className="ff-small ff-muted">{bonusZin(w)}</span>
                 </span>
                 <span aria-hidden="true">›</span>
               </button>

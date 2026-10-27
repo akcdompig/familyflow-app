@@ -4,7 +4,7 @@ import { useState } from "react";
 import { actions } from "@/lib/store";
 import { addDays, iso } from "@/lib/planner";
 import { maandag } from "@/lib/huis";
-import { MAX_TURVEN_PER_DAG, PER_STER, PER_TURF, STANDAARD_AVOND, STERREN_VOOR_EXTRA, afspraakVan, avondVan, gedragWeek, magGoedmaken, redenen, schermStraf, sterOp, strafZin, turvenOp, turvenVan } from "@/lib/gedrag";
+import { MAX_TURVEN_PER_DAG, STANDAARD_AVOND, STERREN_VOOR_EXTRA, afspraakVan, avondVan, gedragWeek, magGoedmaken, redenen, schermStraf, sterOp, strafZin, turvenOp, turvenVan } from "@/lib/gedrag";
 import type { FamilyState, Member, Turf } from "@/lib/types";
 
 /*
@@ -49,8 +49,8 @@ function Stand({ state, id }: { state: FamilyState; id: string }) {
   const nog = Math.max(0, STERREN_VOOR_EXTRA - g.sterren);
   return (
     <span className="ff-small">
-      ⭐ {g.sterren} {g.sterren === 1 ? "ster" : "sterren"} (+{g.plus}%) · {turven(g.turven)} (−{g.min}%)
-      {extra ? (g.extra ? ` · ${extra} verdiend 🎉` : ` · nog ${nog} ${nog === 1 ? "ster" : "sterren"} tot: ${extra.toLowerCase()}`) : ""}
+      ⭐ {g.sterren} {g.sterren === 1 ? "dag" : "dagen"} zonder turf · {turven(g.turven)}
+      {extra ? (g.extra ? ` · ${extra} verdiend 🎉` : ` · nog ${nog} ${nog === 1 ? "dag" : "dagen"} zonder turf tot: ${extra.toLowerCase()}`) : ""}
     </span>
   );
 }
@@ -154,8 +154,8 @@ function GedragInstellen({ state, kind, bestaand, onKlaar }: { state: FamilyStat
           <li><span className="ff-grow">Afgesproken regel niet gehaald</span><b>turf</b></li>
           <li><span className="ff-grow">Gelogen</span><b>2 turven</b></li>
           <li><span className="ff-grow">Gevolg morgen</span><b>15 / 30 min minder scherm, bij 3: geen scherm 's avonds</b></li>
-          <li><span className="ff-grow">Weekscore</span><b>−{PER_TURF}% per turf (max −{PER_TURF * MAX_TURVEN_PER_DAG}% per dag)</b></li>
-          <li><span className="ff-grow">Dag zonder turf</span><b>⭐ +{PER_STER}%</b></li>
+          <li><span className="ff-grow">Dag met een turf</span><b>wordt niet groen (telt niet voor de weekbonus)</b></li>
+          <li><span className="ff-grow">Dag zonder turf</span><b>⭐ telt voor de extra beloning</b></li>
           <li><span className="ff-grow">Goedmaken (sorry + extra klus)</span><b>1 per week</b></li>
         </ul>
       )}
@@ -165,7 +165,7 @@ function GedragInstellen({ state, kind, bestaand, onKlaar }: { state: FamilyStat
         <label className="ff-field"><span className="ff-small">Douchen</span><input type="time" value={douchen} onChange={(e) => setDouchen(e.target.value || STANDAARD_AVOND.douchen)} /></label>
         <label className="ff-field"><span className="ff-small">Telefoon aan de lader</span><input type="time" value={lader} onChange={(e) => setLader(e.target.value || STANDAARD_AVOND.lader)} /></label>
       </div>
-      <span className="ff-eyebrow">Extra bij {STERREN_VOOR_EXTRA} of 7 sterren in een week</span>
+      <span className="ff-eyebrow">Extra bij {STERREN_VOOR_EXTRA} of 7 dagen zonder turf</span>
       <div className="ff-chips">{EXTRA.map((x) => <button key={x} className="ff-chip" aria-pressed={extra === x} onClick={() => setExtra(x)}>{x}</button>)}</div>
       <label className="ff-field"><span className="ff-small">Of zelf</span><input value={extra} maxLength={40} onChange={(e) => setExtra(e.target.value)} aria-label="Extra beloning" /></label>
       <button className="ff-btn ff-btn-primary ff-btn-wide" onClick={bewaar}>{bestaand ? "Opslaan" : "Aanzetten"}</button>
@@ -187,9 +187,8 @@ export function GedragKind({ state, me }: { state: FamilyState; me: Member }) {
   const straf = schermStraf(state, me.id);
   const av = avondVan(state, me.id);
   return (
-    <section className="ff-card ff-stack-s v2-gedrag" aria-label="Mijn sterren en turven">
-      <b>⭐ Mijn sterren en turven</b>
-      <WeekSterren state={state} id={me.id} />
+    <section className="ff-card ff-stack-s v2-gedrag" aria-label="Mijn turven">
+      <b>✕ Mijn turven</b>
       <Stand state={state} id={me.id} />
       {straf.turven > 0 && <span className="ff-small v2-straf">Vandaag: {strafZin(straf)} ({turven(straf.turven)} gisteren)</span>}
       {deze.length > 0 && (

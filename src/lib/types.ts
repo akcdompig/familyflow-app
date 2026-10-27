@@ -288,7 +288,7 @@ export interface FamilyState {
   /** Weekbonus per kind (3.10): vast zakgeld (alleen ter info, staat los van de week) en 1 of 2 treden. "drempel" en "beloning" = de eerste trede (oude afspraken blijven werken). */
   weekAfspraak?: Record<string, { drempel: number; beloning?: string; treden?: WeekTrede[]; zakgeld?: string }>;
   /** Afgesloten weken per kind (maandag als sleutel). Wat afgesloten is, staat vast. */
-  weekAfsluiting?: Record<string, Record<string, { af: number; totaal: number; pct: number; gehaald: boolean; beloning?: string; trede?: number; betaald?: string; door: string; at: string }>>;
+  weekAfsluiting?: Record<string, Record<string, { af: number; totaal: number; pct: number; groen?: number; gehaald: boolean; beloning?: string; trede?: number; betaald?: string; door: string; at: string }>>;
   /** 3.14 Turven en sterren: per kind, alleen ouders zetten ze. Een kind ziet alleen de eigen. */
   gedrag?: Record<string, Turf[]>;
   /** 3.14 Per kind: turven en sterren aan (vanaf een datum), de avondtijden en de extra beloning bij 6+ sterren. */
@@ -498,8 +498,11 @@ export interface ToetsPoging {
 
 /** Een trede van de weekbonus: vanaf dit percentage krijg je dit (een bedrag of iets leuks). */
 export interface WeekTrede {
+  /** Oude regel (tot 3.22): vanaf dit percentage van de week. Blijft voor oude data. */
   pct: number;
   wat: string;
+  /** 3.23: bij zoveel groene dagen (1–7). */
+  dagen?: number;
 }
 
 /** Een turf: een afgesproken regel niet gehaald. n = 2 bij liegen. Goedgemaakt (sorry + extra klus) telt niet meer. */
